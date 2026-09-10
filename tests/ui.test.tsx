@@ -201,7 +201,7 @@ describe('native chatroom integration', () => {
         meetingSummaryModel: 'chat',
         mainAgentPrompt: '原主提示词',
         controllerPrompt: '原判断提示词',
-        models: [{ provider: 'deepseek', model: 'chat', label: 'DeepSeek · Chat' }],
+        models: [{ provider: 'deepseek', model: 'chat', label: 'DeepSeek · Chat', reasoningEfforts: ['off'] }],
       },
     }), { saveAutomation })
 
@@ -297,7 +297,7 @@ describe('native chatroom integration', () => {
     expect(screen.queryByRole('button', { name: '正在建立共享群…' })).toBeNull()
   })
 
-  it('opens group management from a shared Session header', () => {
+  it('opens the member list without claiming management rights from a shared Session header', () => {
     const openMembers = vi.fn()
     const room = view()
     render(<RoomIdentityAction
@@ -305,7 +305,7 @@ describe('native chatroom integration', () => {
       useChatroom={selector => selector(room)}
       openMembers={openMembers}
     />)
-    fireEvent.click(screen.getByRole('button', { name: '群管理' }))
+    fireEvent.click(screen.getByRole('button', { name: '群成员' }))
     expect(openMembers).toHaveBeenCalledOnce()
   })
 
@@ -407,7 +407,7 @@ describe('native chatroom integration', () => {
     expect(nextFrameUrl.searchParams.get('dsh-chatroom-thread-session')).toBe('chatroom-thread-v1-thread-2')
   })
 
-  it('lets every room member change the automatic-reply policy', () => {
+  it('hides the automatic-reply switch from members and permits room managers', () => {
     const setRoomAutoTrigger = vi.fn(async () => true)
     renderEntry(view({
       membersOpen: true,
@@ -417,6 +417,13 @@ describe('native chatroom integration', () => {
       }],
     }), { setRoomAutoTrigger })
 
+    expect(screen.queryByRole('checkbox', { name: '无需 @AI 自动回复' })).toBeNull()
+    expect(setRoomAutoTrigger).not.toHaveBeenCalled()
+    cleanup()
+    renderEntry(view({ membersOpen: true, members: [{
+      participantId: 'alice-id', displayName: 'Alice', avatarId: 'whale', role: 'admin',
+      joinedAt: 1, lastSeenAt: Date.now(), online: true,
+    }] }), { setRoomAutoTrigger })
     expect(screen.getByText('无需 @AI 自动回复')).toBeTruthy()
     const autoReply = screen.getByRole('checkbox', { name: '无需 @AI 自动回复' }) as HTMLInputElement
     expect(autoReply.disabled).toBe(false)
@@ -575,6 +582,12 @@ function view(patch: Partial<ChatroomView> = {}): ChatroomView {
     threadPreviews: [],
     pendingMessages: [],
     membersOpen: false,
+    agentsOpen: false,
+    agentProfiles: undefined,
+    agentProfilesRoomId: undefined,
+    manageableRooms: [],
+    agentBusy: false,
+    agentError: undefined,
     error: undefined,
     composerRoomId: undefined,
     pendingFiles: [],
@@ -665,6 +678,7 @@ function entry(
 ): JSX.Element {
   return <ChatroomEntry
     useSessions={vi.fn() as never}
+    useSessionPendingInteraction={vi.fn() as never}
     useWorkspaces={vi.fn() as never}
     useChatroom={selector => selector(room)}
     openRoom={vi.fn()}
@@ -675,6 +689,7 @@ function entry(
     resetIdentity={vi.fn(async () => undefined)}
     retry={vi.fn(async () => undefined)}
     closeMembers={vi.fn()}
+    closeAgents={vi.fn()}
     closeThread={vi.fn()}
     setThreadReply={vi.fn()}
     clearThreadReply={vi.fn()}

@@ -35,12 +35,17 @@ describe('ChatroomAuth', () => {
       username: 'owner', password: 'correct horse battery', displayName: 'Owner', bootstrapToken: 'bootstrap-token',
     })
     expect(owner.account.role).toBe('super-admin')
+    expect(fixture.auth.state(owner.account).canManageSettings).toBe(true)
+    expect(fixture.auth.state().canManageSettings).toBe(false)
     expect(fixture.auth.account(owner.token)).toMatchObject({ username: 'owner', role: 'super-admin' })
 
     const member = await fixture.auth.register({
       username: 'member', password: 'member password 123', displayName: 'Member',
     })
     expect(member.account.role).toBe('member')
+    expect(fixture.auth.state(member.account).canManageSettings).toBe(false)
+    expect(fixture.auth.state({ ...member.account, role: 'admin' }).canManageSettings).toBe(false)
+    expect(fixture.auth.state({ ...owner.account, status: 'disabled' }).canManageSettings).toBe(false)
     await fixture.auth.updateSettings(owner.account, { allowSelfRegistration: false })
     await expect(fixture.auth.register({
       username: 'third-user', password: 'third password 123', displayName: 'Third',
@@ -63,6 +68,14 @@ describe('ChatroomAuth', () => {
     expect(fixture.auth.account(changed.token)).toMatchObject({ username: 'member' })
     await expect(fixture.auth.login('member', 'replacement password 123')).resolves.toMatchObject({
       account: { username: 'member' },
+    })
+
+    await expect(fixture.auth.changePassword(secondAdmin, 'second password 123', '66688'))
+      .rejects.toThrow('6–128')
+    await expect(fixture.auth.changePassword(secondAdmin, 'second password 123', '666888'))
+      .resolves.toMatchObject({ account: { username: 'second-admin' } })
+    await expect(fixture.auth.login('second-admin', '666888')).resolves.toMatchObject({
+      account: { username: 'second-admin' },
     })
   })
 

@@ -5,13 +5,14 @@ import { resolve, relative, join } from 'node:path'
 import { describe, expect, it, vi } from 'vitest'
 import type { Context } from '@deepseek-ai/cordis'
 import type { Agent } from '@deepseek-ai/dsh-agent'
-import { CallId, createAssistantMessage, createToolResultMessage, createUserMessage } from '@deepseek-ai/dsh-llm'
+import { ToolCallId, createAssistantMessage, createToolResultMessage, createUserMessage } from '@deepseek-ai/dsh-llm'
 import type { Session, SessionEvent } from '@deepseek-ai/dsh-session'
 import type { KvTable } from '@deepseek-ai/dsh-storage-domain'
 import type { ToolDefinition } from '@deepseek-ai/dsh-tools'
 import sharp from 'sharp'
 import type { Config } from '../src/config.js'
-import { ChatroomRuntime } from '../src/room.js'
+import { chatroomAgentDomainSpec, chatroomDomainSpec } from '../src/domain.js'
+import { ChatroomRuntime, parseRoomAgentSessionId } from '../src/room.js'
 import {
   identifyChatroomText,
   identifyExternalCardText,
@@ -22,14 +23,46 @@ import {
 } from '../src/message.js'
 
 describe('ChatroomRuntime', () => {
+  it('filters AI configuration in live events and removes it immediately after room-admin demotion', async () => {
+    const harness = fakeHarness()
+    const runtime = new ChatroomRuntime(harness.ctx, config())
+    await runtime.start()
+    const alice = { participantId: 'alice', displayName: 'Alice', avatarId: 'whale' as const }
+    const bob = { participantId: 'bob', displayName: 'Bob', avatarId: 'panda' as const }
+    try {
+      const room = await runtime.createRoom('权限验收', alice)
+      await runtime.selectRoom(room.id, bob)
+      const aliceWrites: string[] = []
+      const bobWrites: string[] = []
+      const response = (writes: string[]) => ({ destroyed: false, writableEnded: false,
+        write: (value: string) => { writes.push(value); return true }, end: vi.fn() })
+      runtime.subscribe(room.id, alice, response(aliceWrites) as never)
+      runtime.subscribe(room.id, bob, response(bobWrites) as never)
+      await runtime.createRoomAgentProfile(room.id, alice, {
+        name: 'Reviewer', role: '审查', instructions: 'private-instructions', provider: 'deepseek', model: 'chat', enabled: true,
+      })
+      const latest = (writes: string[]) => writes.filter(value => value.startsWith('data: '))
+        .map(value => JSON.parse(value.slice(6))).filter(value => value.type === 'agent-profiles').at(-1)
+      expect(latest(aliceWrites)).toMatchObject({ canManage: true, profiles: [{ instructions: 'private-instructions', model: 'chat' }] })
+      expect(latest(bobWrites)).toMatchObject({ canManage: false, profiles: [{ provider: '', model: '', name: 'Reviewer' }] })
+      expect(JSON.stringify(latest(bobWrites))).not.toContain('private-instructions')
+      await runtime.setMemberRole(room.id, bob.participantId, 'admin', alice)
+      expect(latest(bobWrites)).toMatchObject({ canManage: true, profiles: [{ instructions: 'private-instructions' }] })
+      await runtime.setMemberRole(room.id, bob.participantId, 'member', alice)
+      expect(latest(bobWrites).canManage).toBe(false)
+      expect(JSON.stringify(latest(bobWrites))).not.toContain('private-instructions')
+      await expect(runtime.setRoomAutoTrigger(room.id, true, bob)).rejects.toThrow('群管理权限')
+    } finally { await runtime.stop() }
+  })
   it('appends human chat without waking AI and wakes only on explicit mention', async () => {
     const harness = fakeHarness()
     const runtime = new ChatroomRuntime(harness.ctx, config())
     await runtime.start()
     const identity = { participantId: 'alice-id', displayName: 'Alice', avatarId: 'whale' as const }
 
-    await runtime.submit('lobby', identity, [{ type: 'text', text: '大家先讨论' }], 'queue')
+    await runtime.submit('lobby', identity, [{ type: 'text', text: '大家先讨论' }], 'queue', undefined, 'native-echo-1')
     expect(harness.agents[0]?.session.append).toHaveBeenCalledOnce()
+    expect(harness.agents[0]?.session.append.mock.calls[0]?.[1]).toMatchObject({ source: { rpcId: 'native-echo-1', chatroomParticipantId: identity.participantId } })
     expect(harness.agents[0]?.followup).not.toHaveBeenCalled()
 
     await runtime.submit('lobby', identity, [{ type: 'text', text: '@AI 请总结' }], 'queue')
@@ -121,18 +154,18 @@ describe('ChatroomRuntime', () => {
       source: { provider: 'deepseek', model: 'chat' },
     })
     const toolMessage = createToolResultMessage({
-      callId: CallId('call-before-reset'),
+      callId: ToolCallId('call-before-reset'),
       content: [{ type: 'text', text: '需要从新上下文排除的工具结果' }],
       isError: false,
     })
     const events: SessionEvent[] = [
-      { type: 'user/message', seq: 0, time: 1, data: userMessage, surfaceOp: 'append' },
+      { type: 'user/message', seq: SessionSeq(0), time: 1, data: userMessage, surfaceOp: 'append' },
       {
-        type: 'assistant/message', seq: 1, time: 2,
+        type: 'assistant/message', seq: SessionSeq(1), time: 2,
         data: { turn: 1, step: 1, message: assistantMessage }, surfaceOp: 'append',
       },
       {
-        type: 'tool/result', seq: 2, time: 3,
+        type: 'tool/result', seq: SessionSeq(2), time: 3,
         data: { turn: 1, step: 1, message: toolMessage }, surfaceOp: 'append',
       },
     ]
@@ -158,7 +191,7 @@ describe('ChatroomRuntime', () => {
       content: [{ type: 'text', text: '新 AI 会话中的第一条消息' }],
       source: { kind: 'user' },
     })
-    const currentEvent = { type: 'user/message', seq: 3, time: 4, data: currentMessage, surfaceOp: 'append' } as const
+    const currentEvent = { type: 'user/message', seq: SessionSeq(3), time: 4, data: currentMessage, surfaceOp: 'append' } as const
     events.push(currentEvent)
     runtime.handleSessionEvent(harness.agents[0]!.session, currentEvent)
     await vi.waitFor(() => {
@@ -398,7 +431,7 @@ describe('ChatroomRuntime', () => {
       }],
       source: { kind: 'user' },
     })
-    const event = { type: 'user/message', seq: 1, time: 10, data: message, surfaceOp: 'append' } as const
+    const event = { type: 'user/message', seq: SessionSeq(1), time: 10, data: message, surfaceOp: 'append' } as const
     const harness = fakeHarness([event])
     const runtime = new ChatroomRuntime(harness.ctx, config())
     await runtime.start()
@@ -436,7 +469,8 @@ describe('ChatroomRuntime', () => {
     await runtime.selectRoom('lobby', { participantId: 'alice-id', displayName: 'Alice', avatarId: 'whale' })
     const identity = { participantId: 'bob-id', displayName: 'Bob', avatarId: 'panda' as const }
     await runtime.selectRoom('lobby', identity)
-    await runtime.setRoomAutoTrigger('lobby', true, identity)
+    await expect(runtime.setRoomAutoTrigger('lobby', true, identity)).rejects.toThrow('群管理权限')
+    await runtime.setRoomAutoTrigger('lobby', true, { participantId: 'alice-id', displayName: 'Alice', avatarId: 'whale' })
     harness.llmStream.mockImplementationOnce(async function* () {
       yield { type: 'text-delta', index: 0, text: '{"wake":true}' }
       yield { type: 'finish', reason: { kind: 'stop' } }
@@ -529,6 +563,76 @@ describe('ChatroomRuntime', () => {
       messages: [{ text: '这是第二个需要回复的问题', status: 'queued' }],
     })
     await runtime.stop()
+  })
+
+  it('drops an overloaded SSE client so a reconnect receives a fresh snapshot', async () => {
+    const harness = fakeHarness()
+    const runtime = new ChatroomRuntime(harness.ctx, config())
+    await runtime.start()
+    try {
+      const identity = { participantId: 'alice-id', displayName: 'Alice', avatarId: 'whale' as const }
+      const overloaded = {
+        destroyed: false,
+        writableEnded: false,
+        write: vi.fn(() => false),
+        end: vi.fn(),
+      }
+      runtime.subscribe('lobby', identity, overloaded as never)
+      expect(overloaded.write).toHaveBeenCalledOnce()
+      expect(overloaded.end).toHaveBeenCalledOnce()
+
+      await runtime.submit('lobby', identity, [{ type: 'text', text: '重连前的消息' }], 'queue')
+      expect(overloaded.write).toHaveBeenCalledOnce()
+
+      const writes: string[] = []
+      runtime.subscribe('lobby', identity, {
+        destroyed: false,
+        writableEnded: false,
+        write: vi.fn((value: string) => { writes.push(value); return true }),
+        end: vi.fn(),
+      } as never)
+      expect(JSON.parse(writes[0]!.slice('data: '.length))).toMatchObject({ type: 'snapshot' })
+    } finally {
+      await runtime.stop()
+    }
+  })
+
+  it('waits for drain instead of dropping a large initial SSE snapshot', async () => {
+    const harness = fakeHarness()
+    const runtime = new ChatroomRuntime(harness.ctx, config())
+    await runtime.start()
+    try {
+      const identity = { participantId: 'alice-id', displayName: 'Alice', avatarId: 'whale' as const }
+      vi.spyOn(runtime as unknown as { pendingMessagesForRoom: () => unknown[] }, 'pendingMessagesForRoom')
+        .mockReturnValue([{ text: 'x'.repeat(2 * 1024 * 1024) }])
+      let drain: (() => void) | undefined
+      const response = {
+        destroyed: false,
+        writableEnded: false,
+        writableLength: 0,
+        write: vi.fn((value: string) => {
+          response.writableLength += Buffer.byteLength(value)
+          return false
+        }),
+        once: vi.fn((_event: string, handler: () => void) => { drain = handler }),
+        end: vi.fn(),
+      }
+      runtime.subscribe('lobby', identity, response as never)
+      expect(response.end).not.toHaveBeenCalled()
+      expect(response.writableLength).toBeGreaterThan(2 * 1024 * 1024)
+      response.writableLength = 0
+      drain?.()
+      expect(response.write).toHaveBeenCalledTimes(2)
+      expect(response.write.mock.calls.filter(([value]) => String(value).includes('"type":"snapshot"'))).toHaveLength(1)
+      expect(response.end).not.toHaveBeenCalled()
+      response.writableLength = 1024 * 1024 + 1
+      runtime.subscribe('lobby', identity, {
+        destroyed: false, writableEnded: false, write: vi.fn(() => true), end: vi.fn(),
+      } as never)
+      expect(response.end).toHaveBeenCalledOnce()
+    } finally {
+      await runtime.stop()
+    }
   })
 
   it('appends a controller-skipped message only after the active reply becomes idle', async () => {
@@ -734,7 +838,7 @@ describe('ChatroomRuntime', () => {
     harness.agents.push({
       id: 'native-session-1',
       options: { provider: 'deepseek', model: 'chat' },
-      session: { events: [], append: vi.fn() },
+      session: { events: [], snapshotEvents: () => [], append: vi.fn() },
       ctx: harness.makeAgentContext(),
       inbox: { nextTurn: [], nextStep: [] },
       followup: vi.fn(),
@@ -794,7 +898,7 @@ describe('ChatroomRuntime', () => {
     harness.agents.push({
       id: sessionId,
       options: { provider: 'deepseek', model: 'chat' },
-      session: { id: sessionId, events: [], append: vi.fn() },
+      session: { id: sessionId, events: [], snapshotEvents: () => [], append: vi.fn() },
       ctx: harness.makeAgentContext(),
       inbox: { nextTurn: [], nextStep: [] },
       followup: vi.fn(),
@@ -824,7 +928,7 @@ describe('ChatroomRuntime', () => {
     harness.agents.push({
       id: 'native-live-session',
       options: { provider: 'deepseek', model: 'chat' },
-      session: { id: 'native-live-session', events: [], append: vi.fn() },
+      session: { id: 'native-live-session', events: [], snapshotEvents: () => [], append: vi.fn() },
       inbox: { nextTurn: [], nextStep: [] },
       ctx: agentCtx,
       followup: vi.fn(),
@@ -937,7 +1041,7 @@ describe('ChatroomRuntime', () => {
 
     first.handleSessionEvent(session, {
       type: 'session/title',
-      seq: 1,
+      seq: SessionSeq(1),
       time: 2,
       data: { title: '原生侧栏改名', messageSeqs: [], source: { kind: 'user' } },
     } as SessionEvent)
@@ -1136,7 +1240,8 @@ describe('ChatroomRuntime', () => {
     }
     const unsubscribe = runtime.subscribe('lobby', alice, response as never)
     const snapshot = JSON.parse(writes[0]!.slice('data: '.length)) as { members: Array<{ displayName: string }> }
-    expect(snapshot.members.map(member => member.displayName)).toEqual(['Alice', 'Bob'])
+    // Presence/last-seen ordering is not part of this membership/branch contract.
+    expect(snapshot.members.map(member => member.displayName).sort()).toEqual(['Alice', 'Bob'])
 
     const opened = await runtime.openThread('lobby', alice, {
       messageId: 'user:1', displayName: 'Bob', text: '这个方案怎么做？', role: 'human',
@@ -1160,7 +1265,7 @@ describe('ChatroomRuntime', () => {
     runtime.handleSessionEvent(
       { id: opened.thread.sessionId } as unknown as Session,
       {
-        type: 'assistant/message', seq: 8, time: 1_000,
+        type: 'assistant/message', seq: SessionSeq(8), time: 1_000,
         data: {
           turn: 1,
           step: 1,
@@ -1229,7 +1334,7 @@ describe('ChatroomRuntime', () => {
       },
     })
     runtime.handleSessionEvent(harness.agents[1]!.session, {
-      type: 'assistant/message', seq: 1, time: 1, data: payload,
+      type: 'assistant/message', seq: SessionSeq(1), time: 1, data: payload,
     } as SessionEvent)
     await expect(runtime.openThread('lobby', alice, opened.thread.root)).resolves.toMatchObject({ messages: [] })
     await runtime.stop()
@@ -1274,7 +1379,7 @@ describe('ChatroomRuntime', () => {
     await runtime.submit('lobby', alice, [{ type: 'text', text: '稍后撤回' }], 'queue')
     const payload = harness.agents[0]?.session.append.mock.calls[0]?.[1]
     Object.assign(harness.agents[0]!.session, {
-      events: [{ type: 'user/message', seq: 7, time: 1, data: payload }],
+      events: [{ type: 'user/message', seq: SessionSeq(7), time: 1, data: payload }],
     })
 
     await runtime.toggleReaction('lobby', 'user:7', '👍', bob)
@@ -1320,7 +1425,7 @@ describe('ChatroomRuntime', () => {
     await runtime.submit('lobby', alice, [{ type: 'text', text: '请处理这条消息' }], 'queue')
     const payload = harness.agents[0]?.session.append.mock.calls[0]?.[1]
     Object.assign(harness.agents[0]!.session, {
-      events: [{ type: 'user/message', seq: 9, time: 1, data: payload }],
+      events: [{ type: 'user/message', seq: SessionSeq(9), time: 1, data: payload }],
     })
     const capabilities = harness.registeredTools.find(tool => tool.name === 'chatroom_capabilities')
     const action = harness.registeredTools.find(tool => tool.name === 'chatroom_action')
@@ -1348,8 +1453,8 @@ describe('ChatroomRuntime', () => {
     const assistantPayload = { turn: 3, step: 1, message: assistantMessage }
     Object.assign(harness.agents[0]!.session, {
       events: [
-        { type: 'user/message', seq: 9, time: 1, data: payload },
-        { type: 'assistant/message', seq: 10, time: 2, data: assistantPayload },
+        { type: 'user/message', seq: SessionSeq(9), time: 1, data: payload },
+        { type: 'assistant/message', seq: SessionSeq(10), time: 2, data: assistantPayload },
       ],
     })
     await action.execute({
@@ -1386,7 +1491,7 @@ describe('ChatroomRuntime', () => {
     }], 'queue')
     const sourceMessage = harness.agents[0]?.session.append.mock.calls[0]?.[1]
     Object.assign(harness.agents[0]!.session, {
-      events: [{ type: 'user/message', seq: 7, time: 123_456, data: sourceMessage }],
+      events: [{ type: 'user/message', seq: SessionSeq(7), time: 123_456, data: sourceMessage }],
     })
 
     const opened = await runtime.openThread('lobby', alice, {
@@ -1427,7 +1532,7 @@ describe('ChatroomRuntime', () => {
     await second.start()
     Object.assign(harness.agents[2]!.session, {
       events: [{
-        type: 'user/message', seq: 7, time: 123_456,
+        type: 'user/message', seq: SessionSeq(7), time: 123_456,
         data: {
           role: 'user',
           content: [
@@ -1499,7 +1604,7 @@ describe('ChatroomRuntime', () => {
     ], 'queue', { messageId: 'user:2', displayName: 'Bob', text: '请补充资料' })
     const sourceMessage = harness.agents[0]?.session.append.mock.calls[0]?.[1]
     Object.assign(harness.agents[0]!.session, {
-      events: [{ type: 'user/message', seq: 7, time: 123_456, data: sourceMessage }],
+      events: [{ type: 'user/message', seq: SessionSeq(7), time: 123_456, data: sourceMessage }],
     })
     await runtime.toggleReaction('lobby', 'user:7', '🎉', alice)
 
@@ -1567,7 +1672,7 @@ describe('ChatroomRuntime', () => {
       source: { kind: 'user', chatroomParticipantId: identity.participantId },
     })
     runtime.handleSessionEvent(harness.agents[0]!.session, {
-      type: 'user/message', seq: 1, time: 1, data: message, surfaceOp: 'append',
+      type: 'user/message', seq: SessionSeq(1), time: 1, data: message, surfaceOp: 'append',
     })
 
     await admitStep(harness.agents[0]!, [message])
@@ -1652,11 +1757,13 @@ describe('ChatroomRuntime', () => {
       await mkdir(join(directory, 'workspace'))
       await writeFile(join(directory, 'outside.txt'), 'synthetic outside data')
       await writeFile(join(directory, 'workspace', 'inside.txt'), 'synthetic inside data')
-      await symlink(join(directory, 'outside.txt'), join(directory, 'workspace', 'shortcut.txt'))
+      await mkdir(join(directory, 'outside'))
+      await writeFile(join(directory, 'outside', 'file.txt'), 'synthetic outside data')
+      await symlink(join(directory, 'outside'), join(directory, 'workspace', 'shortcut'), 'junction')
       await runtime.start()
       const agent = harness.agents[0]!
       Object.assign(agent.session, { header: { cwd: join(directory, 'workspace') } })
-      await expect(runtime.agentAction(String(agent.session.id), { action: 'send_file', path: 'shortcut.txt' })).rejects.toThrow('当前工作区')
+      await expect(runtime.agentAction(String(agent.session.id), { action: 'send_file', path: 'shortcut/file.txt' })).rejects.toThrow('当前工作区')
       expect(agent.ctx.fs.readBytes).not.toHaveBeenCalled()
       await expect(runtime.agentAction(String(agent.session.id), { action: 'send_file', path: 'inside.txt' })).resolves.toMatchObject({ action: 'send_file' })
       expect(agent.ctx.fs.readBytes).toHaveBeenCalledWith(expect.anything(), expect.any(AbortSignal), config().maxFileBytes)
@@ -1773,6 +1880,651 @@ describe('ChatroomRuntime', () => {
     expect(harness.promptSections).toHaveLength(0)
   })
 
+  it('keeps room AI participants in a dedicated storage domain and leaves the legacy chatroom domain untouched', () => {
+    expect(chatroomDomainSpec.name).toBe('chatroom')
+    expect(Object.keys(chatroomDomainSpec.tables)).not.toContain('room_agent_profiles')
+    expect(chatroomAgentDomainSpec.name).toBe('chatroom_agents')
+    expect(Object.keys(chatroomAgentDomainSpec.tables)).toEqual(['room_agent_profiles'])
+  })
+
+  it('parses room AI participant session ids for UUID and adopted native session room ids', () => {
+    const profileId = '821f2743-ea58-4a67-bc75-38c8b2cc48c2'
+    expect(parseRoomAgentSessionId(`chatroom-agent-v1-ad9fa91f-19c4-48c8-b4c9-be4f3679f2b3-${profileId}`))
+      .toEqual({ roomId: 'ad9fa91f-19c4-48c8-b4c9-be4f3679f2b3', profileId })
+    // Adopted rooms use the native session id (variable length) as the room id.
+    expect(parseRoomAgentSessionId(`chatroom-agent-v1-session-XEPqyhXlIEwk8_tUWSxBUftt-${profileId}`))
+      .toEqual({ roomId: 'session-XEPqyhXlIEwk8_tUWSxBUftt', profileId })
+    expect(parseRoomAgentSessionId('chatroom-v1-lobby')).toBeUndefined()
+    expect(parseRoomAgentSessionId(`chatroom-agent-v1-lobby-${profileId.slice(0, 35)}`)).toBeUndefined()
+  })
+
+  it('manages room AI participants only inside the independent agent domain', async () => {
+    const harness = fakeHarness()
+    const runtime = new ChatroomRuntime(harness.ctx, config())
+    await runtime.start()
+    try {
+      const owner = { participantId: 'alice-id', displayName: 'Alice', avatarId: 'whale' as const }
+      const outsider = { participantId: 'bob-id', displayName: 'Bob', avatarId: 'panda' as const }
+      const room = await runtime.createRoom('评审部', owner)
+
+      const overview = await runtime.agentProfilesOverview(room.id, owner)
+      expect(overview.canManage).toBe(true)
+      expect(overview.models.length).toBeGreaterThan(0)
+      expect((await runtime.agentProfilesOverview(room.id, outsider)).canManage).toBe(false)
+
+      const profile = await runtime.createRoomAgentProfile(room.id, owner, {
+        name: 'Terra',
+        role: '审查员',
+        instructions: '只检查架构、安全边界和恢复路径。',
+        provider: 'deepseek',
+        model: 'chat',
+        reasoningEffort: 'off',
+        enabled: true,
+      })
+      expect(profile.roomId).toBe(room.id)
+      expect(profile.instructions).toBe('只检查架构、安全边界和恢复路径。')
+      const memberOverview = await runtime.agentProfilesOverview(room.id, outsider)
+      expect(memberOverview.profiles[0]).toMatchObject({ id: profile.id, name: 'Terra', provider: '', model: '' })
+      expect(memberOverview.profiles[0]).not.toHaveProperty('instructions')
+      expect(memberOverview.profiles[0]).not.toHaveProperty('reasoningEffort')
+      expect((await runtime.agentProfilesOverview(room.id, owner)).profiles[0]?.instructions).toBe(profile.instructions)
+      await expect(runtime.setRoomAutoTrigger(room.id, true, outsider)).rejects.toThrow()
+      await expect(runtime.setRoomAutoTrigger(room.id, true, owner)).resolves.toMatchObject({ autoTriggerEnabled: true })
+      const publicPolicy = await runtime.automationOverview(false)
+      expect(publicPolicy).toEqual({ canManage: false, provider: '', model: '', meetingSummaryProvider: '', meetingSummaryModel: '',
+        mainAgentPrompt: '', controllerPrompt: '', models: [] })
+      await expect(runtime.createRoomAgentProfile(room.id, owner, {
+        name: 'Terra', role: '审查员', provider: 'deepseek', model: 'chat', enabled: true,
+      })).rejects.toThrow('已存在名为「Terra」')
+      await expect(runtime.createRoomAgentProfile(room.id, owner, {
+        name: 'AI', role: '审查员', provider: 'deepseek', model: 'chat', enabled: true,
+      })).rejects.toThrow('与房间主 Agent 冲突')
+      await expect(runtime.createRoomAgentProfile(room.id, owner, {
+        name: 'Nova', role: '审查员', provider: 'deepseek', model: 'chat', reasoningEffort: 'high', enabled: true,
+      })).rejects.toThrow('不支持推理强度')
+      vi.mocked(harness.ctx.llm.resolveModelInfo).mockResolvedValueOnce({ inputModalities: ['text'] } as never)
+      await expect(runtime.createRoomAgentProfile(room.id, owner, {
+        name: 'NoReasoning', role: '审查员', provider: 'deepseek', model: 'chat', reasoningEffort: 'off', enabled: true,
+      })).rejects.toThrow('不支持推理强度')
+      await expect(runtime.createRoomAgentProfile(room.id, outsider, {
+        name: 'Nova', role: '审查员', provider: 'deepseek', model: 'chat', enabled: true,
+      })).rejects.toThrow()
+
+      // Physical separation: the legacy unit never grows the new table.
+      expect(harness.tables.get('room_agent_profiles')).toBeUndefined()
+      expect(harness.tables.get('chatroom_agents:room_agent_profiles')!.size).toBe(1)
+
+      const updated = await runtime.updateRoomAgentProfile(room.id, profile.id, owner, {
+        name: 'Terra High',
+        role: '独立审查员',
+        provider: 'deepseek',
+        model: 'chat',
+        enabled: false,
+      })
+      expect(updated.name).toBe('Terra High')
+      expect(updated.enabled).toBe(false)
+      await runtime.deleteRoomAgentProfile(room.id, profile.id, owner)
+      expect(harness.tables.get('chatroom_agents:room_agent_profiles')!.size).toBe(0)
+    } finally {
+      await runtime.stop()
+    }
+  })
+
+  it('wakes a mentioned room AI participant on its own session and projects its reply into the room stream', async () => {
+    const harness = fakeHarness()
+    const runtime = new ChatroomRuntime(harness.ctx, config())
+    await runtime.start()
+    try {
+      const owner = { participantId: 'alice-id', displayName: 'Alice', avatarId: 'whale' as const }
+      const room = await runtime.createRoom('评审部', owner)
+      const profile = await runtime.createRoomAgentProfile(room.id, owner, {
+        name: 'Terra',
+        role: '审查员',
+        instructions: '只检查架构、安全边界和恢复路径。',
+        provider: 'terra',
+        model: 'terra-main',
+        reasoningEffort: 'off',
+        enabled: true,
+      })
+      const mainAgent = harness.agents.find(agent => agent.id === `chatroom-v1-${room.id}`)!
+
+      await runtime.submit(room.id, owner, [{ type: 'text', text: '@Terra 请审查这段设计' }], 'queue')
+      const profileSessionId = `chatroom-agent-v1-${room.id}-${profile.id}`
+      const profileAgent = harness.agents.find(agent => agent.id === profileSessionId)!
+      expect(profileAgent.id).toBe(profileSessionId)
+      expect(harness.ctx.agents.create).toHaveBeenCalledWith(expect.objectContaining({
+        sessionId: profileSessionId,
+        agentOptions: { provider: 'terra', model: 'terra-main', reasoningEffort: 'off' },
+      }))
+      await vi.waitFor(() => expect(profileAgent.followup).toHaveBeenCalledOnce())
+      const profilePrompt = harness.promptSections.find(section => section.name === 'chatroom:room-agent-profile')
+      expect(profilePrompt).toBeDefined()
+      expect(promptSectionText(profilePrompt!)).toContain('只检查架构、安全边界和恢复路径。')
+      const delivered = profileAgent.followup.mock.calls[0]?.[0]
+      expect(delivered?.content[0]).toMatchObject({
+        type: 'text',
+        text: expect.stringContaining('\u2063dsh-chatroom:alice-id|whale\u2063Alice：@Terra 请审查这段设计'),
+      })
+
+      const reply = createAssistantMessage({
+        content: [{ type: 'text', text: '审查完成，结论见下。' }],
+        source: { provider: 'terra', model: 'terra-main' },
+      })
+      runtime.handleSessionEvent(profileAgent.session, profileAgent.session.append('assistant/message', { turn: 0, step: 0, message: reply }, { surfaceOp: 'append' }))
+      await vi.waitFor(() => {
+        const projection = mainAgent.session.append.mock.calls
+          .map(call => call[1] as { content: Array<{ type: string; text?: string }> })
+          .find(message => message.content[0]?.text?.includes('Terra：审查完成，结论见下。'))
+        expect(projection).toBeDefined()
+        expect(projection!.content[0]!.text).toContain(`\u2063dsh-chatroom:chatroom-agent-${profile.id}|`)
+      })
+
+      // Changing model routing releases the live agent; the next mention re-creates it with new options.
+      const createMock = vi.mocked(harness.ctx.agents.create)
+      const terraCreateIndex = createMock.mock.calls.findIndex(call => String(call[0].sessionId) === profileSessionId)
+      const terraHandle = await createMock.mock.results[terraCreateIndex]!.value
+      await runtime.updateRoomAgentProfile(room.id, profile.id, owner, {
+        name: 'Terra',
+        role: '审查员',
+        provider: 'deepseek',
+        model: 'chat',
+        enabled: true,
+      })
+      expect(terraHandle.agent.cancel).toHaveBeenCalledWith({ kind: 'user' })
+      await vi.waitFor(() => expect(terraHandle.dispose).toHaveBeenCalledOnce())
+      await runtime.submit(room.id, owner, [{ type: 'text', text: '@Terra 继续审查' }], 'queue')
+      await vi.waitFor(() => expect(harness.ctx.agents.create).toHaveBeenCalledWith(expect.objectContaining({
+        sessionId: profileSessionId,
+        agentOptions: { provider: 'deepseek', model: 'chat' },
+      })))
+    } finally {
+      await runtime.stop()
+    }
+  })
+
+  it('accepts and starts a named AI participant before a gated shared-room activation', async () => {
+    const harness = fakeHarness()
+    const runtime = new ChatroomRuntime(harness.ctx, config())
+    await runtime.start()
+    try {
+      const owner = { participantId: 'alice-id', displayName: 'Alice', avatarId: 'whale' as const }
+      const room = await runtime.createRoom('并发评审部', owner)
+      const profile = await runtime.createRoomAgentProfile(room.id, owner, {
+        name: 'Terra', role: '审查员', provider: 'deepseek', model: 'chat', enabled: true,
+      })
+      const state = (runtime as unknown as { states: Map<string, { binding?: unknown }> }).states.get(room.id)!
+      state.binding = undefined
+      const mainSessionId = `chatroom-v1-${room.id}`
+      const profileSessionId = `chatroom-agent-v1-${room.id}-${profile.id}`
+      const activation = Promise.withResolvers<void>()
+      const baseCreate = vi.mocked(harness.ctx.agents.create).getMockImplementation()!
+      vi.mocked(harness.ctx.agents.create).mockImplementation(async (options) => {
+        if (String(options.sessionId) === mainSessionId) await activation.promise
+        return baseCreate(options)
+      })
+
+      const submitted = runtime.submit(room.id, owner, [{ type: 'text', text: '@Terra 先审查' }], 'queue')
+      await vi.waitFor(() => expect(harness.agents.find(agent => agent.id === profileSessionId)?.followup).toHaveBeenCalledOnce())
+      activation.resolve()
+      await submitted
+    } finally {
+      await runtime.stop()
+    }
+  })
+
+  it('queues 16 concurrent mentions for one named participant without releasing their shared activation', async () => {
+    const harness = fakeHarness()
+    const runtime = new ChatroomRuntime(harness.ctx, config())
+    await runtime.start()
+    try {
+      const owner = { participantId: 'alice-id', displayName: 'Alice', avatarId: 'whale' as const }
+      const room = await runtime.createRoom('并发评审部', owner)
+      const profile = await runtime.createRoomAgentProfile(room.id, owner, {
+        name: 'Terra', role: '审查员', provider: 'deepseek', model: 'chat', enabled: true,
+      })
+      const profileSessionId = `chatroom-agent-v1-${room.id}-${profile.id}`
+      const activation = Promise.withResolvers<void>()
+      const baseCreate = vi.mocked(harness.ctx.agents.create).getMockImplementation()!
+      vi.mocked(harness.ctx.agents.create).mockImplementation(async (options) => {
+        if (String(options.sessionId) === profileSessionId) await activation.promise
+        return baseCreate(options)
+      })
+      const prompts = Array.from({ length: 16 }, (_, index) => `@Terra concurrent ${index + 1}`)
+      await Promise.all(prompts.map(text => runtime.submit(room.id, owner, [{ type: 'text', text }], 'queue')))
+      await vi.waitFor(() => expect(harness.ctx.agents.create).toHaveBeenCalledWith(expect.objectContaining({
+        sessionId: profileSessionId,
+      })))
+      activation.resolve()
+      await vi.waitFor(() => expect(harness.agents.find(candidate => candidate.id === profileSessionId)).toBeDefined())
+      const agent = harness.agents.find(candidate => candidate.id === profileSessionId)!
+      await vi.waitFor(() => expect(agent.followup).toHaveBeenCalledTimes(16))
+      expect(harness.agents.filter(candidate => candidate.id === profileSessionId)).toHaveLength(1)
+      expect(agent.cancel).not.toHaveBeenCalled()
+      const delivered = agent.followup.mock.calls.map(([message]) => String(message.content[0]?.text))
+      for (const prompt of prompts) expect(delivered.some(text => text.endsWith(prompt))).toBe(true)
+      expect(new Set(delivered).size).toBe(16)
+      expect((await runtime.agentProfilesOverview(room.id, owner)).profiles[0]?.runtime.status).not.toBe('failed')
+    } finally {
+      await runtime.stop()
+    }
+  })
+
+  it('keeps the remaining room AI participants responsive when one fails to accept a message', async () => {
+    const harness = fakeHarness()
+    const runtime = new ChatroomRuntime(harness.ctx, config())
+    await runtime.start()
+    try {
+      const owner = { participantId: 'alice-id', displayName: 'Alice', avatarId: 'whale' as const }
+      const room = await runtime.createRoom('评审部', owner)
+      const terra = await runtime.createRoomAgentProfile(room.id, owner, {
+        name: 'Terra', role: '审查员', provider: 'deepseek', model: 'chat', enabled: true,
+      })
+      await runtime.createRoomAgentProfile(room.id, owner, {
+        name: 'Nova', role: '设计员', provider: 'deepseek', model: 'chat', enabled: true,
+      })
+      const mainAgent = harness.agents.find(agent => agent.id === `chatroom-v1-${room.id}`)!
+      const baseCreate = vi.mocked(harness.ctx.agents.create).getMockImplementation()!
+      let terraFailed = false
+      vi.mocked(harness.ctx.agents.create).mockImplementation(async (options) => {
+        if (!terraFailed && String(options.sessionId) === `chatroom-agent-v1-${room.id}-${terra.id}`) {
+          terraFailed = true
+          throw new Error('模型路由不可用')
+        }
+        return await baseCreate(options)
+      })
+
+      await runtime.submit(room.id, owner, [{ type: 'text', text: '@Terra @Nova 都来看下' }], 'queue')
+      await vi.waitFor(() => {
+        const novaAgent = harness.agents.find(agent => agent.id.startsWith(`chatroom-agent-v1-${room.id}-`)
+          && agent.id !== `chatroom-agent-v1-${room.id}-${terra.id}`)
+        expect(novaAgent?.followup).toHaveBeenCalledOnce()
+        const notice = mainAgent.session.append.mock.calls
+          .map(call => call[1] as { content: Array<{ type: string; text?: string }> })
+          .find(message => message.content[0]?.text?.includes('暂时无法响应'))
+        expect(notice).toBeDefined()
+        expect(notice!.content[0]!.text).toContain('Terra：')
+      })
+    } finally {
+      await runtime.stop()
+    }
+  })
+
+  it('lets a room member cancel one running room AI participant without changing its durable profile', async () => {
+    const harness = fakeHarness()
+    const runtime = new ChatroomRuntime(harness.ctx, config())
+    await runtime.start()
+    try {
+      const owner = { participantId: 'alice-id', displayName: 'Alice', avatarId: 'whale' as const }
+      const room = await runtime.createRoom('评审部', owner)
+      const profile = await runtime.createRoomAgentProfile(room.id, owner, {
+        name: 'Terra', role: '审查员', provider: 'deepseek', model: 'chat', enabled: true,
+      })
+      const baseCreate = vi.mocked(harness.ctx.agents.create).getMockImplementation()!
+      let releaseIdle: (() => void) | undefined
+      vi.mocked(harness.ctx.agents.create).mockImplementation(async (options) => {
+        const handle = await baseCreate(options)
+        if (String(options.sessionId) === `chatroom-agent-v1-${room.id}-${profile.id}`) {
+          Object.assign(handle.agent, {
+            status: 'running',
+            whenIdle: vi.fn(() => new Promise<void>(resolve => { releaseIdle = resolve })),
+          })
+        }
+        return handle
+      })
+
+      await runtime.submit(room.id, owner, [{ type: 'text', text: '@Terra 持续检查' }], 'queue')
+      await vi.waitFor(async () => {
+        expect((await runtime.agentProfilesOverview(room.id, owner)).profiles[0]?.runtime.status).toBe('running')
+      })
+      const profileAgent = harness.agents.find(agent => agent.id === `chatroom-agent-v1-${room.id}-${profile.id}`)!
+      const mainAgent = harness.agents.find(agent => agent.id === `chatroom-v1-${room.id}`)!
+      const mainAppendCount = mainAgent.session.append.mock.calls.length
+      await runtime.cancelRoomAgent(room.id, profile.id, owner)
+      expect(profileAgent.cancel).toHaveBeenCalledWith({ kind: 'user' })
+      expect((await runtime.agentProfilesOverview(room.id, owner)).profiles[0]?.runtime.status).toBe('cancelled')
+      expect(runtime.roomAgentProfilesFor(room.id)).toHaveLength(1)
+      const lateReply = createAssistantMessage({ content: [{ type: 'text', text: '取消后的迟到输出' }], source: { provider: 'deepseek', model: 'chat' } })
+      runtime.handleSessionEvent(profileAgent.session, profileAgent.session.append('assistant/message', { turn: 1, step: 1, message: lateReply }, { surfaceOp: 'append' }))
+      await new Promise(resolve => setTimeout(resolve, 0))
+      expect(mainAgent.session.append.mock.calls.slice(mainAppendCount).some(call => JSON.stringify(call[1]).includes('取消后的迟到输出'))).toBe(false)
+      releaseIdle?.()
+    } finally {
+      await runtime.stop()
+    }
+  })
+
+  it('drops a late profile reply when cancellation lands while room projection waits for activation', async () => {
+    const harness = fakeHarness()
+    const runtime = new ChatroomRuntime(harness.ctx, config())
+    await runtime.start()
+    try {
+      const owner = { participantId: 'alice-id', displayName: 'Alice', avatarId: 'whale' as const }
+      const room = await runtime.createRoom('评审部', owner)
+      const profile = await runtime.createRoomAgentProfile(room.id, owner, {
+        name: 'Terra', role: '审查员', provider: 'deepseek', model: 'chat', enabled: true,
+      })
+      await runtime.submit(room.id, owner, [{ type: 'text', text: '@Terra 运行' }], 'queue')
+      const profileAgent = harness.agents.find(agent => agent.id === `chatroom-agent-v1-${room.id}-${profile.id}`)!
+      const state = (runtime as unknown as { states: Map<string, { binding?: unknown }> }).states.get(room.id)!
+      state.binding = undefined
+      const mainSessionId = `chatroom-v1-${room.id}`
+      const activation = Promise.withResolvers<void>()
+      const baseCreate = vi.mocked(harness.ctx.agents.create).getMockImplementation()!
+      vi.mocked(harness.ctx.agents.create).mockImplementation(async (options) => {
+        if (String(options.sessionId) === mainSessionId) await activation.promise
+        return baseCreate(options)
+      })
+      const reply = createAssistantMessage({ content: [{ type: 'text', text: '不应投影的迟到回复' }], source: { provider: 'deepseek', model: 'chat' } })
+      runtime.handleSessionEvent(profileAgent.session, profileAgent.session.append('assistant/message', { turn: 1, step: 1, message: reply }, { surfaceOp: 'append' }))
+      await vi.waitFor(() => expect(vi.mocked(harness.ctx.agents.create)).toHaveBeenCalledWith(expect.objectContaining({ sessionId: mainSessionId })))
+      await runtime.cancelRoomAgent(room.id, profile.id, owner)
+      activation.resolve()
+      await new Promise(resolve => setTimeout(resolve, 0))
+      expect(harness.agents
+        .filter(agent => agent.id === mainSessionId)
+        .some(agent => agent.session.append.mock.calls.some(call => JSON.stringify(call[1]).includes('不应投影的迟到回复')))).toBe(false)
+    } finally {
+      await runtime.stop()
+    }
+  })
+
+  it('drops a failed-profile notice when cancellation lands while its projection waits', async () => {
+    const harness = fakeHarness()
+    const runtime = new ChatroomRuntime(harness.ctx, config())
+    await runtime.start()
+    try {
+      const owner = { participantId: 'alice-id', displayName: 'Alice', avatarId: 'whale' as const }
+      const room = await runtime.createRoom('评审部', owner)
+      const profile = await runtime.createRoomAgentProfile(room.id, owner, {
+        name: 'Terra', role: '审查员', provider: 'deepseek', model: 'chat', enabled: true,
+      })
+      const state = (runtime as unknown as { states: Map<string, { binding?: unknown }> }).states.get(room.id)!
+      state.binding = undefined
+      const mainSessionId = `chatroom-v1-${room.id}`
+      const activation = Promise.withResolvers<void>()
+      const baseCreate = vi.mocked(harness.ctx.agents.create).getMockImplementation()!
+      vi.mocked(harness.ctx.agents.create).mockImplementation(async (options) => {
+        if (String(options.sessionId) === mainSessionId) await activation.promise
+        if (String(options.sessionId) === `chatroom-agent-v1-${room.id}-${profile.id}`) throw new Error('route unavailable')
+        return baseCreate(options)
+      })
+      const submitted = runtime.submit(room.id, owner, [{ type: 'text', text: '@Terra 失败后取消' }], 'queue')
+      await vi.waitFor(async () => {
+        expect((await runtime.agentProfilesOverview(room.id, owner)).profiles[0]?.runtime.status).toBe('failed')
+      })
+      await runtime.cancelRoomAgent(room.id, profile.id, owner)
+      activation.resolve()
+      await submitted
+      await new Promise(resolve => setTimeout(resolve, 0))
+      expect(harness.agents
+        .filter(agent => agent.id === mainSessionId)
+        .some(agent => agent.session.append.mock.calls.some(call => JSON.stringify(call[1]).includes('暂时无法响应')))).toBe(false)
+    } finally {
+      await runtime.stop()
+    }
+  })
+
+  it('keeps cancelled terminal when cancel lands during agent activation', async () => {
+    const harness = fakeHarness()
+    const runtime = new ChatroomRuntime(harness.ctx, config())
+    await runtime.start()
+    try {
+      const owner = { participantId: 'alice-id', displayName: 'Alice', avatarId: 'whale' as const }
+      const room = await runtime.createRoom('评审部', owner)
+      const profile = await runtime.createRoomAgentProfile(room.id, owner, {
+        name: 'Terra', role: '审查员', provider: 'deepseek', model: 'chat', enabled: true,
+      })
+      const profileSessionId = `chatroom-agent-v1-${room.id}-${profile.id}`
+      // Gate the profile agent activation: the dispatch stays inside ensureRoomAgent until released.
+      const activation = Promise.withResolvers<void>()
+      const baseCreate = vi.mocked(harness.ctx.agents.create).getMockImplementation()!
+      vi.mocked(harness.ctx.agents.create).mockImplementation(async (options) => {
+        if (String(options.sessionId) === `chatroom-agent-v1-${room.id}-${profile.id}`) await activation.promise
+        return baseCreate(options)
+      })
+      const submitTask = runtime.submit(room.id, owner, [{ type: 'text', text: '@Terra 交错取消' }], 'queue')
+      await new Promise(resolve => setTimeout(resolve, 30))
+      await runtime.cancelRoomAgent(room.id, profile.id, owner)
+      activation.resolve()
+      await submitTask
+      // The superseded dispatch resumes after activation and must not write queued/running.
+      await new Promise(resolve => setTimeout(resolve, 30))
+      const view = await runtime.agentProfilesOverview(room.id, owner)
+      expect(view.profiles[0]?.runtime.status).toBe('cancelled')
+      const profileAgent = harness.agents.find(agent => agent.id === `chatroom-agent-v1-${room.id}-${profile.id}`)
+      expect(profileAgent?.followup).not.toHaveBeenCalled()
+    } finally {
+      await runtime.stop()
+    }
+  })
+
+  it('delivers and projects an immediate re-mention after cancellation during activation', async () => {
+    const harness = fakeHarness()
+    const runtime = new ChatroomRuntime(harness.ctx, config())
+    await runtime.start()
+    const activation = Promise.withResolvers<void>()
+    try {
+      const owner = { participantId: 'alice-id', displayName: 'Alice', avatarId: 'whale' as const }
+      const room = await runtime.createRoom('评审部', owner)
+      const profile = await runtime.createRoomAgentProfile(room.id, owner, {
+        name: 'Terra', role: '审查员', provider: 'deepseek', model: 'chat', enabled: true,
+      })
+      const profileSessionId = `chatroom-agent-v1-${room.id}-${profile.id}`
+      const baseCreate = vi.mocked(harness.ctx.agents.create).getMockImplementation()!
+      vi.mocked(harness.ctx.agents.create).mockImplementation(async (options) => {
+        if (String(options.sessionId) === profileSessionId) await activation.promise
+        return baseCreate(options)
+      })
+      await runtime.submit(room.id, owner, [{ type: 'text', text: '@Terra 旧请求' }], 'queue')
+      await vi.waitFor(() => expect(harness.ctx.agents.create).toHaveBeenCalledWith(expect.objectContaining({ sessionId: profileSessionId })))
+      await runtime.cancelRoomAgent(room.id, profile.id, owner)
+      await runtime.submit(room.id, owner, [{ type: 'text', text: '@Terra 新请求' }], 'queue')
+      activation.resolve()
+      await vi.waitFor(() => expect(harness.agents.filter(agent => agent.id === profileSessionId)
+        .some(agent => agent.followup.mock.calls.some(call => JSON.stringify(call[0]).includes('新请求')))).toBe(true))
+      const profileAgents = harness.agents.filter(agent => agent.id === profileSessionId)
+      expect(profileAgents.some(agent => agent.followup.mock.calls.some(call => JSON.stringify(call[0]).includes('旧请求')))).toBe(false)
+      const current = profileAgents.at(-1)!
+      const reply = createAssistantMessage({ content: [{ type: 'text', text: '重试成功回复' }], source: { provider: 'deepseek', model: 'chat' } })
+      runtime.handleSessionEvent(current.session, current.session.append('assistant/message', { turn: 1, step: 1, message: reply }, { surfaceOp: 'append' }))
+      await vi.waitFor(() => expect(harness.agents.find(agent => agent.id === `chatroom-v1-${room.id}`)!
+        .session.append.mock.calls.some(call => JSON.stringify(call[1]).includes('重试成功回复'))).toBe(true))
+    } finally {
+      activation.resolve()
+      await runtime.stop()
+    }
+  })
+
+  it.each(['cancel', 'update'] as const)('waits for a running binding to retire before re-mention after %s', async (action) => {
+    const harness = fakeHarness()
+    const runtime = new ChatroomRuntime(harness.ctx, config())
+    await runtime.start()
+    const retirement = Promise.withResolvers<void>()
+    const retiring = Promise.withResolvers<void>()
+    try {
+      const owner = { participantId: 'alice-id', displayName: 'Alice', avatarId: 'whale' as const }
+      const room = await runtime.createRoom('评审部', owner)
+      const input = { name: 'Terra', role: '审查员', provider: 'deepseek', model: 'chat', enabled: true }
+      const profile = await runtime.createRoomAgentProfile(room.id, owner, input)
+      const profileSessionId = `chatroom-agent-v1-${room.id}-${profile.id}`
+      const live = new Map<string, Agent>()
+      vi.mocked(harness.ctx.agents.get).mockImplementation(id => live.get(String(id)))
+      const baseCreate = vi.mocked(harness.ctx.agents.create).getMockImplementation()!
+      vi.mocked(harness.ctx.agents.create).mockImplementation(async (options) => {
+        const handle = await baseCreate(options)
+        if (String(options.sessionId) !== profileSessionId) return handle
+        Object.assign(handle.agent, { options: options.agentOptions })
+        live.set(profileSessionId, handle.agent)
+        return { agent: handle.agent, dispose: vi.fn(async () => {
+          retiring.resolve()
+          await retirement.promise
+          if (live.get(profileSessionId) === handle.agent) live.delete(profileSessionId)
+        }) }
+      })
+      await runtime.submit(room.id, owner, [{ type: 'text', text: '@Terra 旧请求' }], 'queue')
+      const old = harness.agents.find(agent => agent.id === profileSessionId)!
+      await vi.waitFor(() => expect(old.followup).toHaveBeenCalledOnce())
+      const changed = action === 'cancel'
+        ? runtime.cancelRoomAgent(room.id, profile.id, owner)
+        : runtime.updateRoomAgentProfile(room.id, profile.id, owner, { ...input, model: 'chat-v2' })
+      await retiring.promise
+      await runtime.submit(room.id, owner, [{ type: 'text', text: '@Terra 新请求' }], 'queue')
+      expect(old.followup).toHaveBeenCalledOnce()
+      retirement.resolve()
+      await changed
+      await vi.waitFor(() => expect(harness.agents.filter(agent => agent.id === profileSessionId)).toHaveLength(2))
+      const current = harness.agents.filter(agent => agent.id === profileSessionId).at(-1)!
+      await vi.waitFor(() => expect(current.followup).toHaveBeenCalledOnce())
+      expect(JSON.stringify(current.followup.mock.calls[0]?.[0])).toContain('新请求')
+      expect(current.options.model).toBe(action === 'update' ? 'chat-v2' : 'chat')
+      for (const [agent, text] of [[old, '旧实例迟到回复'], [current, '新实例成功回复']] as const) {
+        const reply = createAssistantMessage({ content: [{ type: 'text', text }], source: { provider: 'deepseek', model: 'chat' } })
+        runtime.handleSessionEvent(agent.session, agent.session.append('assistant/message', { turn: 1, step: 1, message: reply }, { surfaceOp: 'append' }))
+      }
+      const projected = () => harness.agents.find(agent => agent.id === `chatroom-v1-${room.id}`)!.session.append.mock.calls
+      await vi.waitFor(() => expect(projected().some(call => JSON.stringify(call[1]).includes('新实例成功回复'))).toBe(true))
+      expect(projected().some(call => JSON.stringify(call[1]).includes('旧实例迟到回复'))).toBe(false)
+    } finally {
+      retirement.resolve()
+      await runtime.stop()
+    }
+  })
+
+  it('keeps cancelled stable and silent when the cancelled agent rejects instead of resolving', async () => {
+    const harness = fakeHarness()
+    const runtime = new ChatroomRuntime(harness.ctx, config())
+    await runtime.start()
+    try {
+      const owner = { participantId: 'alice-id', displayName: 'Alice', avatarId: 'whale' as const }
+      const room = await runtime.createRoom('评审部', owner)
+      const profile = await runtime.createRoomAgentProfile(room.id, owner, {
+        name: 'Terra', role: '审查员', provider: 'deepseek', model: 'chat', enabled: true,
+      })
+      const profileSessionId = `chatroom-agent-v1-${room.id}-${profile.id}`
+      let rejectIdle: ((reason?: unknown) => void) | undefined
+      const baseCreate = vi.mocked(harness.ctx.agents.create).getMockImplementation()!
+      vi.mocked(harness.ctx.agents.create).mockImplementation(async (options) => {
+        const handle = await baseCreate(options)
+        if (String(options.sessionId) === `chatroom-agent-v1-${room.id}-${profile.id}`) {
+          Object.assign(handle.agent, {
+            whenIdle: vi.fn(() => new Promise<void>((_resolve, reject) => { rejectIdle = reject })),
+          })
+        }
+        return handle
+      })
+      await runtime.submit(room.id, owner, [{ type: 'text', text: '@Terra 取消中拒绝' }], 'queue')
+      const profileAgent = harness.agents.find(agent => agent.id === profileSessionId)!
+      await vi.waitFor(() => expect(profileAgent.whenIdle).toHaveBeenCalled())
+      const mainAgent = harness.agents.find(agent => agent.id === `chatroom-v1-${room.id}`)!
+      const mainAppendCount = mainAgent.session.append.mock.calls.length
+      await runtime.cancelRoomAgent(room.id, profile.id, owner)
+      rejectIdle?.(new Error('cancelled'))
+      await new Promise(resolve => setTimeout(resolve, 30))
+      expect((await runtime.agentProfilesOverview(room.id, owner)).profiles[0]?.runtime.status).toBe('cancelled')
+      expect(mainAgent.session.append.mock.calls.slice(mainAppendCount).some(call =>
+        JSON.stringify(call[1]).includes('暂时无法响应'))).toBe(false)
+    } finally {
+      await runtime.stop()
+    }
+  })
+  it('keeps an updated room AI participant stable when the superseded execution settles', async () => {
+    const harness = fakeHarness()
+    const runtime = new ChatroomRuntime(harness.ctx, config())
+    await runtime.start()
+    try {
+      const owner = { participantId: 'alice-id', displayName: 'Alice', avatarId: 'whale' as const }
+      const room = await runtime.createRoom('评审部', owner)
+      const profile = await runtime.createRoomAgentProfile(room.id, owner, {
+        name: 'Terra', role: '审查员', provider: 'deepseek', model: 'chat', enabled: true,
+      })
+      const profileSessionId = `chatroom-agent-v1-${room.id}-${profile.id}`
+      let releaseIdle: (() => void) | undefined
+      const baseCreate = vi.mocked(harness.ctx.agents.create).getMockImplementation()!
+      vi.mocked(harness.ctx.agents.create).mockImplementation(async (options) => {
+        const handle = await baseCreate(options)
+        if (String(options.sessionId) === `chatroom-agent-v1-${room.id}-${profile.id}`) {
+          Object.assign(handle.agent, {
+            whenIdle: vi.fn(() => new Promise<void>(resolve => { releaseIdle = resolve })),
+          })
+        }
+        return handle
+      })
+      await runtime.submit(room.id, owner, [{ type: 'text', text: '@Terra 更新中' }], 'queue')
+      const mainAgent = harness.agents.find(agent => agent.id === `chatroom-v1-${room.id}`)!
+      await vi.waitFor(async () => {
+        expect((await runtime.agentProfilesOverview(room.id, owner)).profiles[0]?.runtime.status).toBe('running')
+      })
+      const createCallsBefore = vi.mocked(harness.ctx.agents.create).mock.calls.length
+      await runtime.updateRoomAgentProfile(room.id, profile.id, owner, {
+        name: 'Terra', role: '审查员', provider: 'deepseek', model: 'chat-v2', enabled: true,
+      })
+      releaseIdle?.()
+      await new Promise(resolve => setTimeout(resolve, 30))
+      const view = await runtime.agentProfilesOverview(room.id, owner)
+      expect(view.profiles[0]?.runtime.status).toBe('idle')
+      expect(vi.mocked(harness.ctx.agents.create).mock.calls.length).toBe(createCallsBefore)
+      expect(mainAgent.session.append.mock.calls.some(call =>
+        JSON.stringify(call[1]).includes('暂时无法响应'))).toBe(false)
+      await runtime.submit(room.id, owner, [{ type: 'text', text: '@Terra 再来一次' }], 'queue')
+      await vi.waitFor(async () => {
+        expect((await runtime.agentProfilesOverview(room.id, owner)).profiles[0]?.runtime.status).toBe('running')
+      })
+    } finally {
+      await runtime.stop()
+    }
+  })
+function mainAgentSessionAppendCalls(harness: ReturnType<typeof fakeHarness>, roomId: string): string[] {
+  const main = harness.agents.find(agent => agent.id === `chatroom-v1-${roomId}`)
+  return ((main?.session.append as { mock?: { calls: unknown[][] } }).mock?.calls ?? []).map(call => JSON.stringify(call[1]).slice(0, 80))
+}
+
+  it('keeps a fast re-mention owning the shared room agent without an early idle from the first execution', async () => {
+    const harness = fakeHarness()
+    const runtime = new ChatroomRuntime(harness.ctx, config())
+    await runtime.start()
+    try {
+      const owner = { participantId: 'alice-id', displayName: 'Alice', avatarId: 'whale' as const }
+      const room = await runtime.createRoom('评审部', owner)
+      const profile = await runtime.createRoomAgentProfile(room.id, owner, {
+        name: 'Terra', role: '审查员', provider: 'deepseek', model: 'chat', enabled: true,
+      })
+      const profileSessionId = `chatroom-agent-v1-${room.id}-${profile.id}`
+      const idleGates: Array<PromiseWithResolvers<void>> = []
+      const baseCreate = vi.mocked(harness.ctx.agents.create).getMockImplementation()!
+      vi.mocked(harness.ctx.agents.create).mockImplementation(async (options) => {
+        const handle = await baseCreate(options)
+        if (String(options.sessionId) === `chatroom-agent-v1-${room.id}-${profile.id}`) {
+          Object.assign(handle.agent, {
+            whenIdle: vi.fn(() => {
+              const gate = Promise.withResolvers<void>()
+              idleGates.push(gate)
+              return gate.promise
+            }),
+          })
+        }
+        return handle
+      })
+      await runtime.submit(room.id, owner, [{ type: 'text', text: '@Terra 第一条' }], 'queue')
+      await vi.waitFor(async () => {
+        expect((await runtime.agentProfilesOverview(room.id, owner)).profiles[0]?.runtime.status).toBe('running')
+      })
+      // Fast re-mention while the first execution is still running: generation 2 supersedes it.
+      await runtime.submit(room.id, owner, [{ type: 'text', text: '@Terra 第二条' }], 'queue')
+      await vi.waitFor(() => expect(idleGates.length).toBe(2))
+      idleGates[0]!.resolve()
+      await new Promise(resolve => setTimeout(resolve, 30))
+      expect((await runtime.agentProfilesOverview(room.id, owner)).profiles[0]?.runtime.status).toBe('running')
+      idleGates[1]!.resolve()
+      await vi.waitFor(async () => {
+        expect((await runtime.agentProfilesOverview(room.id, owner)).profiles[0]?.runtime.status).toBe('idle')
+      })
+      expect(harness.agents.filter(agent => agent.id === profileSessionId)).toHaveLength(1)
+    } finally {
+      await runtime.stop()
+    }
+  })
+
+
 })
 
 function fakeHarness(initialEvents: SessionEvent[] = []): {
@@ -1781,7 +2533,7 @@ function fakeHarness(initialEvents: SessionEvent[] = []): {
     followup: ReturnType<typeof vi.fn>
     steer: ReturnType<typeof vi.fn>
     inbox: Agent['inbox']
-    session: Agent['session'] & { append: ReturnType<typeof vi.fn> }
+    session: Agent['session'] & { events: SessionEvent[]; append: ReturnType<typeof vi.fn> }
   }>
   attached: string[]
   savedImages: ReturnType<typeof vi.fn>
@@ -1796,7 +2548,7 @@ function fakeHarness(initialEvents: SessionEvent[] = []): {
     followup: ReturnType<typeof vi.fn>
     steer: ReturnType<typeof vi.fn>
     inbox: Agent['inbox']
-    session: Agent['session'] & { append: ReturnType<typeof vi.fn> }
+    session: Agent['session'] & { events: SessionEvent[]; append: ReturnType<typeof vi.fn> }
   }> = []
   const attached: string[] = []
   const promptSections: Array<{ name: string; order: number; text: string | (() => string) }> = []
@@ -1805,7 +2557,7 @@ function fakeHarness(initialEvents: SessionEvent[] = []): {
     on: vi.fn(() => () => undefined),
     fs: {
       resolve: vi.fn(async (path: string, options: { cwd?: string } = {}) => ({ path: await realpath(resolve(options.cwd ?? process.cwd(), path)) })),
-      contains: vi.fn((parent: { path: string }, child: { path: string }) => { const path = relative(parent.path, child.path); return path !== '..' && !path.startsWith('../') }),
+      contains: vi.fn((parent: { path: string }, child: { path: string }) => { const path = relative(parent.path, child.path); return path !== '..' && !/^(?:\.\.[\\/]|[A-Za-z]:)/.test(path) }),
       processPath: vi.fn((target: { path: string }) => target.path),
       readBytes: vi.fn(async (target: { path: string }, _signal: AbortSignal, maxBytes: number) => { const data = await readFile(target.path); if (data.length > maxBytes) throw new Error('FS_TOO_LARGE'); return data }),
     },
@@ -1838,12 +2590,14 @@ function fakeHarness(initialEvents: SessionEvent[] = []): {
   const ctx = {
     logger: vi.fn(() => ({ warn: vi.fn(), info: vi.fn() })),
     storageDomain: {
-      open: vi.fn(async () => ({
+      open: vi.fn(async (spec: { name: string }) => ({
         table: (name: string) => {
-          let table = tables.get(name)
+          // Units of non-legacy domains live in their own namespace, mirroring one file per domain.
+          const key = spec.name === 'chatroom' ? name : `${spec.name}:${name}`
+          let table = tables.get(key)
           if (table === undefined) {
             table = new MemoryTable()
-            tables.set(name, table)
+            tables.set(key, table)
           }
           return table
         },
@@ -1875,6 +2629,7 @@ function fakeHarness(initialEvents: SessionEvent[] = []): {
           id: sessionId,
           header: { cwd: process.cwd() },
           events,
+          snapshotEvents: (): readonly SessionEvent[] => session.events,
           append: vi.fn((type: string, data: unknown, options: Record<string, unknown> = {}) => {
             const event = { type, seq: Math.max(0, ...session.events.map(item => item.seq)) + 1, time: Date.now(), data, ...options }
             session.events.push(event as SessionEvent)
@@ -2015,3 +2770,4 @@ async function authenticatedRoom() {
   const bob = (await runtime.auth.register({ username: 'bob', password: 'bob password 12345', displayName: 'Bob' })).account
   return { runtime, harness, alice, bob, settings }
 }
+import { SessionSeq } from '@deepseek-ai/dsh-session/types'

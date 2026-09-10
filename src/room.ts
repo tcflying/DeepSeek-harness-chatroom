@@ -3,11 +3,11 @@ import { createHash, randomBytes, randomUUID } from 'node:crypto'
 import type { ServerResponse } from 'node:http'
 import { basename } from 'node:path'
 import type { Context } from '@deepseek-ai/cordis'
-import type { Agent, AgentHandle } from '@deepseek-ai/dsh-agent'
+import type { Agent, AgentHandle, AgentOptions } from '@deepseek-ai/dsh-agent'
 import type {} from '@deepseek-ai/dsh-agent-default-model'
-import { resolveSessionPreset } from '@deepseek-ai/dsh-agent-presets'
+import { agentPresetProjectionDefinition } from '@deepseek-ai/dsh-agent-presets'
 import { AttachmentError, type ImageAttachmentRef, type ImageMediaType } from '@deepseek-ai/dsh-attachment'
-import { BlockAssembler, createAssistantMessage, createUserMessage, freezeMessage, type ContentBlock, type UserMessage } from '@deepseek-ai/dsh-llm'
+import { BlockAssembler, createAssistantMessage, createUserMessage, freezeMessage, type ContentBlock, type ReasoningEffortId, type UserMessage } from '@deepseek-ai/dsh-llm'
 import { SessionId, type Session, type SessionEvent } from '@deepseek-ai/dsh-session'
 import type {} from '@deepseek-ai/dsh-session-persistence'
 import type {} from '@deepseek-ai/dsh-session-title'
@@ -27,8 +27,10 @@ import {
 import type { Config } from './config.js'
 import { isChatroomAvatarId, fallbackAvatarId } from './avatars.js'
 import {
+  chatroomAgentDomainSpec,
   chatroomDomainSpec,
   type AutomationSettingsRecord,
+  type RoomAgentProfileRecord,
   type DirectConversationRecord,
   type DirectMessageRecord,
   type FileRecord,
@@ -44,6 +46,7 @@ import {
   type ThreadRecord,
 } from './domain.js'
 import {
+  identifyChatroomText,
   identifyFileText,
   identifyExternalCardText,
   identifyForwardText,
@@ -51,6 +54,7 @@ import {
   identifyReplyText,
   addressesAi,
   mentionsAi,
+  mentionsName,
   participantMarker,
   projectFileText,
   projectExternalCardText,
@@ -63,6 +67,11 @@ import { fetchTencentDocumentTitle, normalizeDocumentTitle, parseWecomDocumentUr
 import { messageParticipant } from './principal.js'
 import { registerWecomAgentTools } from './wecom-tools.js'
 import type {
+  ChatroomAgentProfile,
+  ChatroomAgentProfileInput,
+  ChatroomAgentProfilesView,
+  ChatroomAgentRuntimeState,
+  ChatroomAutomationModel,
   ChatroomAutomationOverview,
   ChatroomDirectConversation,
   ChatroomDirectMessage,
@@ -110,11 +119,15 @@ interface AgentBinding {
 interface SseClient {
   readonly participantId: string
   readonly response: ServerResponse
+  drainTimer: ReturnType<typeof setTimeout> | undefined
+  snapshotAllowance: number
 }
 
 interface NotificationClient {
   readonly participantId: string
   readonly response: ServerResponse
+  drainTimer: ReturnType<typeof setTimeout> | undefined
+  snapshotAllowance: number
 }
 
 interface RoomState {
@@ -126,11 +139,25 @@ interface RoomState {
   admission: Promise<void>
   automation: Promise<void>
   rotation: Promise<void> | undefined
+  /** Live per-profile AI participants, keyed by profile id. */
+  readonly agentBindings: Map<string, AgentBinding>
+  readonly agentActivations: Map<string, { generation: number | undefined, promise: Promise<AgentBinding> }>
+  readonly agentRetirements: Map<string, Promise<void>>
+  readonly agentRuntime: Map<string, ChatroomAgentRuntimeState>
+  /** Bumped on cancel/update/delete; in-flight executions capture it and stop when it moves. */
+  readonly agentExecutionGenerations: Map<string, number>
+  /** Concurrent inbox deliveries for one profile; only the last may report idle. */
+  readonly agentExecutionCounts: Map<string, number>
 }
 
 interface PendingRoomMessage {
   readonly message: UserMessage
   view: ChatroomPendingMessage
+}
+
+interface RoomAgentMention {
+  readonly profile: RoomAgentProfileRecord
+  readonly message: UserMessage
 }
 
 interface ThreadState {
@@ -155,10 +182,17 @@ interface AgentToolTarget {
 /** Runtime validation failure safe to return to a browser. */
 export class ChatroomInputError extends Error {}
 
+const ROOM_AGENT_ACTIVATION_TIMEOUT_MS = 30_000
+const ROOM_AGENT_RESPONSE_TIMEOUT_MS = 180_000
+const ROOM_AGENT_INSTRUCTIONS_MAX_CHARS = 4_000
+const SSE_DRAIN_TIMEOUT_MS = 15_000
+const SSE_MAX_BUFFER_BYTES = 1_048_576
+
 /** Shared browser identities, room directory, presence, and native Harness Sessions. */
 export class ChatroomRuntime {
   private readonly log
   private domain: Domain<typeof chatroomDomainSpec> | undefined
+  private agentDomain: Domain<typeof chatroomAgentDomainSpec> | undefined
   private archive: ChatArchive | undefined
   private inputs: KvTable<string, InputRecord> | undefined
   private readonly inputCommits = new Map<string, Promise<void>>()
@@ -167,6 +201,7 @@ export class ChatroomRuntime {
   private roomPreferences: KvTable<string, RoomPreferenceRecord> | undefined
   private soloSessions: KvTable<string, SoloSessionRecord> | undefined
   private automationSettings: KvTable<string, AutomationSettingsRecord> | undefined
+  private roomAgentProfiles: KvTable<string, RoomAgentProfileRecord> | undefined
   private files: KvTable<string, FileRecord> | undefined
   private members: KvTable<string, MemberRecord> | undefined
   private threads: KvTable<string, ThreadRecord> | undefined
@@ -224,36 +259,220 @@ export class ChatroomRuntime {
         || roomUpdatedAt(right.record) - roomUpdatedAt(left.record)
         || left.record.id.localeCompare(right.record.id)
     })
-    return states.map(state => this.projectRoom(state, participantId))
+    return states.map(state => this.projectRoom(state, participantId,
+      identity === undefined ? undefined : this.canManageRoomAgents(state.record, identity)))
   }
 
   /** Global automatic-response settings and the available controller-model catalog. */
   async automationOverview(canManage: boolean): Promise<ChatroomAutomationOverview> {
     const settings = this.resolvedAutomationSettings()
-    if (!canManage) return { canManage: false, ...settings, models: [] }
-    const models = (await Promise.all(this.ctx.llm.listProviders().map(async provider => {
-      try {
-        return (await this.ctx.llm.listModels(provider.id)).map(model => ({
-          provider: provider.id,
-          model: model.id,
-          label: `${provider.name} · ${model.name}`,
-        }))
-      } catch (error) {
-        this.log.warn('Unable to list automatic-response models for %s: %s', provider.id, String(error))
-        return []
-      }
-    }))).flat()
+    // Keep the response shape compatible, but never send deployment policy to members.
+    if (!canManage) return {
+      canManage: false, provider: '', model: '', meetingSummaryProvider: '', meetingSummaryModel: '',
+      mainAgentPrompt: '', controllerPrompt: '', models: [],
+    }
+    const models = await this.modelCatalog('automatic-response')
     if (!models.some(model => model.provider === settings.provider && model.model === settings.model)) {
-      models.unshift({ provider: settings.provider, model: settings.model, label: `${settings.provider} · ${settings.model}` })
+      models.unshift({ provider: settings.provider, model: settings.model, label: `${settings.provider} · ${settings.model}`, reasoningEfforts: [] })
     }
     if (!models.some(model => model.provider === settings.meetingSummaryProvider && model.model === settings.meetingSummaryModel)) {
       models.unshift({
         provider: settings.meetingSummaryProvider,
         model: settings.meetingSummaryModel,
         label: `${settings.meetingSummaryProvider} · ${settings.meetingSummaryModel}`,
+        reasoningEfforts: [],
       })
     }
     return { canManage: true, ...settings, models }
+  }
+
+  /** Read durable room-level AI participants. These are independent of native subagent UI. */
+  roomAgentProfilesFor(roomId: string): readonly RoomAgentProfileRecord[] {
+    if (this.roomAgentProfiles === undefined) throw new Error('chatroom room agent profile storage is unavailable')
+    const profiles: RoomAgentProfileRecord[] = []
+    for (const [, profile] of this.roomAgentProfiles.entries()) {
+      if (profile.roomId === roomId) profiles.push(profile)
+    }
+    return profiles
+  }
+
+  /** Room AI participant roster plus, for managers, the configurable model catalog. */
+  async agentProfilesOverview(roomId: string, identity: ChatroomIdentity): Promise<ChatroomAgentProfilesView> {
+    this.assertReady()
+    const state = this.requireState(roomId)
+    if (!('role' in identity && identity.role === 'super-admin')) this.assertRoomAccess(roomId, identity)
+    const canManage = this.canManageRoomAgents(state.record, identity)
+    const profiles = this.roomAgentProfilesFor(roomId).map(profile => this.projectRoomAgentProfile(state, profile, canManage))
+    if (!canManage) return { canManage: false, profiles, models: [] }
+    return { canManage: true, profiles, models: await this.modelCatalog('room AI participant') }
+  }
+
+  /** Create one room AI participant in the plugin-independent agent storage unit. */
+  async createRoomAgentProfile(roomId: string, identity: ChatroomIdentity, input: ChatroomAgentProfileInput): Promise<RoomAgentProfileRecord> {
+    this.assertReady()
+    const state = this.requireState(roomId)
+    this.assertRoomAgentAccess(roomId, identity)
+    const validated = await this.validateRoomAgentProfile(state, input)
+    const now = Date.now()
+    const record: RoomAgentProfileRecord = {
+      id: randomUUID(),
+      roomId,
+      ...validated,
+      createdAt: now,
+      updatedAt: now,
+    }
+    await this.requireRoomAgentProfiles().put(record.id, record)
+    this.setRoomAgentRuntime(state, record.id, { status: 'idle', updatedAt: now })
+    this.broadcastRoomAgentProfiles(state)
+    return record
+  }
+
+  /** Replace one room AI participant; changing model routing releases the live agent for re-creation. */
+  async updateRoomAgentProfile(roomId: string, profileId: string, identity: ChatroomIdentity, input: ChatroomAgentProfileInput): Promise<RoomAgentProfileRecord> {
+    this.assertReady()
+    const state = this.requireState(roomId)
+    this.assertRoomAgentAccess(roomId, identity)
+    const table = this.requireRoomAgentProfiles()
+    const existing = table.get(profileId)
+    if (existing === undefined || existing.roomId !== roomId) throw new ChatroomInputError('该 AI 成员不存在。')
+    const validated = await this.validateRoomAgentProfile(state, input, existing)
+    const record: RoomAgentProfileRecord = {
+      id: existing.id,
+      roomId,
+      ...validated,
+      createdAt: existing.createdAt,
+      updatedAt: Date.now(),
+    }
+    await table.put(record.id, record)
+    const runtimeConfigurationChanged = existing.name !== record.name || existing.role !== record.role
+      || existing.instructions !== record.instructions || existing.provider !== record.provider
+      || existing.model !== record.model || existing.reasoningEffort !== record.reasoningEffort
+      || existing.enabled !== record.enabled
+    let previous: AgentBinding | undefined
+    let previousInputIds: Set<string> | undefined
+    if (runtimeConfigurationChanged) {
+      previousInputIds = new Set([...this.requireInputs().entries()].map(([id]) => id))
+      this.bumpRoomAgentExecutionGeneration(state, profileId)
+      previous = state.agentBindings.get(profileId)
+      state.agentBindings.delete(profileId)
+      // Keep a pending activation as a cleanup barrier for the next generation.
+      // A changed route/prompt is a new participant execution. Stop the old
+      // one before releasing it so it cannot finish under the new profile.
+      previous?.agent.cancel({ kind: 'user' })
+      if (previous !== undefined) await this.retireRoomAgent(state, profileId, previous)
+    }
+    this.setRoomAgentRuntime(state, profileId, {
+      status: record.enabled ? 'idle' : 'cancelled',
+      updatedAt: Date.now(),
+    })
+    this.broadcastRoomAgentProfiles(state)
+    if (runtimeConfigurationChanged && record.enabled) this.resumeRoomAgentInputs(state, record, previous, previousInputIds)
+    return record
+  }
+
+  /** Remove one room AI participant and release its live agent; its durable Session history is left untouched. */
+  async deleteRoomAgentProfile(roomId: string, profileId: string, identity: ChatroomIdentity): Promise<void> {
+    this.assertReady()
+    const state = this.requireState(roomId)
+    this.assertRoomAgentAccess(roomId, identity)
+    const table = this.requireRoomAgentProfiles()
+    const existing = table.get(profileId)
+    if (existing === undefined || existing.roomId !== roomId) return
+    await table.delete(profileId)
+    this.bumpRoomAgentExecutionGeneration(state, profileId)
+    const binding = state.agentBindings.get(profileId)
+    state.agentBindings.delete(profileId)
+    state.agentRuntime.delete(profileId)
+    binding?.agent.cancel({ kind: 'user' })
+    if (binding !== undefined) await this.retireRoomAgent(state, profileId, binding)
+    this.broadcastRoomAgentProfiles(state)
+  }
+
+  /** Cancel one running room AI participant without changing its durable profile or Session history. */
+  async cancelRoomAgent(roomId: string, profileId: string, identity: ChatroomIdentity): Promise<void> {
+    this.assertReady()
+    const state = this.requireState(roomId)
+    this.assertRoomAccess(roomId, identity)
+    const profile = this.requireRoomAgentProfiles().get(profileId)
+    if (profile === undefined || profile.roomId !== roomId) throw new ChatroomInputError('该 AI 成员不存在。')
+    this.setRoomAgentRuntime(state, profileId, { status: 'cancelled', updatedAt: Date.now() })
+    this.bumpRoomAgentExecutionGeneration(state, profileId)
+    this.broadcastRoomAgentProfiles(state)
+    const binding = state.agentBindings.get(profileId)
+    const discarded = this.discardRoomAgentInputs(state.record.id, profileId)
+    if (binding !== undefined) {
+      state.agentBindings.delete(profileId)
+      binding.agent.cancel({ kind: 'user' })
+      await this.retireRoomAgent(state, profileId, binding).catch(() => undefined)
+    }
+    await discarded
+  }
+
+  private async validateRoomAgentProfile(
+    state: RoomState,
+    input: ChatroomAgentProfileInput,
+    existing?: RoomAgentProfileRecord,
+  ): Promise<Omit<RoomAgentProfileRecord, 'id' | 'roomId' | 'createdAt' | 'updatedAt'>> {
+    const name = normalizeModelRoute(input.name, 'AI 成员名称').trim()
+    if (name === '') throw new ChatroomInputError('请填写 AI 成员名称。')
+    if (name.length > 80) throw new ChatroomInputError('AI 成员名称过长。')
+    if (name === state.record.aiDisplayName || name === 'AI') throw new ChatroomInputError('该名称与房间主 Agent 冲突。')
+    if (this.roomAgentProfilesFor(state.record.id).some(profile => profile.id !== existing?.id && profile.name === name)) {
+      throw new ChatroomInputError(`已存在名为「${name}」的 AI 成员。`)
+    }
+    const role = normalizeModelRoute(input.role, 'AI 成员职责').trim()
+    if (role === '') throw new ChatroomInputError('请填写 AI 成员职责。')
+    if (role.length > 120) throw new ChatroomInputError('AI 成员职责描述过长。')
+    const instructions = normalizeSystemPrompt(
+      input.instructions ?? '',
+      'AI 成员角色指令',
+      Math.min(ROOM_AGENT_INSTRUCTIONS_MAX_CHARS, this.config.maxMessageTextChars),
+    )
+    const provider = normalizeModelRoute(input.provider, '模型提供方')
+    const model = normalizeModelRoute(input.model, '模型')
+    const modelInfo = await this.ctx.llm.resolveModelInfo(provider, model)
+    const requestedEffort = input.reasoningEffort?.trim()
+    if (requestedEffort !== undefined && requestedEffort !== '') {
+      if (modelInfo.reasoning === undefined
+        || !modelInfo.reasoning.efforts.some(effort => String(effort.id) === requestedEffort)) {
+        throw new ChatroomInputError(`模型 ${JSON.stringify(model)} 不支持推理强度 ${JSON.stringify(requestedEffort)}。`)
+      }
+    }
+    return {
+      name,
+      role,
+      ...(instructions === '' ? {} : { instructions }),
+      provider,
+      model,
+      ...(requestedEffort === undefined || requestedEffort === '' ? {} : { reasoningEffort: requestedEffort }),
+      enabled: input.enabled,
+    }
+  }
+
+  private async modelCatalog(logLabel: string): Promise<ChatroomAutomationModel[]> {
+    return (await Promise.all(this.ctx.llm.listProviders().map(async provider => {
+      try {
+        const models = await this.ctx.llm.listModels(provider.id)
+        const resolved = await Promise.all(models.map(async (model): Promise<ChatroomAutomationModel | undefined> => {
+          try {
+            const info = await this.ctx.llm.resolveModelInfo(provider.id, model.id)
+            return {
+              provider: provider.id,
+              model: model.id,
+              label: `${provider.name} · ${model.name}`,
+              reasoningEfforts: info.reasoning?.efforts.map(effort => String(effort.id)) ?? [],
+            }
+          } catch (error) {
+            this.log.warn('Unable to resolve %s model %s/%s: %s', logLabel, provider.id, model.id, String(error))
+            return undefined
+          }
+        }))
+        return resolved.filter((model): model is ChatroomAutomationModel => model !== undefined)
+      } catch (error) {
+        this.log.warn('Unable to list %s models for %s: %s', logLabel, provider.id, String(error))
+        return []
+      }
+    }))).flat()
   }
 
   /** Validate and persist the controller model plus both chatroom prompt roles. */
@@ -329,7 +548,7 @@ export class ChatroomRuntime {
     for (const messageId of this.activeTurnDeferredMessageIds.get(sessionId) ?? []) hidden.add(messageId)
     const state = [...this.states.values()].find(candidate => candidate.record.sessionId === sessionId)
     const resetSeq = state?.record.aiContextResetSeq
-    const events = state?.binding?.agent.session.events
+    const events = state?.binding?.agent.session.snapshotEvents()
     if (resetSeq === undefined || events === undefined) return hidden
     for (const event of events) {
       if (event.seq > resetSeq) break
@@ -451,6 +670,9 @@ export class ChatroomRuntime {
   async start(): Promise<void> {
     const domain = await this.ctx.storageDomain.open(chatroomDomainSpec)
     this.domain = domain
+    // Room-level AI participant profiles persist in their own storage unit, physically separate from the legacy chatroom domain.
+    const agentDomain = await this.ctx.storageDomain.open(chatroomAgentDomainSpec)
+    this.agentDomain = agentDomain
     this.archive = await openChatArchive(this.config.dataDirectory ?? '')
     this.inputs = domain.table('inputs')
     this.identities = domain.table('identities')
@@ -458,6 +680,7 @@ export class ChatroomRuntime {
     this.roomPreferences = domain.table('room_preferences')
     this.soloSessions = domain.table('solo_sessions')
     this.automationSettings = domain.table('automation_settings')
+    this.roomAgentProfiles = agentDomain.table('room_agent_profiles')
     this.files = domain.table('files')
     this.members = domain.table('members')
     this.threads = domain.table('threads')
@@ -508,10 +731,16 @@ export class ChatroomRuntime {
     for (const dispose of this.chatroomAgentContexts.values()) dispose()
     this.chatroomAgentContexts.clear()
     for (const state of this.states.values()) {
-      for (const client of state.clients) client.response.end()
+      for (const client of state.clients) {
+        clearSseDrain(client)
+        client.response.end()
+      }
       state.clients.clear()
     }
-    for (const client of this.notificationClients) client.response.end()
+    for (const client of this.notificationClients) {
+      clearSseDrain(client)
+      client.response.end()
+    }
     this.notificationClients.clear()
     await Promise.allSettled(this.inputCommits.values())
     await Promise.allSettled(this.roomTitleWrites.values())
@@ -525,6 +754,11 @@ export class ChatroomRuntime {
       await state.activation?.catch(() => undefined)
       await state.binding?.release()
       state.binding = undefined
+      await Promise.allSettled([...state.agentBindings.values()].map(binding => binding.release()))
+      state.agentBindings.clear()
+      await Promise.allSettled(state.agentRetirements.values())
+      state.agentRetirements.clear()
+      state.agentActivations.clear()
     }))
     this.states.clear()
     await Promise.allSettled([...this.threadStates.values()].map(async (state) => {
@@ -539,11 +773,14 @@ export class ChatroomRuntime {
     this.archive = undefined
     await this.domain?.close()
     this.domain = undefined
+    await this.agentDomain?.close()
+    this.agentDomain = undefined
     this.identities = undefined
     this.roomRecords = undefined
     this.roomPreferences = undefined
     this.soloSessions = undefined
     this.automationSettings = undefined
+    this.roomAgentProfiles = undefined
     this.files = undefined
     this.members = undefined
     this.threads = undefined
@@ -724,15 +961,15 @@ export class ChatroomRuntime {
   }
 
   /** Admit native group input through the same authenticated path as the chatroom composer. */
-  async submitNativeSession(sessionId: string, identity: ChatroomIdentity, content: readonly ChatroomPromptContentPart[], mode: 'queue' | 'steer'): Promise<boolean> {
+  async submitNativeSession(sessionId: string, identity: ChatroomIdentity, content: readonly ChatroomPromptContentPart[], mode: 'queue' | 'steer', requestId?: string): Promise<boolean> {
     const room = [...this.states.values()].find(state => state.record.sessionId === sessionId)
     if (room !== undefined) {
-      await this.submit(room.record.id, identity, content, mode)
+      await this.submit(room.record.id, identity, content, mode, undefined, requestId)
       return true
     }
     const thread = [...this.threadStates.values()].find(state => state.record.sessionId === sessionId)
     if (thread === undefined) return false
-    await this.submitThread(thread.record.id, identity, content, mode)
+    await this.submitThread(thread.record.id, identity, content, mode, undefined, requestId)
     return true
   }
 
@@ -765,6 +1002,18 @@ export class ChatroomRuntime {
     }
   }
 
+  /** New groups must never inherit native session placeholder titles (workspace name, dsh-chatroom:<id>). */
+  private defaultSessionRoomTitle(title: string): string {
+    const trimmed = title.trim()
+    const workspaceName = basename(this.config.cwd)
+    if (trimmed === '' || trimmed === workspaceName || trimmed.startsWith('dsh-chatroom:')) {
+      const now = new Date()
+      const stamp = `${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')} ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`
+      return `新群聊 ${stamp}`
+    }
+    return trimmed
+  }
+
   private async createSessionRoom(
     sessionId: string,
     title: string,
@@ -785,7 +1034,7 @@ export class ChatroomRuntime {
     const now = Date.now()
     const record: RoomRecord = {
       id,
-      title: normalizeRoomTitle(title, this.config.maxRoomTitleChars),
+      title: normalizeRoomTitle(this.defaultSessionRoomTitle(title), this.config.maxRoomTitleChars),
       aiDisplayName: this.config.aiDisplayName,
       sessionId: normalizedSessionId,
       createdAt: now,
@@ -856,7 +1105,7 @@ export class ChatroomRuntime {
       await previous.agent.whenIdle()
       for (const [id, input] of this.requireInputs().entries()) {
         if (input.sessionId !== String(previous.agent.session.id)) continue
-        if (!previous.agent.session.events.some(event => event.type === 'user/message' && String(event.data.id) === id)) {
+        if (!previous.agent.session.snapshotEvents().some(event => event.type === 'user/message' && String(event.data.id) === id)) {
           previous.agent.session.append('user/message', freezeMessage(input.message), { surfaceOp: 'append' })
         }
         await this.commitInput(previous.agent.session, id)
@@ -865,7 +1114,7 @@ export class ChatroomRuntime {
       this.broadcastPendingMessages(state)
       await this.aiContextStartWrites.get(roomId)
       this.archiveRoomSession(state, previous.agent.session)
-      const resetSeq = previous.agent.session.events.at(-1)?.seq
+      const resetSeq = previous.agent.session.snapshotEvents().at(-1)?.seq
       const record = await this.requireRoomRecords().update(roomId, current => ({
         ...withoutAiContextStart(current),
         ...(resetSeq === undefined ? {} : { aiContextResetSeq: resetSeq }),
@@ -1033,7 +1282,7 @@ export class ChatroomRuntime {
     const state = this.requireState(roomId)
     const normalizedTitle = normalizeRoomTitle(title, this.config.maxRoomTitleChars)
     const record = await this.requireRoomRecords().update(roomId, current => {
-      this.assertRoomManager(current, identity.participantId)
+      this.assertRoomInviter(current, identity)
       return { ...current, title: normalizedTitle, updatedAt: Date.now() }
     })
     state.record = record
@@ -1070,6 +1319,7 @@ export class ChatroomRuntime {
     state.record = record
     const members = this.roomMembers(state)
     this.broadcast(state, { type: 'room-updated', room: this.projectRoom(state), members })
+    this.broadcastRoomAgentProfiles(state)
     return members
   }
 
@@ -1119,11 +1369,16 @@ export class ChatroomRuntime {
     content: readonly ChatroomPromptContentPart[],
     mode: 'queue' | 'steer',
     reply?: ChatroomReplyReference,
+    requestId?: string,
   ): Promise<ChatroomPromptResponse> {
     this.assertReady()
     const state = this.requireState(roomId)
     this.assertRoomAccess(roomId, identity)
     await this.assertPromptReferences(identity, content)
+    const durable = await this.durableContent(roomId, identity, identifyPrompt(content, identity, reply))
+    const mentionedProfiles = this.enabledRoomAgentProfiles(roomId).filter(profile => mentionsName(content, profile.name))
+    const profileMentions = await this.acceptRoomAgentMentions(state, mentionedProfiles, identity, durable, requestId)
+    if (profileMentions.length > 0) this.dispatchRoomAgentMentions(state, profileMentions)
     const task = state.admission.then(async () => {
       const binding = await this.ensureRoom(roomId)
       const aiTriggered = mentionsAi(content, state.record.aiDisplayName)
@@ -1135,8 +1390,7 @@ export class ChatroomRuntime {
           throw new ChatroomInputError(`模型 ${JSON.stringify(modelId)} 不支持图片输入。`)
         }
       }
-      const durable = await this.durableContent(roomId, identity, identifyPrompt(content, identity, reply))
-      const message = createUserMessage({ content: durable, source: { kind: 'user', chatroomParticipantId: identity.participantId } })
+      const message = createUserMessage({ content: durable, source: { kind: 'user', chatroomParticipantId: identity.participantId, ...(requestId === undefined ? {} : { rpcId: requestId }) } })
       await this.persistInput(state, binding, identity, message, aiTriggered ? 'respond' : state.record.autoTriggerEnabled === true ? 'decide' : 'passive')
       const pending = binding.agent.status === 'running'
         && mode === 'queue'
@@ -1268,12 +1522,12 @@ export class ChatroomRuntime {
     return this.projectRoom(state, identity.participantId)
   }
 
-  /** Enable or disable model-controlled automatic AI responses as a room member. */
+  /** Enable or disable model-controlled automatic AI responses as a room manager. */
   async setRoomAutoTrigger(roomId: string, enabled: boolean, identity: ChatroomIdentity): Promise<ChatroomInfo> {
     this.assertReady()
     const state = this.requireState(roomId)
     const task = state.admission.then(async () => {
-      this.assertRoomMember(roomId, identity.participantId)
+      this.assertRoomAgentAccess(roomId, identity)
       const record = await this.requireRoomRecords().update(roomId, current => ({
         ...current,
         autoTriggerEnabled: enabled,
@@ -1444,7 +1698,7 @@ export class ChatroomRuntime {
       throw new ChatroomInputError('转发来源消息不完整。')
     }
     const source = await this.forwardSourceBinding(sourceRoomId, item.sourceSessionId)
-    const event = source.agent.session.events.find(candidate => candidate.seq === item.sourceSeq)
+    const event = source.agent.session.snapshotEvents().find(candidate => candidate.seq === item.sourceSeq)
     if (event === undefined) throw new ChatroomInputError('转发来源消息不存在或已变化。')
     const message = event.type === 'user/message'
       ? event.data
@@ -1514,7 +1768,7 @@ export class ChatroomRuntime {
   ): Promise<{ readonly ref: ChatroomImageReference; readonly data: Uint8Array }> {
     this.assertReady()
     const binding = await this.forwardSourceBinding(sourceRoomId, sourceSessionId)
-    const event = binding.agent.session.events.find(candidate => candidate.seq === sourceSeq)
+    const event = binding.agent.session.snapshotEvents().find(candidate => candidate.seq === sourceSeq)
     const message = event?.type === 'user/message'
       ? event.data
       : event?.type === 'assistant/message'
@@ -1538,8 +1792,6 @@ export class ChatroomRuntime {
     const state = this.requireState(roomId)
     this.assertRoomAccess(roomId, identity)
     if (state.binding === undefined) throw new Error(`chatroom room ${JSON.stringify(roomId)} is not active`)
-    const client: SseClient = { participantId: identity.participantId, response }
-    state.clients.add(client)
     const snapshot: ChatroomSnapshotEvent = {
       type: 'snapshot',
       room: this.projectRoom(state, identity.participantId),
@@ -1551,13 +1803,17 @@ export class ChatroomRuntime {
       threadPreviews: this.threadPreviewsForRoom(roomId),
       pendingMessages: this.pendingMessagesForRoom(state),
     }
-    writeSse(response, snapshot)
+    const client: SseClient = { participantId: identity.participantId, response, drainTimer: undefined, snapshotAllowance: 0 }
+    state.clients.add(client)
+    if (!writeSse(client, snapshot, () => removeSseClient(state.clients, client))) {
+      return () => undefined
+    }
     this.broadcastPresence(state)
     let disposed = false
     return () => {
       if (disposed) return
       disposed = true
-      state.clients.delete(client)
+      removeSseClient(state.clients, client)
       if (!this.stopping) this.broadcastPresence(state)
     }
   }
@@ -1565,9 +1821,9 @@ export class ChatroomRuntime {
   /** Attach one identity to the global message-notification stream. */
   subscribeNotifications(identity: ChatroomIdentity, response: ServerResponse): () => void {
     this.assertReady()
-    const client: NotificationClient = { participantId: identity.participantId, response }
+    const client: NotificationClient = { participantId: identity.participantId, response, drainTimer: undefined, snapshotAllowance: 0 }
     this.notificationClients.add(client)
-    return () => { this.notificationClients.delete(client) }
+    return () => { removeSseClient(this.notificationClients, client) }
   }
 
   /** List active peers and private conversations visible only to the requesting account. */
@@ -1763,7 +2019,7 @@ export class ChatroomRuntime {
       const projected = client.participantId === senderId
         ? event
         : { ...event, conversation: this.publicDirectConversation(conversation, client.participantId) }
-      if (!writeNotificationSse(client.response, projected)) this.notificationClients.delete(client)
+      if (!writeNotificationSse(client, projected, () => removeSseClient(this.notificationClients, client))) removeSseClient(this.notificationClients, client)
     }
     return event
   }
@@ -1813,6 +2069,7 @@ export class ChatroomRuntime {
     content: readonly ChatroomPromptContentPart[],
     mode: 'queue' | 'steer',
     reply?: ChatroomReplyReference,
+    requestId?: string,
   ): Promise<ChatroomPromptResponse>
   async submitThread(
     threadId: string,
@@ -1820,6 +2077,7 @@ export class ChatroomRuntime {
     contentOrText: readonly ChatroomPromptContentPart[] | string,
     modeOrReply: 'queue' | 'steer' | ChatroomReplyReference = 'queue',
     explicitReply?: ChatroomReplyReference,
+    requestId?: string,
   ): Promise<ChatroomPromptResponse> {
     this.assertReady()
     const state = this.requireThreadState(threadId)
@@ -1853,7 +2111,7 @@ export class ChatroomRuntime {
       const sequence = this.nextThreadSequence(threadId)
       const message = createUserMessage({
         content: durable,
-        source: { kind: 'user', chatroomParticipantId: identity.participantId },
+        source: { kind: 'user', chatroomParticipantId: identity.participantId, ...(requestId === undefined ? {} : { rpcId: requestId }) },
       })
       const record: ThreadMessageRecord = {
         id: randomUUID(),
@@ -1935,6 +2193,19 @@ export class ChatroomRuntime {
     if (this.ignoredAssistantMessageIds.delete(String(event.data.message.id))) return
     const text = assistantText(event.data.message.content)
     if (text === '') return
+    const agentSession = parseRoomAgentSessionId(String(session.id))
+    if (agentSession !== undefined) {
+      const room = this.requireState(agentSession.roomId)
+      const profile = this.roomAgentProfilesFor(agentSession.roomId).find(profile => profile.id === agentSession.profileId)
+      // Cancellation and profile replacement release their binding. Do not let
+      // output from that detached native Session appear as a delayed reply.
+      if (profile !== undefined && profile.enabled && room.agentBindings.get(profile.id)?.agent.session === session) {
+        void this.projectRoomAgentMessage(room, profile, text, session).catch((error: unknown) => {
+          this.log.warn('Room AI participant projection failed: %s', String(error))
+        })
+      }
+      return
+    }
     const thread = [...this.threadStates.values()].find(state => state.record.sessionId === String(session.id))
     if (thread !== undefined) {
       void this.recordThreadAssistant(thread, text, event.time, String(event.data.message.id), event.seq).catch((error: unknown) => {
@@ -2151,7 +2422,8 @@ export class ChatroomRuntime {
       .map(([, record]) => record)
       .filter(record => record.roomId === state.record.id)
       .sort((left, right) => Number(online.has(right.participantId)) - Number(online.has(left.participantId))
-        || right.lastSeenAt - left.lastSeenAt)
+        || right.lastSeenAt - left.lastSeenAt
+        || left.participantId.localeCompare(right.participantId))
       .map(record => ({
         participantId: record.participantId,
         displayName: record.displayName,
@@ -2196,7 +2468,7 @@ export class ChatroomRuntime {
     const event: ChatroomNotificationEvent = { type: 'notification', notification }
     for (const client of [...this.notificationClients]) {
       if (client.participantId === notification.participantId) continue
-      if (!writeNotificationSse(client.response, event)) this.notificationClients.delete(client)
+      if (!writeNotificationSse(client, event, () => removeSseClient(this.notificationClients, client))) removeSseClient(this.notificationClients, client)
     }
   }
 
@@ -2467,7 +2739,7 @@ export class ChatroomRuntime {
       throw new ChatroomInputError('目标消息不存在。')
     }
     const binding = await this.ensureRoom(target.room.record.id)
-    const event = binding.agent.session.events.find((candidate) => {
+    const event = binding.agent.session.snapshotEvents().find((candidate) => {
       if (candidate.type === 'user/message') {
         return messageId === `user:${candidate.seq}` || messageId === `steering:${candidate.seq}`
       }
@@ -2510,7 +2782,7 @@ export class ChatroomRuntime {
       ].slice(-20)
     }
     const binding = await this.ensureRoom(target.room.record.id)
-    return binding.agent.session.events.flatMap((event) => {
+    return binding.agent.session.snapshotEvents().flatMap((event) => {
       if (event.type !== 'user/message' && event.type !== 'assistant/message') return []
       const messageId = event.type === 'assistant/message' ? String(event.data.message.id) : `user:${event.seq}`
       if (recalled.has(messageId) || (event.type === 'user/message' && recalled.has(`steering:${event.seq}`))) return []
@@ -2601,7 +2873,12 @@ export class ChatroomRuntime {
     }
   }
 
-  private async acquireAgent(sessionId: string, parentSessionId?: string): Promise<AgentBinding> {
+  private async acquireAgent(
+    sessionId: string,
+    parentSessionId?: string,
+    agentOptions?: AgentOptions,
+    configureAgent?: (agentCtx: Context) => void,
+  ): Promise<AgentBinding> {
     const id = SessionId(sessionId)
     const live = this.ctx.agents.get(id)
     if (live !== undefined) {
@@ -2610,16 +2887,19 @@ export class ChatroomRuntime {
     }
     const persisted = (await this.ctx.sessionPersistence.list()).some(header => header.id === id)
     const model = this.ctx.agentDefaultModel.currentSelection()
-    const agentOptions = { provider: model.provider, model: model.model }
+    const options = agentOptions ?? { provider: model.provider, model: model.model }
     if (persisted) {
       const inspected = await this.ctx.sessionPersistence.inspect(id)
-      const agentPreset = resolveSessionPreset({ header: inspected.meta, events: inspected.events })
+      const agentPreset = inspected.events.reduce(agentPresetProjectionDefinition.apply, agentPresetProjectionDefinition.init(inspected.meta))
         ?? this.config.agentPreset
       try {
         return ownAgent(await this.ctx.agents.resume({
           resumeSessionId: id,
-          agentOptions,
-          setup: async (agentCtx) => { await this.setupAgentContext(agentCtx, agentPreset, sessionId) },
+          agentOptions: options,
+          setup: async (agentCtx) => {
+            await this.setupAgentContext(agentCtx, agentPreset, sessionId)
+            configureAgent?.(agentCtx)
+          },
         }))
       } catch (error) {
         const raced = this.ctx.agents.get(id)
@@ -2638,8 +2918,11 @@ export class ChatroomRuntime {
           agentPreset: this.config.agentPreset,
           ...(parentSessionId === undefined ? {} : { parentSession: SessionId(parentSessionId) }),
         },
-        agentOptions,
-        setup: async (agentCtx) => { await this.setupAgentContext(agentCtx, this.config.agentPreset, sessionId) },
+        agentOptions: options,
+        setup: async (agentCtx) => {
+          await this.setupAgentContext(agentCtx, this.config.agentPreset, sessionId)
+          configureAgent?.(agentCtx)
+        },
       }))
     } catch (error) {
       const raced = this.ctx.agents.get(id)
@@ -2649,6 +2932,276 @@ export class ChatroomRuntime {
       }
       throw error
     }
+  }
+
+  /** Rooms the identity may manage AI participants in (super-admin: every room). */
+  manageableRooms(identity: ChatroomIdentity): readonly ChatroomInfo[] {
+    this.assertReady()
+    return [...this.states.values()]
+      .filter(state => this.canManageRoomAgents(state.record, identity))
+      .sort((left, right) => roomUpdatedAt(right.record) - roomUpdatedAt(left.record))
+      .map(state => this.projectRoom(state, identity.participantId, true))
+  }
+
+  private enabledRoomAgentProfiles(roomId: string): readonly RoomAgentProfileRecord[] {
+    return this.roomAgentProfilesFor(roomId).filter(profile => profile.enabled)
+  }
+
+  private projectRoomAgentProfile(state: RoomState, profile: RoomAgentProfileRecord, canManage: boolean): ChatroomAgentProfile {
+    const { instructions, provider, model, reasoningEffort, ...publicFields } = profile
+    return {
+      ...publicFields,
+      provider: canManage ? provider : '',
+      model: canManage ? model : '',
+      ...(canManage ? { instructions, reasoningEffort } : {}),
+      runtime: state.agentRuntime.get(profile.id) ?? {
+        status: profile.enabled ? 'idle' : 'cancelled',
+        updatedAt: profile.updatedAt,
+      },
+    }
+  }
+
+  private setRoomAgentRuntime(state: RoomState, profileId: string, runtime: ChatroomAgentRuntimeState): void {
+    state.agentRuntime.set(profileId, runtime)
+  }
+
+  /** Invalidate every in-flight execution for this profile; dispatches capture the returned generation. */
+  private bumpRoomAgentExecutionGeneration(state: RoomState, profileId: string): number {
+    const next = (state.agentExecutionGenerations.get(profileId) ?? 0) + 1
+    state.agentExecutionGenerations.set(profileId, next)
+    state.agentExecutionCounts.delete(profileId)
+    return next
+  }
+
+  private isCurrentRoomAgentExecution(state: RoomState, profileId: string, generation: number | undefined): boolean {
+    return state.agentExecutionGenerations.get(profileId) === generation
+  }
+
+  private broadcastRoomAgentProfiles(state: RoomState): void {
+    const profiles = this.roomAgentProfilesFor(state.record.id)
+    for (const client of [...state.clients]) {
+      // Re-evaluate membership for every event, including after a manager is demoted.
+      const canManage = state.record.ownerParticipantId === client.participantId
+        || (state.record.adminParticipantIds ?? []).includes(client.participantId)
+        || this.auth.isSuperAdmin(client.participantId)
+      const event: ChatroomServerEvent = {
+        type: 'agent-profiles', roomId: state.record.id, canManage,
+        profiles: profiles.map(profile => this.projectRoomAgentProfile(state, profile, canManage)),
+      }
+      if (!writeSse(client, event, () => removeSseClient(state.clients, client))) removeSseClient(state.clients, client)
+    }
+  }
+
+  /** Durable Session id owning one profile's private context: isolation is one Session per room + agent. */
+  private roomAgentSessionId(roomId: string, profileId: string): string {
+    return `chatroom-agent-v1-${roomId}-${profileId}`
+  }
+
+  private retireRoomAgent(state: RoomState, profileId: string, binding: AgentBinding): Promise<void> {
+    const previous = state.agentRetirements.get(profileId)
+    const retirement = Promise.resolve(previous).then(() => binding.release()).finally(() => {
+      if (state.agentRetirements.get(profileId) === retirement) state.agentRetirements.delete(profileId)
+    })
+    state.agentRetirements.set(profileId, retirement)
+    return retirement
+  }
+
+  private async ensureRoomAgent(state: RoomState, profile: RoomAgentProfileRecord, generation: number | undefined): Promise<AgentBinding> {
+    // A cancelled activation may still own this profile's stable Session id.
+    // Let it release that ownership before the next generation acquires it.
+    for (;;) {
+      if (!this.isCurrentRoomAgentExecution(state, profile.id, generation)) {
+        throw new ChatroomInputError('AI 成员配置已变化，请重试。')
+      }
+      const retirement = state.agentRetirements.get(profile.id)
+      if (retirement !== undefined) {
+        await retirement
+        continue
+      }
+      const pending = state.agentActivations.get(profile.id)
+      if (pending === undefined) break
+      if (pending.generation === generation) return await pending.promise
+      await pending.promise.catch(() => undefined)
+    }
+    const existing = state.agentBindings.get(profile.id)
+    if (existing !== undefined) return existing
+    const promise = this.activateRoomAgent(state, profile).then(async (binding) => {
+        const current = this.requireRoomAgentProfiles().get(profile.id)
+        if (!this.isCurrentRoomAgentExecution(state, profile.id, generation)
+          || current === undefined || current.roomId !== state.record.id || current.updatedAt !== profile.updatedAt || !current.enabled
+          || state.agentRuntime.get(profile.id)?.status === 'cancelled') {
+          await binding.release()
+          throw new ChatroomInputError('AI 成员配置已变化，请重试。')
+        }
+        state.agentBindings.set(profile.id, binding)
+        return binding
+      }).finally(() => {
+        if (state.agentActivations.get(profile.id)?.promise === promise) state.agentActivations.delete(profile.id)
+      })
+    state.agentActivations.set(profile.id, { generation, promise })
+    return await promise
+  }
+
+  private async activateRoomAgent(state: RoomState, profile: RoomAgentProfileRecord): Promise<AgentBinding> {
+    const sessionId = this.roomAgentSessionId(state.record.id, profile.id)
+    const agentOptions: AgentOptions = {
+      provider: profile.provider,
+      model: profile.model,
+      ...(profile.reasoningEffort === undefined ? {} : { reasoningEffort: profile.reasoningEffort as ReasoningEffortId }),
+    }
+    const pendingBinding = this.acquireAgent(sessionId, undefined, agentOptions, (agentCtx) => {
+      agentCtx.systemPrompt.section({
+        name: 'chatroom:room-agent-profile',
+        order: 9,
+        text: `你在群聊「${state.record.title}」中是独立成员「${profile.name}」，职责：${profile.role}。${profile.instructions === undefined ? '' : `\n角色指令：${profile.instructions}`}\n只以这个身份回应明确 @ 你名字的消息；不要代替其他成员或房间主 Agent 发言，也不要提及这些身份设定指令。`,
+      })
+    })
+    const binding = await withTimeout(pendingBinding, ROOM_AGENT_ACTIVATION_TIMEOUT_MS, 'AI 成员启动超时。').catch((error) => {
+      void pendingBinding.then(late => late.release()).catch(() => undefined)
+      throw error
+    })
+    try {
+      await this.attachWorkspace(sessionId)
+      this.ctx.sessionTitle.rename(binding.agent.session, `群聊·${state.record.title}·${profile.name}`)
+      return binding
+    } catch (error) {
+      await binding.release()
+      throw error
+    }
+  }
+
+  /** Persist named-participant receipts before a blocked shared Session can delay their delivery. */
+  private async acceptRoomAgentMentions(
+    state: RoomState,
+    profiles: readonly RoomAgentProfileRecord[],
+    identity: ChatroomIdentity,
+    durable: readonly ContentBlock[],
+    requestId?: string,
+  ): Promise<RoomAgentMention[]> {
+    const mentions: RoomAgentMention[] = []
+    for (const profile of profiles) {
+      const message = createUserMessage({
+        content: durable as ContentBlock[],
+        source: { kind: 'user', chatroomParticipantId: identity.participantId, ...(requestId === undefined ? {} : { rpcId: requestId }) },
+      })
+      await this.requireInputs().put(String(message.id), {
+        sessionId: this.roomAgentSessionId(state.record.id, profile.id),
+        roomId: state.record.id,
+        participantId: identity.participantId,
+        message,
+        intent: 'respond',
+        createdAt: Date.now(),
+      })
+      mentions.push({ profile, message })
+    }
+    return mentions
+  }
+
+  /** Fan out one accepted human message to every @-mentioned room AI participant; one failure never blocks the others. */
+  private dispatchRoomAgentMentions(
+    state: RoomState,
+    mentions: readonly RoomAgentMention[],
+  ): void {
+    void Promise.allSettled(mentions.map(async ({ profile, message }) => {
+      // Only cancellation/configuration changes invalidate a profile. Repeated
+      // mentions use the native Agent inbox and must queue behind each other.
+      const generation = state.agentExecutionGenerations.get(profile.id)
+      const isCurrent = (): boolean => this.isCurrentRoomAgentExecution(state, profile.id, generation)
+      state.agentExecutionCounts.set(profile.id, (state.agentExecutionCounts.get(profile.id) ?? 0) + 1)
+      let finished = false
+      const finish = (): boolean => {
+        if (finished || !isCurrent()) return false
+        finished = true
+        const remaining = Math.max(0, (state.agentExecutionCounts.get(profile.id) ?? 1) - 1)
+        if (remaining === 0) state.agentExecutionCounts.delete(profile.id)
+        else state.agentExecutionCounts.set(profile.id, remaining)
+        return remaining === 0
+      }
+      try {
+        this.setRoomAgentRuntime(state, profile.id, { status: 'queued', updatedAt: Date.now() })
+        this.broadcastRoomAgentProfiles(state)
+        const binding = await this.ensureRoomAgent(state, profile, generation)
+        if (!isCurrent() || state.agentRuntime.get(profile.id)?.status === 'cancelled') {
+          return
+        }
+        binding.agent.followup(message)
+        await this.commitInput(binding.agent.session, String(message.id))
+        if (!isCurrent()) return
+        this.setRoomAgentRuntime(state, profile.id, { status: 'running', updatedAt: Date.now() })
+        this.broadcastRoomAgentProfiles(state)
+        try {
+          await withTimeout(binding.agent.whenIdle(), ROOM_AGENT_RESPONSE_TIMEOUT_MS, 'AI 成员响应超时。')
+          if (finish()) {
+            this.setRoomAgentRuntime(state, profile.id, { status: 'idle', updatedAt: Date.now() })
+            this.broadcastRoomAgentProfiles(state)
+          }
+        } catch (error) {
+          if (!isCurrent()) return
+          binding.agent.cancel({ kind: 'user' })
+          if (state.agentBindings.get(profile.id) === binding) state.agentBindings.delete(profile.id)
+          await this.retireRoomAgent(state, profile.id, binding).catch(() => undefined)
+          if (!isCurrent()) return
+          if (state.agentBindings.get(profile.id) === binding) state.agentBindings.delete(profile.id)
+          this.setRoomAgentRuntime(state, profile.id, {
+            status: 'failed',
+            updatedAt: Date.now(),
+            error: error instanceof Error && error.message.includes('超时')
+              ? '响应超时，已取消；下一次 @ 将重新恢复。'
+              : '运行失败；下一次 @ 将重新恢复。',
+          })
+          this.broadcastRoomAgentProfiles(state)
+          throw error
+        }
+      } catch (error) {
+        this.log.warn('Room AI participant %s could not accept the message: %s', profile.name, String(error))
+        if (!isCurrent() || state.agentRuntime.get(profile.id)?.status === 'cancelled') return
+        this.setRoomAgentRuntime(state, profile.id, {
+          status: 'failed',
+          updatedAt: Date.now(),
+          error: 'AI 成员暂时不可用；下一次 @ 会自动重试。',
+        })
+        this.broadcastRoomAgentProfiles(state)
+        await this.projectRoomAgentMessage(
+          state,
+          profile,
+          '（暂时无法响应；下一次 @ 会自动重试。）',
+          undefined,
+          () => isCurrent() && state.agentRuntime.get(profile.id)?.status === 'failed',
+        ).catch(() => undefined)
+      } finally {
+        finish()
+      }
+    }))
+  }
+
+  /** Project one room AI participant utterance into the shared room message stream under its own name. */
+  private async projectRoomAgentMessage(
+    state: RoomState,
+    profile: RoomAgentProfileRecord,
+    text: string,
+    sourceSession?: Session,
+    isCurrent?: () => boolean,
+  ): Promise<void> {
+    const binding = await this.ensureRoom(state.record.id)
+    if (isCurrent !== undefined && !isCurrent()) return
+    if (sourceSession !== undefined && state.agentBindings.get(profile.id)?.agent.session !== sourceSession) return
+    const participantId = `chatroom-agent-${profile.id}`
+    const content = [{ type: 'text' as const, text: identifyChatroomText(text, {
+      participantId,
+      displayName: profile.name,
+      avatarId: fallbackAvatarId(participantId),
+    }) }]
+    binding.agent.session.append('user/message', createUserMessage({ content, source: { kind: 'user' } }), { surfaceOp: 'append' })
+    this.notify({
+      id: `room-agent:${profile.id}:${Date.now()}`,
+      roomId: state.record.id,
+      roomTitle: state.record.title,
+      participantId,
+      displayName: profile.name,
+      role: 'ai',
+      text,
+      createdAt: Date.now(),
+    })
   }
 
   private async setupAgentContext(agentCtx: Context, agentPreset: string, sessionId: string): Promise<void> {
@@ -2818,7 +3371,7 @@ export class ChatroomRuntime {
     const persisted = new Set((await this.ctx.sessionPersistence.list()).map(header => String(header.id)))
     let complete = true
     for (const state of this.states.values()) {
-      let events: readonly SessionEvent[] | undefined = state.binding?.agent.session.events
+      let events: readonly SessionEvent[] | undefined = state.binding?.agent.session.snapshotEvents()
       if (events === undefined && persisted.has(state.record.sessionId)) {
         try {
           events = (await this.ctx.sessionPersistence.inspect(SessionId(state.record.sessionId))).events
@@ -2837,7 +3390,7 @@ export class ChatroomRuntime {
       }
     }
     for (const state of this.threadStates.values()) {
-      let events: readonly SessionEvent[] | undefined = state.binding?.agent.session.events
+      let events: readonly SessionEvent[] | undefined = state.binding?.agent.session.snapshotEvents()
       if (events === undefined && persisted.has(state.record.sessionId)) {
         try {
           events = (await this.ctx.sessionPersistence.inspect(SessionId(state.record.sessionId))).events
@@ -3280,11 +3833,31 @@ export class ChatroomRuntime {
     await this.requireInputs().update(messageId, record => ({ ...record!, intent }))
   }
 
+  private async discardRoomAgentInputs(roomId: string, profileId: string): Promise<void> {
+    const sessionId = this.roomAgentSessionId(roomId, profileId)
+    for (const [id, record] of [...this.requireInputs().entries()]) {
+      if (record.sessionId === sessionId) await this.requireInputs().delete(id)
+    }
+  }
+
+  /** Re-drive receipts not yet claimed by the replaced profile Session. */
+  private resumeRoomAgentInputs(state: RoomState, profile: RoomAgentProfileRecord, previous?: AgentBinding, inputIds?: ReadonlySet<string>): void {
+    const sessionId = this.roomAgentSessionId(state.record.id, profile.id)
+    const accepted = [...this.requireInputs().entries()].flatMap(([id, record]): RoomAgentMention[] => {
+      if (record.sessionId !== sessionId || (inputIds !== undefined && !inputIds.has(id))) return []
+      const claimed = previous?.agent.session.snapshotEvents().some(event => event.type === 'user/message' && String(event.data.id) === id)
+        || previous?.agent.inbox.nextTurn.some(message => String(message.id) === id)
+        || previous?.agent.inbox.nextStep.some(message => String(message.id) === id)
+      return claimed ? [] : [{ profile, message: freezeMessage(record.message) }]
+    })
+    if (accepted.length > 0) this.dispatchRoomAgentMentions(state, accepted)
+  }
+
   private commitInput(session: Session, messageId: string): Promise<void> {
     const existing = this.inputCommits.get(messageId)
     if (existing !== undefined) return existing
     if (this.requireInputs().get(messageId) === undefined) return Promise.resolve()
-    const claimed = (): boolean => session.events.some(event => event.type === 'user/message' && String(event.data.id) === messageId)
+    const claimed = (): boolean => session.snapshotEvents().some(event => event.type === 'user/message' && String(event.data.id) === messageId)
     const claimedBeforeFlush = claimed()
     const commit = this.ctx.sessions.flush(session).then(async durable => {
       if (!durable) throw new Error('No native Session durability listener')
@@ -3300,10 +3873,20 @@ export class ChatroomRuntime {
   private async recoverInputs(): Promise<void> {
     for (const [id, record] of this.requireInputs().entries()) {
       const room = this.requireState(record.roomId)
+      const roomAgent = parseRoomAgentSessionId(record.sessionId)
+      if (roomAgent !== undefined) {
+        const profile = this.roomAgentProfilesFor(roomAgent.roomId).find(candidate => candidate.id === roomAgent.profileId)
+        if (profile === undefined || !profile.enabled || profile.roomId !== room.record.id) {
+          await this.requireInputs().delete(id)
+          continue
+        }
+        this.dispatchRoomAgentMentions(room, [{ profile, message: freezeMessage(record.message) }])
+        continue
+      }
       const thread = record.threadId === undefined ? undefined : this.requireThreadState(record.threadId)
       const binding = thread === undefined ? await this.ensureRoom(room.record.id) : await this.ensureThread(thread.record.id)
       if (String(binding.agent.session.id) !== record.sessionId) throw new Error('Accepted input refers to a replaced Session')
-      if (binding.agent.session.events.some(event => event.type === 'user/message' && String(event.data.id) === id)) {
+      if (binding.agent.session.snapshotEvents().some(event => event.type === 'user/message' && String(event.data.id) === id)) {
         await this.commitInput(binding.agent.session, id)
         continue
       }
@@ -3373,7 +3956,7 @@ export class ChatroomRuntime {
 
   private broadcast(state: RoomState, event: ChatroomServerEvent): void {
     for (const client of [...state.clients]) {
-      if (!writeSse(client.response, event)) state.clients.delete(client)
+      if (!writeSse(client, event, () => removeSseClient(state.clients, client))) removeSseClient(state.clients, client)
     }
   }
 
@@ -3385,7 +3968,7 @@ export class ChatroomRuntime {
     return this.projectRoom(this.requireState(roomId))
   }
 
-  private projectRoom(state: RoomState, participantId?: string): ChatroomInfo {
+  private projectRoom(state: RoomState, participantId?: string, canManageAgents?: boolean): ChatroomInfo {
     // Presence ordering is intentionally excluded so merely opening a room cannot reshuffle its sidebar avatar.
     const members = this.roomMembers(state).slice()
       .sort((left, right) => left.joinedAt - right.joinedAt
@@ -3395,7 +3978,22 @@ export class ChatroomRuntime {
       state.record,
       members,
       participantId === undefined ? undefined : this.roomPinned(state.record.id, participantId),
+      canManageAgents,
     )
+  }
+
+  /** Whether this identity may manage the room's AI participants (super-admin, owner, or admin). */
+  private canManageRoomAgents(record: RoomRecord, identity: ChatroomIdentity | undefined): boolean {
+    if (identity === undefined) return false
+    if ('role' in identity && identity.role === 'super-admin') return true
+    return record.ownerParticipantId === identity.participantId
+      || (record.adminParticipantIds ?? []).includes(identity.participantId)
+  }
+
+  /** Room AI participant access: super-admin may manage any room; others must be a managing member. */
+  private assertRoomAgentAccess(roomId: string, identity: ChatroomIdentity): void {
+    if (!('role' in identity && identity.role === 'super-admin')) this.assertRoomAccess(roomId, identity)
+    this.assertRoomInviter(this.requireState(roomId).record, identity)
   }
 
   private roomPinned(roomId: string, participantId: string): boolean {
@@ -3568,7 +4166,7 @@ export class ChatroomRuntime {
   }
 
   private archiveRoomSession(state: RoomState, session: Session): void {
-    for (const event of session.events) this.archiveSessionEvent(session, event)
+    for (const event of session.snapshotEvents()) this.archiveSessionEvent(session, event)
     for (const recall of this.recallsForRoom(state.record.id)) {
       this.requireArchive().recallMessage(
         state.record.id,
@@ -3628,7 +4226,7 @@ export class ChatroomRuntime {
     if (room.record.autoTriggerEnabled !== true) return false
     if (addressesAi(content, room.record.aiDisplayName)) return true
     const history = thread === undefined
-      ? recentRoomConversation(binding.agent.session.events, this.hiddenModelMessageIds(room.record.sessionId))
+      ? recentRoomConversation(binding.agent.session.snapshotEvents(), this.hiddenModelMessageIds(room.record.sessionId))
       : recentThreadConversation(
           thread.record,
           this.messagesForThread(thread.record.id).filter(message =>
@@ -3795,6 +4393,11 @@ export class ChatroomRuntime {
     return this.automationSettings
   }
 
+  private requireRoomAgentProfiles(): KvTable<string, RoomAgentProfileRecord> {
+    if (this.roomAgentProfiles === undefined) throw new Error('chatroom room agent profile storage is unavailable')
+    return this.roomAgentProfiles
+  }
+
   private requireArchive(): ChatArchive {
     if (this.archive === undefined) throw new Error('chatroom archive is unavailable')
     return this.archive
@@ -3847,7 +4450,7 @@ export class ChatroomRuntime {
     }
     const match = /^(?:user|steering):(\d+)$/u.exec(messageId)
     const sequence = match === null ? undefined : Number(match[1])
-    const event = sequence === undefined ? undefined : state.binding?.agent.session.events.find(candidate =>
+    const event = sequence === undefined ? undefined : state.binding?.agent.session.snapshotEvents().find(candidate =>
       candidate.seq === sequence && candidate.type === 'user/message')
     const text = event?.type === 'user/message'
       ? event.data.content.find((block): block is Extract<ContentBlock, { type: 'text' }> => block.type === 'text')?.text
@@ -3911,6 +4514,17 @@ export class ChatroomRuntime {
   }
 }
 
+/** Resolve one plugin-managed room AI participant Session id back to its room and profile. */
+export function parseRoomAgentSessionId(sessionId: string): { roomId: string; profileId: string } | undefined {
+  const prefix = 'chatroom-agent-v1-'
+  if (!sessionId.startsWith(prefix)) return undefined
+  const rest = sessionId.slice(prefix.length)
+  // The profile id is a 36-char UUID at the end; the room id may be a UUID or an
+  // adopted native session id (variable length), so parse from the right edge.
+  if (rest.length < 38 || rest[rest.length - 37] !== '-') return undefined
+  return { roomId: rest.slice(0, rest.length - 37), profileId: rest.slice(rest.length - 36) }
+}
+
 function newRoomState(record: RoomRecord): RoomState {
   return {
     record,
@@ -3921,6 +4535,12 @@ function newRoomState(record: RoomRecord): RoomState {
     admission: Promise.resolve(),
     automation: Promise.resolve(),
     rotation: undefined,
+    agentBindings: new Map(),
+    agentActivations: new Map(),
+    agentRetirements: new Map(),
+    agentExecutionGenerations: new Map(),
+    agentExecutionCounts: new Map(),
+    agentRuntime: new Map(),
   }
 }
 
@@ -3955,7 +4575,7 @@ function publicFile(record: FileRecord): ChatroomFileReference {
   return { id: record.id, name: record.name, mediaType: record.mediaType, bytes: record.bytes }
 }
 
-function publicRoom(record: RoomRecord, members: readonly ChatroomMember[], pinned?: boolean): ChatroomInfo {
+function publicRoom(record: RoomRecord, members: readonly ChatroomMember[], pinned?: boolean, canManageAgents?: boolean): ChatroomInfo {
   return {
     id: record.id,
     title: record.title,
@@ -3972,6 +4592,7 @@ function publicRoom(record: RoomRecord, members: readonly ChatroomMember[], pinn
       avatarId: member.avatarId,
       ...(member.avatarUrl === undefined ? {} : { avatarUrl: member.avatarUrl }),
     })),
+    ...(canManageAgents === undefined ? {} : { canManageAgents }),
   }
 }
 
@@ -4566,27 +5187,83 @@ function publicDirectMessage(record: DirectMessageRecord): ChatroomDirectMessage
   }
 }
 
-function writeSse(response: ServerResponse, event: ChatroomServerEvent): boolean {
-  if (response.destroyed || response.writableEnded) return false
-  try {
-    response.write(`data: ${JSON.stringify(event)}\n\n`)
-    return true
-  } catch {
-    return false
-  }
+function writeSse(client: SseClient, event: ChatroomServerEvent, remove: () => void): boolean {
+  return writeSseEvent(client, event, remove)
 }
 
 function writeNotificationSse(
-  response: ServerResponse,
+  client: NotificationClient,
   event: ChatroomNotificationEvent | ChatroomDirectMessageEvent,
+  remove: () => void,
 ): boolean {
+  return writeSseEvent(client, event, remove)
+}
+
+function writeSseEvent(
+  client: SseClient | NotificationClient,
+  event: ChatroomServerEvent | ChatroomNotificationEvent | ChatroomDirectMessageEvent,
+  remove: () => void,
+): boolean {
+  const response = client.response
   if (response.destroyed || response.writableEnded) return false
-  try {
-    response.write(`data: ${JSON.stringify(event)}\n\n`)
-    return true
-  } catch {
+  const buffered = 'writableLength' in response && typeof response.writableLength === 'number'
+    ? response.writableLength
+    : 0
+  if (buffered > SSE_MAX_BUFFER_BYTES + client.snapshotAllowance) {
+    remove()
+    closeSse(response)
     return false
   }
+  try {
+    const frame = `data: ${JSON.stringify(event)}\n\n`
+    if (response.write(frame)) return true
+    // Allow one initial snapshot plus bounded live traffic until the first drain.
+    if (event.type === 'snapshot') client.snapshotAllowance = Buffer.byteLength(frame)
+  } catch {
+    remove()
+    closeSse(response)
+    return false
+  }
+  if (typeof response.once !== 'function') {
+    remove()
+    closeSse(response)
+    return false
+  }
+  const drain = (): void => {
+    if (client.drainTimer !== undefined) clearTimeout(client.drainTimer)
+    client.drainTimer = undefined
+    client.snapshotAllowance = 0
+  }
+  if (client.drainTimer === undefined) {
+    client.drainTimer = setTimeout(() => {
+      client.drainTimer = undefined
+      remove()
+      closeSse(response)
+    }, SSE_DRAIN_TIMEOUT_MS)
+    response.once('drain', drain)
+  }
+  return true
+}
+
+/** Close only after the native response buffer exceeds its ceiling or misses the drain deadline. */
+function closeSse(response: ServerResponse): void {
+  if (response.destroyed || response.writableEnded) return
+  try {
+    response.destroy()
+  } catch {
+    // Unit response doubles may not implement destroy; end is the safe fallback.
+    try { response.end() } catch { /* already closed */ }
+  }
+}
+
+function clearSseDrain(client: SseClient | NotificationClient): void {
+  if (client.drainTimer !== undefined) clearTimeout(client.drainTimer)
+  client.drainTimer = undefined
+}
+
+function removeSseClient<T extends SseClient | NotificationClient>(clients: Set<T>, client: T): void {
+  clearSseDrain(client)
+  clients.delete(client)
 }
 
 /** Stop waiting for a borrowed Agent when this plugin is withdrawn. */
@@ -4599,4 +5276,13 @@ async function waitForIdle(agent: Agent, signal: AbortSignal): Promise<void> {
   })
   try { await Promise.race([agent.whenIdle(), stopped]) }
   finally { signal.removeEventListener('abort', release) }
+}
+
+async function withTimeout<T>(promise: Promise<T>, timeoutMs: number, message: string): Promise<T> {
+  let timer: ReturnType<typeof setTimeout> | undefined
+  const timeout = new Promise<never>((_resolve, reject) => {
+    timer = setTimeout(() => reject(new Error(message)), timeoutMs)
+  })
+  try { return await Promise.race([promise, timeout]) }
+  finally { if (timer !== undefined) clearTimeout(timer) }
 }

@@ -41,6 +41,8 @@ export interface ChatroomAuthProvider {
 export interface ChatroomAuthState {
   readonly enabled: boolean
   readonly authenticated: boolean
+  /** Server-computed deployment permission; distinct from room membership roles. */
+  readonly canManageSettings?: boolean
   readonly authMode?: 'local' | 'hybrid' | 'dsh-auth-only'
   readonly account?: ChatroomAccount
   readonly providers: readonly ChatroomAuthProvider[]
@@ -77,6 +79,8 @@ export interface ChatroomAutomationModel {
   readonly provider: string
   readonly model: string
   readonly label: string
+  /** Exact reasoning-effort ids advertised by this model; empty means unsupported. */
+  readonly reasoningEfforts: readonly string[]
 }
 
 /** Global automatic-response policy and the model routes available to its administrator. */
@@ -89,6 +93,54 @@ export interface ChatroomAutomationOverview {
   readonly mainAgentPrompt: string
   readonly controllerPrompt: string
   readonly models: readonly ChatroomAutomationModel[]
+}
+
+/** One durable room-level AI participant with its own model routing. */
+export interface ChatroomAgentProfile {
+  readonly id: string
+  readonly roomId: string
+  readonly name: string
+  readonly role: string
+  /** Longer model-facing role instructions, kept separate from the short UI role label. */
+  readonly instructions?: string
+  readonly provider: string
+  readonly model: string
+  readonly reasoningEffort?: string
+  readonly enabled: boolean
+  readonly createdAt: number
+  readonly updatedAt: number
+  readonly runtime: ChatroomAgentRuntimeState
+}
+
+export type ChatroomAgentRuntimeStatus = 'idle' | 'queued' | 'running' | 'failed' | 'cancelled'
+
+export interface ChatroomAgentRuntimeState {
+  readonly status: ChatroomAgentRuntimeStatus
+  readonly updatedAt: number
+  readonly error?: string
+}
+
+/** Validated write input for one room-level AI participant. */
+export interface ChatroomAgentProfileInput {
+  readonly name: string
+  readonly role: string
+  readonly instructions?: string
+  readonly provider: string
+  readonly model: string
+  readonly reasoningEffort?: string
+  readonly enabled: boolean
+}
+
+/** Room AI participant roster; the model catalog is only populated for managers. */
+export interface ChatroomAgentProfilesView {
+  readonly canManage: boolean
+  readonly profiles: readonly ChatroomAgentProfile[]
+  readonly models: readonly ChatroomAutomationModel[]
+}
+
+/** Manageable-room directory for the settings-page AI member manager. */
+export interface ChatroomManageableRoomsResponse {
+  readonly rooms: readonly ChatroomInfo[]
 }
 
 /** One room member projected with current presence. */
@@ -215,6 +267,8 @@ export interface ChatroomInfo {
   /** Up to nine member avatars used by compact room-directory surfaces. */
   readonly memberAvatarIds?: readonly ChatroomAvatarId[]
   readonly memberAvatars?: readonly ChatroomRoomAvatar[]
+  /** Whether the viewing identity may manage this room's AI participants. */
+  readonly canManageAgents?: boolean
 }
 
 /** Result of one room-management mutation. */
@@ -306,6 +360,8 @@ export interface ChatroomSessionResponse {
   readonly rooms: readonly ChatroomInfo[]
   /** Native Solo Sessions owned by the authenticated identity. */
   readonly soloSessionIds: readonly string[]
+  /** Server-checked native descendant access requested by the navigation guard. */
+  readonly nativeSessionAccess?: { readonly sessionId: string; readonly allowed: boolean }
   /** Configured legacy room retained during rolling browser bundle upgrades after authentication. */
   readonly room?: ChatroomInfo
 }
@@ -404,6 +460,8 @@ export type ChatroomPromptContentPart =
 
 /** Browser submission routed through human-first room admission. */
 export interface ChatroomPromptRequest {
+  /** Native optimistic-message identity, echoed by the persisted user message. */
+  readonly requestId?: string
   readonly roomId: string
   readonly mode: 'queue' | 'steer'
   readonly content: readonly ChatroomPromptContentPart[]
@@ -485,6 +543,8 @@ export interface ChatroomThreadPreview {
 
 /** Branch text admission request. */
 export interface ChatroomThreadPromptRequest {
+  /** Native optimistic-message identity, echoed by the persisted user message. */
+  readonly requestId?: string
   readonly threadId: string
   readonly mode: 'queue' | 'steer'
   readonly content: readonly ChatroomPromptContentPart[]
@@ -572,6 +632,14 @@ export interface ChatroomRoomUpdatedEvent {
   readonly members: readonly ChatroomMember[]
 }
 
+/** Runtime/config replacement for room-level AI participants. */
+export interface ChatroomAgentProfilesEvent {
+  readonly canManage?: boolean
+  readonly type: 'agent-profiles'
+  readonly roomId: string
+  readonly profiles: readonly ChatroomAgentProfile[]
+}
+
 /** One global message alert delivered independently of active-room presence. */
 export interface ChatroomNotificationEvent {
   readonly type: 'notification'
@@ -594,6 +662,7 @@ export type ChatroomServerEvent =
   | ChatroomThreadMessageEvent
   | ChatroomReactionEvent
   | ChatroomRecallEvent
+  | ChatroomAgentProfilesEvent
   | ChatroomRoomUpdatedEvent
 
 /** Browser-visible error envelope. */

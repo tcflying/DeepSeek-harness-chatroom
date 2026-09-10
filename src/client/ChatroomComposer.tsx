@@ -126,6 +126,7 @@ export function ChatroomFileAction(props: FileActionProps): JSX.Element | null {
   const active = target?.room
   const input = useRef<HTMLInputElement>(null)
   const [emojiOpen, setEmojiOpen] = useState(false)
+  const draft = props.useInput(state => state.draft)
   if (active === undefined) return null
   return (
     <div className="dsh-chatroom-composer-actions">
@@ -133,7 +134,7 @@ export function ChatroomFileAction(props: FileActionProps): JSX.Element | null {
         open={emojiOpen}
         toggle={() => { setEmojiOpen(open => !open) }}
         close={() => { setEmojiOpen(false) }}
-        pick={emoji => { props.inputActions.setDraft(`${props.input.draft}${emoji}`) }}
+        pick={emoji => { props.inputActions.setDraft(`${draft}${emoji}`) }}
       />
       <button
         className="dsh-chatroom-file-button"
@@ -164,6 +165,7 @@ export function ChatroomFileAction(props: FileActionProps): JSX.Element | null {
 /** Native-composer controls for stopping work or rotating the room Session. */
 export function ChatroomSessionControls(props: ComposerRightProps): JSX.Element | null {
   const room = props.useChatroom(snapshot => snapshot)
+  const running = props.useSession(snapshot => snapshot.running)
   const target = props.resolveTarget(String(props.sessionId))
   if (target === undefined) return null
   return (
@@ -171,25 +173,31 @@ export function ChatroomSessionControls(props: ComposerRightProps): JSX.Element 
       {target.kind === 'room' && <>
         <button
           type="button"
-          disabled={!props.session.running || room.sessionControlBusy}
+          aria-label="■ 停止"
+          title="停止当前 Agent"
+          disabled={!running || room.sessionControlBusy}
           onClick={() => { void props.stopRoomSession(target.room.id) }}
-        >■ 停止</button>
+        ><span aria-hidden>■</span><span className="dsh-chatroom-control-label"> 停止</span></button>
         <button
           type="button"
+          aria-label="＋ 新会话"
+          title="开始新的 AI 上下文，保留聊天历史"
           disabled={room.sessionControlBusy}
           onClick={() => { void props.newRoomSession(target.room.id) }}
-        >＋ 新会话</button>
+        ><span aria-hidden>＋</span><span className="dsh-chatroom-control-label"> 新会话</span></button>
       </>}
       <button
         type="button"
         className="dsh-chatroom-quick-meeting"
+        aria-label="⚡ 快速会议"
+        title="快速会议"
         disabled={room.wecomBusy}
         onClick={() => {
           void (target.kind === 'room'
             ? props.quickMeeting(target.room.id)
             : props.quickThreadMeeting(target.threadId))
         }}
-      >⚡ 快速会议</button>
+      ><span aria-hidden>⚡</span><span className="dsh-chatroom-control-label"> 快速会议</span></button>
       {room.sessionControlError !== undefined && (
         <span className="dsh-chatroom-control-error" role="alert" title={room.sessionControlError}>{room.sessionControlError}</span>
       )}

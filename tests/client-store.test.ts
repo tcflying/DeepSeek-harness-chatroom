@@ -28,6 +28,143 @@ afterEach(() => {
 })
 
 describe('ChatroomClientStore', () => {
+  it('does not reopen SSE when a session response arrives after the tab is hidden', async () => {
+    const documentStub = Object.assign(new EventTarget(), {
+      title: 'Harness', visibilityState: 'visible', documentElement: { toggleAttribute: vi.fn() },
+    })
+    vi.stubGlobal('document', documentStub)
+    vi.stubGlobal('EventSource', FakeEventSource)
+    let finishSession!: (value: Response) => void
+    vi.stubGlobal('fetch', vi.fn<typeof fetch>().mockImplementationOnce(() => new Promise(resolve => { finishSession = resolve })))
+    const store = new ChatroomClientStore()
+    const starting = store.start()
+    documentStub.visibilityState = 'hidden'
+    documentStub.dispatchEvent(new Event('visibilitychange'))
+    const room = roomInfo()
+    finishSession(jsonResponse(sessionResponse({ participantId: 'alice', displayName: 'Alice', avatarId: 'whale' }, [room])))
+    await starting
+    store.activateSession(room.sessionId)
+    expect(FakeEventSource.instances.filter(source => !source.closed)).toHaveLength(0)
+    documentStub.visibilityState = 'visible'
+    documentStub.dispatchEvent(new Event('visibilitychange'))
+    expect(FakeEventSource.instances.filter(source => !source.closed).map(source => source.url).sort()).toEqual([
+      '/plugins/deepseek-harness-chatroom/api/events?roomId=lobby',
+      '/plugins/deepseek-harness-chatroom/api/notifications',
+    ])
+    documentStub.visibilityState = 'hidden'
+    documentStub.dispatchEvent(new Event('visibilitychange'))
+    expect(FakeEventSource.instances.every(source => source.closed)).toBe(true)
+    store.stop()
+  })
+
+  it('expires a stalled roster read, releases controls, and permits a successful retry', async () => {
+    vi.useFakeTimers()
+    const store = new ChatroomClientStore()
+    try {
+      const room = roomInfo()
+      let rosterSignal: AbortSignal | null | undefined
+      vi.stubGlobal('EventSource', FakeEventSource)
+      vi.stubGlobal('fetch', vi.fn<typeof fetch>()
+        .mockResolvedValueOnce(jsonResponse(sessionResponse({ participantId: 'alice', displayName: 'Alice', avatarId: 'whale' }, [room])))
+        .mockImplementationOnce((_url, init) => new Promise((_resolve, reject) => {
+          rosterSignal = init?.signal
+          rosterSignal?.addEventListener('abort', () => { reject(rosterSignal?.reason) }, { once: true })
+        }))
+        .mockResolvedValueOnce(jsonResponse({ canManage: true, models: [], profiles: [agentProfile(room.id, 'Reviewer')] })))
+      await store.start()
+      store.activateSession(room.sessionId)
+      const pending = store.loadAgentProfiles()
+      expect(store.getSnapshot().agentBusy).toBe(true)
+      await vi.advanceTimersByTimeAsync(15_000)
+      expect(rosterSignal?.aborted).toBe(true)
+      await pending
+      expect(store.getSnapshot()).toMatchObject({ agentBusy: false, agentError: '加载 AI 成员超时，请重试。' })
+      await store.loadAgentProfiles()
+      expect(store.getSnapshot()).toMatchObject({ agentBusy: false, agentError: undefined })
+      expect(store.getSnapshot().agentProfiles?.profiles[0]?.name).toBe('Reviewer')
+    } finally {
+      store.stop()
+      vi.useRealTimers()
+    }
+  })
+
+  it('clears the model catalog and editing permission on a live room-admin demotion', async () => {
+    const identity = { participantId: 'alice-id', displayName: 'Alice', avatarId: 'whale' as const }
+    const room = roomInfo()
+    vi.stubGlobal('fetch', vi.fn<typeof fetch>()
+      .mockResolvedValueOnce(jsonResponse(sessionResponse(identity, [room])))
+      .mockResolvedValueOnce(jsonResponse({ canManage: true, models: [{ provider: 'private-provider' }], profiles: [agentProfile(room.id, 'Reviewer')] })))
+    vi.stubGlobal('EventSource', FakeEventSource)
+    const store = new ChatroomClientStore()
+    await store.start()
+    store.activateSession(room.sessionId)
+    await store.ensureAgentProfiles()
+    expect(store.getSnapshot().agentProfiles?.canManage).toBe(true)
+    const events = FakeEventSource.instances.find(source => source.url.includes('/events?roomId='))!
+    expect(events).toBeDefined()
+    events.emit({ type: 'agent-profiles', roomId: room.id, canManage: false,
+      profiles: [{ ...agentProfile(room.id, 'Reviewer'), provider: '', model: '' }] })
+    expect(store.getSnapshot().agentProfiles).toMatchObject({ canManage: false, models: [] })
+    store.stop()
+  })
+  it('does not pretend to log out when the server rejects revocation, and permits retry', async () => {
+    const identity = { participantId: 'alice', displayName: 'Alice', avatarId: 'whale' as const }
+    const auth = { enabled: true, authenticated: true, canManageSettings: true }
+    const fetchMock = vi.fn<typeof fetch>()
+      .mockResolvedValueOnce(jsonResponse({ ...sessionResponse(identity, []), auth }))
+      .mockResolvedValueOnce(new Response('offline', { status: 503 }))
+      .mockResolvedValueOnce(new Response(null, { status: 204 }))
+    vi.stubGlobal('fetch', fetchMock)
+    vi.stubGlobal('EventSource', FakeEventSource)
+    const store = new ChatroomClientStore()
+    await store.start()
+    await store.logout()
+    expect(store.getSnapshot()).toMatchObject({ phase: 'ready', identity, auth, accountBusy: false })
+    expect(store.getSnapshot().accountError).toContain('尚未确认注销')
+    await store.logout()
+    expect(store.getSnapshot()).toMatchObject({ phase: 'auth-required', auth: { authenticated: false, canManageSettings: false }, accountBusy: false })
+    store.stop()
+  })
+
+  it('clears private settings and collaboration caches on logout', async () => {
+    const identity = { participantId: 'alice', displayName: 'Alice', avatarId: 'whale' as const }
+    vi.stubGlobal('fetch', vi.fn<typeof fetch>()
+      .mockResolvedValueOnce(jsonResponse({ ...sessionResponse(identity, []), auth: { enabled: true, authenticated: true } }))
+      .mockResolvedValueOnce(jsonResponse({ canManage: true, mainAgentPrompt: 'private-policy', models: [] }))
+      .mockResolvedValueOnce(jsonResponse({ enabled: true, status: 'authorized' }))
+      .mockResolvedValueOnce(new Response(null, { status: 204 })))
+    vi.stubGlobal('EventSource', FakeEventSource)
+    const store = new ChatroomClientStore()
+    await store.start()
+    await store.loadAutomation()
+    await store.loadWecomAuthorization()
+    expect(store.getSnapshot().automationOverview?.mainAgentPrompt).toBe('private-policy')
+    await store.logout()
+    expect(store.getSnapshot()).toMatchObject({ automationOverview: undefined, wecomAuthorization: undefined,
+      adminOverview: undefined, selectedMessages: [], threadMessages: [], searchResults: [], identity: undefined })
+    store.stop()
+  })
+  it('keeps authorized native children navigable without relabeling them Solo or trusting another session grant', async () => {
+    const identity = { participantId: 'alice-id', displayName: 'Alice', avatarId: 'whale' as const }
+    const session = { ...sessionResponse(identity, []), auth: { enabled: true, authenticated: true } }
+    const fetchMock = vi.fn<typeof fetch>()
+      .mockResolvedValueOnce(jsonResponse(session))
+      .mockResolvedValueOnce(jsonResponse({ ...session, nativeSessionAccess: { sessionId: 'child/1', allowed: true } }))
+      .mockResolvedValueOnce(jsonResponse({ ...session, nativeSessionAccess: { sessionId: 'child/1', allowed: true } }))
+      .mockResolvedValueOnce(jsonResponse({ ...session, nativeSessionAccess: { sessionId: 'foreign', allowed: false } }))
+    vi.stubGlobal('fetch', fetchMock)
+    vi.stubGlobal('EventSource', FakeEventSource)
+    const store = new ChatroomClientStore()
+    await store.start()
+    expect(await store.resolveNativeOwnership('child/1')).toBe(true)
+    expect(fetchMock.mock.calls[1]?.[0]).toContain('nativeSessionId=child%2F1')
+    expect(store.canPromptNativeSession('child/1')).toBe(true)
+    expect(store.getSnapshot().soloSessionIds).toEqual([])
+    expect(await store.resolveNativeOwnership('mismatched')).toBe(false)
+    expect(await store.resolveNativeOwnership('foreign')).toBe(false)
+    store.stop()
+  })
+
   it('refreshes native startup ownership without granting access to a foreign session', async () => {
     const identity = { participantId: 'alice-id', displayName: 'Alice', avatarId: 'whale' as const }
     const auth = { enabled: true, authenticated: true }
@@ -46,6 +183,131 @@ describe('ChatroomClientStore', () => {
     expect(await first).toBe(true)
     expect(store.canPromptNativeSession('native-created')).toBe(true)
     expect(store.canPromptNativeSession('foreign')).toBe(false)
+    store.stop()
+  })
+
+  it('ignores a previous account ownership response after logout and another login', async () => {
+    const alice = { participantId: 'alice-id', displayName: 'Alice', avatarId: 'whale' as const }
+    const bob = { participantId: 'bob-id', displayName: 'Bob', avatarId: 'panda' as const }
+    const auth = { enabled: true, authenticated: true }
+    const ownership = Promise.withResolvers<Response>()
+    const fetchMock = vi.fn<typeof fetch>()
+      .mockResolvedValueOnce(jsonResponse({ ...sessionResponse(alice, []), auth }))
+      .mockReturnValueOnce(ownership.promise)
+      .mockResolvedValueOnce(new Response(null, { status: 204 }))
+      .mockResolvedValueOnce(jsonResponse({ ...sessionResponse(bob, []), auth }))
+    vi.stubGlobal('fetch', fetchMock)
+    vi.stubGlobal('EventSource', FakeEventSource)
+    const store = new ChatroomClientStore()
+    await store.start()
+
+    const lookup = store.resolveNativeOwnership('alice-only')
+    await store.logout()
+    await expect(store.login('bob', 'correct horse battery')).resolves.toBe(true)
+    ownership.resolve(jsonResponse({ ...sessionResponse(alice, []), auth, soloSessionIds: ['alice-only'] }))
+
+    await expect(lookup).resolves.toBe(false)
+    expect(store.getSnapshot()).toMatchObject({ identity: bob, soloSessionIds: [] })
+    expect(store.canPromptNativeSession('alice-only')).toBe(false)
+    store.stop()
+  })
+
+  it('does not adopt a room created by a previous account after logout', async () => {
+    const alice = { participantId: 'alice-id', displayName: 'Alice', avatarId: 'whale' as const }
+    const bob = { participantId: 'bob-id', displayName: 'Bob', avatarId: 'panda' as const }
+    const auth = { enabled: true, authenticated: true }
+    const ensure = Promise.withResolvers<Response>()
+    const adopted = { id: 'alice-room', title: 'Alice 的群', aiDisplayName: 'DeepSeek', sessionId: 'native-session' }
+    const fetchMock = vi.fn<typeof fetch>()
+      .mockResolvedValueOnce(jsonResponse(sessionResponse(alice, [])))
+      .mockReturnValueOnce(ensure.promise)
+      .mockResolvedValueOnce(new Response(null, { status: 204 }))
+      .mockResolvedValueOnce(jsonResponse({ ...sessionResponse(bob, []), auth }))
+    vi.stubGlobal('fetch', fetchMock)
+    vi.stubGlobal('EventSource', FakeEventSource)
+    const store = new ChatroomClientStore()
+    await store.start()
+    store.registerNewSession(adopted.sessionId)
+    store.activateSession(adopted.sessionId, adopted.title)
+
+    const target = store.ensurePromptTarget(adopted.sessionId)
+    await store.logout()
+    await expect(store.login('bob', 'correct horse battery')).resolves.toBe(true)
+    ensure.resolve(jsonResponse({ room: adopted }))
+
+    await expect(target).resolves.toBeUndefined()
+    expect(store.getSnapshot()).toMatchObject({ identity: bob, rooms: [], room: undefined })
+    store.stop()
+  })
+
+  it('loads the active room roster while a previous room roster is still pending', async () => {
+    const identity = { participantId: 'alice-id', displayName: 'Alice', avatarId: 'whale' as const }
+    const firstRoom = roomInfo()
+    const secondRoom = { id: 'second', title: '项目二', aiDisplayName: 'DeepSeek', sessionId: 'chatroom-v1-second' }
+    const firstRoster = Promise.withResolvers<Response>()
+    const secondRoster = Promise.withResolvers<Response>()
+    const fetchMock = vi.fn<typeof fetch>()
+      .mockResolvedValueOnce(jsonResponse(sessionResponse(identity, [firstRoom, secondRoom])))
+      .mockReturnValueOnce(firstRoster.promise)
+      .mockReturnValueOnce(secondRoster.promise)
+    vi.stubGlobal('fetch', fetchMock)
+    vi.stubGlobal('EventSource', FakeEventSource)
+    const store = new ChatroomClientStore()
+    await store.start()
+
+    store.activateSession(firstRoom.sessionId)
+    const first = store.ensureAgentProfiles()
+    expect(store.getSnapshot().agentBusy).toBe(true)
+    store.activateSession(secondRoom.sessionId)
+    expect(store.getSnapshot().agentBusy).toBe(false)
+    const second = store.ensureAgentProfiles()
+    expect(fetchMock).toHaveBeenCalledTimes(3)
+    expect(store.getSnapshot().agentBusy).toBe(true)
+
+    firstRoster.resolve(jsonResponse({ canManage: false, models: [], profiles: [agentProfile(firstRoom.id, 'First')] }))
+    await first
+    expect(store.getSnapshot().agentBusy).toBe(true)
+
+    secondRoster.resolve(jsonResponse({ canManage: false, models: [], profiles: [agentProfile(secondRoom.id, 'Second')] }))
+    await second
+    expect(store.getSnapshot().agentBusy).toBe(false)
+    expect(store.getSnapshot().agentProfiles?.profiles.map(profile => profile.name)).toEqual(['Second'])
+    expect(store.getSnapshot()).toMatchObject({ agentProfilesRoomId: secondRoom.id })
+    expect(store.getSnapshot().agentProfiles?.profiles.map(profile => profile.name)).toEqual(['Second'])
+    store.stop()
+  })
+
+  it('loads and saves a settings-selected room without blocking the current room', async () => {
+    const identity = { participantId: 'alice-id', displayName: 'Alice', avatarId: 'whale' as const }
+    const managedRoom = roomInfo()
+    const currentRoom = { id: 'second', title: '项目二', aiDisplayName: 'DeepSeek', sessionId: 'chatroom-v1-second' }
+    const roster = Promise.withResolvers<Response>()
+    const save = Promise.withResolvers<Response>()
+    const fetchMock = vi.fn<typeof fetch>()
+      .mockResolvedValueOnce(jsonResponse(sessionResponse(identity, [managedRoom, currentRoom])))
+      .mockReturnValueOnce(roster.promise)
+      .mockReturnValueOnce(save.promise)
+    vi.stubGlobal('fetch', fetchMock)
+    vi.stubGlobal('EventSource', FakeEventSource)
+    const store = new ChatroomClientStore()
+    await store.start()
+    store.activateSession(currentRoom.sessionId)
+
+    const loading = store.loadAgentProfiles(managedRoom.id)
+    expect(store.getSnapshot()).toMatchObject({ room: currentRoom, agentProfilesRoomId: managedRoom.id, agentBusy: true })
+    roster.resolve(jsonResponse({ canManage: true, models: [], profiles: [agentProfile(managedRoom.id, 'Before')] }))
+    await loading
+    expect(store.getSnapshot()).toMatchObject({ agentProfilesRoomId: managedRoom.id, agentBusy: false })
+
+    const saving = store.saveAgentProfile({
+      profileId: `${managedRoom.id}-Before`, name: 'After', role: '审查员', provider: 'deepseek', model: 'chat', enabled: true,
+    }, managedRoom.id)
+    expect(store.getSnapshot().agentBusy).toBe(true)
+    save.resolve(jsonResponse({ canManage: true, models: [], profiles: [agentProfile(managedRoom.id, 'After')] }))
+
+    await expect(saving).resolves.toBe(true)
+    expect(store.getSnapshot()).toMatchObject({ room: currentRoom, agentProfilesRoomId: managedRoom.id, agentBusy: false })
+    expect(store.getSnapshot().agentProfiles?.profiles.map(profile => profile.name)).toEqual(['After'])
     store.stop()
   })
 
@@ -494,6 +756,28 @@ describe('ChatroomClientStore', () => {
     expect(store.getSnapshot().pendingMessages).toEqual([{ ...pending, status: 'queued' }])
   })
 
+  it('keeps room AI participant runtime state synchronized over the room event stream', async () => {
+    const identity = { participantId: 'alice-id', displayName: 'Alice', avatarId: 'whale' as const }
+    const room = roomInfo()
+    vi.stubGlobal('fetch', vi.fn<typeof fetch>().mockResolvedValue(jsonResponse(sessionResponse(identity, [room]))))
+    vi.stubGlobal('EventSource', FakeEventSource)
+    const store = new ChatroomClientStore()
+    await store.start()
+    store.activateSession(room.sessionId)
+    FakeEventSource.instances[1]?.emit({ type: 'snapshot', room, identity, online: 1, members: [], reactions: [], threadPreviews: [] })
+    FakeEventSource.instances[1]?.emit({
+      type: 'agent-profiles',
+      roomId: room.id,
+      profiles: [{
+        id: 'profile-1', roomId: room.id, name: 'Terra', role: '审查员', provider: 'deepseek', model: 'chat',
+        enabled: true, createdAt: 1, updatedAt: 1,
+        runtime: { status: 'running', updatedAt: 2 },
+      }],
+    })
+    expect(store.getSnapshot().agentProfiles?.profiles[0]?.runtime.status).toBe('running')
+    expect(store.getSnapshot().agentProfilesRoomId).toBe(room.id)
+  })
+
   it('keeps the directory avatar projection when the selected-room roster arrives', async () => {
     const identity = { participantId: 'alice-id', displayName: 'Alice', avatarId: 'whale' as const }
     const room = {
@@ -811,6 +1095,21 @@ describe('ChatroomClientStore', () => {
 
 function roomInfo() {
   return { id: 'lobby', title: 'AI 聊天室', aiDisplayName: 'DeepSeek', sessionId: 'chatroom-v1-lobby' }
+}
+
+function agentProfile(roomId: string, name: string) {
+  return {
+    id: `${roomId}-${name}`,
+    roomId,
+    name,
+    role: '审查员',
+    provider: 'deepseek',
+    model: 'chat',
+    enabled: true,
+    createdAt: 1,
+    updatedAt: 1,
+    runtime: { status: 'idle' as const, updatedAt: 1 },
+  }
 }
 
 function sessionResponse(identity: { participantId: string; displayName: string; avatarId: 'whale' | 'panda' } | null, rooms: ReturnType<typeof roomInfo>[]) {
