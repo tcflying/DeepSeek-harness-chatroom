@@ -3,7 +3,7 @@
   <p><strong>A multi-user collaboration layer for the native DeepSeek Harness Web UI.</strong></p>
   <p><a href="README.zh.md">简体中文</a> · English</p>
   <p>
-    <img alt="Version 1.4.4" src="https://img.shields.io/badge/version-1.4.4-4f6bff">
+    <img alt="Version 1.5.0-codex.rc1.3" src="https://img.shields.io/badge/version-1.5.0--codex.rc1.3-4f6bff">
     <img alt="Harness 0.1.2-rc.1" src="https://img.shields.io/badge/DeepSeek_Harness-0.1.2--rc.1-111827">
     <img alt="pnpm 10.33.4" src="https://img.shields.io/badge/pnpm-10.33.4-f69220">
     <img alt="MIT License" src="https://img.shields.io/badge/license-MIT-22c55e">
@@ -19,7 +19,7 @@ Add Group, Solo, and direct-message modes to the native [DeepSeek Harness](https
 
 ## Why this plugin
 
-This local `1.5.0-codex.rc1.1` adaptation is based on upstream 1.4.4 and pinned to official Harness `0.1.2-rc.1`; it is not an upstream release and does not modify DSH source. Shared deployments use a separate `DSH_HOME` and workspace to keep private Sessions and unrelated plugin APIs out of the shared service.
+This local `1.5.0-codex.rc1.3` adaptation is based on upstream 1.4.4 and pinned to official Harness `0.1.2-rc.1`; it is not an upstream release and does not modify DSH source. Shared deployments use a separate `DSH_HOME` and workspace to keep private Sessions and unrelated plugin APIs out of the shared service.
 
 | Native Harness, preserved | Collaboration, added | Identity, ready for deployment |
 | --- | --- | --- |
@@ -55,6 +55,28 @@ The plugin is out-of-tree and does **not** modify DeepSeek Harness. Initializati
 
 ## Core capabilities
 
+### Integrated plugin build
+
+The `1.5.0-codex.rc1.3` package integrates the `codex/chatroom-next-20260909` development work. Named AI mentions are durably accepted before shared-room activation and use each participant's native inbox; repeated mentions do not cancel one another. Cancelling or changing a participant rejects its late replies and failure notices; immediate retries wait for the previous activation and release to finish. Client requests are scoped to their account generation and selected management room, preventing stale responses and stuck settings controls.
+
+Settings distinguish room AI from human membership, keep long instructions collapsed, and report success only after a successful save. Responsive layout checks cover 320/360/390/768/1280px. Slow SSE connections use the native writable buffer with a backlog limit and drain deadline; native event-answer permissions are consumed once and removed when their logical stream ends. These are local regression guarantees, not production throughput or real-device/provider acceptance.
+
+### Candidate: sign-out and authorization boundaries
+
+Background tabs also keep their room and notification SSE streams closed when a late session response arrives; returning to the foreground reconnects them. AI roster reads time out after 15 seconds, release their busy controls, and offer retry. This bounds a stalled read without automatically repeating configuration writes.
+
+**Settings → Chatroom & accounts** now starts with the current account, permission guidance, and **Sign out**, even without an active room. Sign-out revokes only this browser's chatroom session, not the upstream enterprise SSO session. A failed request preserves the real signed-in state and offers retry. Successful sign-out and account acceptance clear plugin caches for administration, global policy, personal WeCom authorization, search, branch messages, and forwarding.
+
+| Authority | Scope |
+| --- | --- |
+| Platform super-admin | Accounts, login providers, global settings, room membership/AI management; not other users' private sessions |
+| Settings allowlist | Global settings only; no implicit account or room-management grant |
+| Legacy platform `admin` | No implicit extra grant; existing records remain compatible, but the UI no longer creates this ambiguous role |
+| Room owner / room admin | Members, AI configuration and automatic-reply policy in that room; only the owner assigns room admins |
+| Room member | Room chat, AI mentions, authorized sessions, and personal account; no management-policy writes |
+
+Members no longer see plugin global model/prompt management panels. The policy API returns empty restricted fields; non-managers retain AI names, short roles and status, but not detailed instructions, model routes or reasoning configuration, including live events. Room-admin demotion immediately updates connected clients. Native Harness may still display its own settings navigation; the server continues to deny deployment/filesystem calls to unauthorized accounts. This is not process isolation for untrusted users: use restricted presets and a minimal working directory.
+
 ### Shared rooms and human-first AI
 
 - The workspace sidebar groups activity into **Group / Solo / Direct**. Shared Rooms appear under Group, native one-person Agent Sessions under Solo, and every available platform account under Direct. Because a category merges every Workspace, the per-Workspace "show more sessions" buttons are expanded and replaced by one show-more control per category whose count matches the folder count.
@@ -67,7 +89,7 @@ The plugin is out-of-tree and does **not** modify DeepSeek Harness. Initializati
 - Shared Session rows retain the native sidebar while adding a roomier member-avatar collage. Native Session renames update the durable room title, so the name survives navigation and restarts.
 - Group, Solo, and Direct reuse the room composer layout and interaction model. Their transcript and composer use the full available conversation column instead of the native fixed-width cap.
 - The Session header shows the current identity, online count, and **Group management**.
-- **Room AI participants** go beyond the single main Agent: room managers add named AI members (name, role, provider/model/reasoning effort, enable switch) from the session header's **AI members** panel, and each member persists in the plugin's independent `chatroom_agents` storage unit, physically separate from the legacy `chatroom` domain. The native `@` mention menu lists every enabled member with its role and model annotation; mentioning a member routes the message only to that member, which runs on its own durable Session with its selected model; the answer re-enters the shared room stream under the member's own name, and one member's failure never blocks other members or the room. New-message toasts, title unread counts, and opt-in browser notifications work across rooms.
+- **Room AI participants** go beyond the single main Agent: room managers add named AI members with a short visible role, optional long model-facing instructions, an exact provider/model route, model-advertised reasoning effort, and an enable switch. Profiles persist in the plugin's independent `chatroom_agents` storage unit, physically separate from the legacy `chatroom` domain. The native `@` menu routes a mention only to the selected member, which runs on its own durable room+profile Session and re-enters the shared room stream under its own name. Runtime state (`queued`, `running`, `failed`, `cancelled`) is streamed live to room clients; members may cancel a running participant without deleting its profile or history. Activation and response waits are bounded, stale profile activations are discarded, and a failed or timed-out participant is released so the next mention can recover without blocking other members or the room. Public failure bubbles are deliberately generic; detailed provider failures stay in Host logs.
 
 ### Complete native Agent runtime
 
@@ -111,7 +133,10 @@ The plugin is out-of-tree and does **not** modify DeepSeek Harness. Initializati
 <details>
 <summary><strong>Recent releases</strong></summary>
 
-- **1.5.0-codex.rc1.1 (local compatibility build)** — Adds room AI participants: managers create per-room AI members with independent provider/model/reasoning routing and enable switches, persisted in a dedicated `chatroom_agents` storage unit. A name mention wakes only that member on its own durable Session and model, the reply re-enters the room stream under the member's own name, and per-member failures stay isolated from the rest of the room.
+- **1.5.0-codex.rc1.3 (local integration build)** — Integrates independent AI mention delivery, room/account-scoped request ownership, bounded roster loading and background SSE recovery, account logout and permission boundaries, and container-based phone/foldable settings and composer layouts. The Harness cohort and plugin storage boundaries are unchanged. See `docs/integration-rc1.3.md` for acceptance limits.
+
+- **1.5.0-codex.rc1.2 (local compatibility build)** — Hardens room AI participants with separate long role instructions, exact reasoning-capability selectors, live per-member queued/running/failed/cancelled state, member cancellation, bounded activation/response recovery, stale-activation cleanup, generic browser-safe failure text, and a compact scrollable narrow-screen Agent header.
+- **1.5.0-codex.rc1.1 (local compatibility build)** — Adds and hardens room AI participants: independent `chatroom_agents` persistence, short role plus optional long instructions, exact model-capability reasoning selectors, live per-member runtime state and cancellation, bounded activation/response recovery, stale-activation rejection, generic public failure text, and isolated room+profile Sessions whose named replies re-enter the shared stream without blocking peers.
 - **1.4.4-codex.rc1.4 (local compatibility build)** — Shows the main Agent and the real native child catalog directly in the room header, with continuation buttons, activity, errors and refresh. Children retain their separate native Sessions; this does not turn `@` Session references into peer-Agent dispatch or combine all child replies in the room feed.
 - **1.4.4-codex.rc1.3 (local compatibility build)** — Fixes blank navigation when opening a native child: the UI now asks the existing server lineage authority instead of treating every child as an unowned Solo.
 - **1.4.4-codex.rc1.2 (local compatibility build)** — Adds account-scoped native subagent catalog, continuation, and stop controls; foreign parent/child addresses remain denied.
@@ -298,7 +323,7 @@ The plugin polls active meeting cards every `wecomMeetingPollIntervalMs`. On the
 
 Authenticated clients can reuse the durable projection through `GET /plugins/deepseek-harness-chatroom/api/meetings/:id` and list completed summaries with `GET /plugins/deepseek-harness-chatroom/api/meetings/summaries`. Each record includes the public meeting id, source conversation kind/id, lifecycle and summary state, times, and summary text. Responses never expose the provider meeting ID, and the caller must belong to the source Group, branch parent Group, or Direct conversation.
 
-`authSecret` encrypts OIDC client secrets and hashes no passwords directly; keep it stable and outside Git. Local passwords use salted scrypt. The first password registration must present `authBootstrapToken` and becomes the initial super administrator. Later registrations follow the mutable policy in **System administration**. Login attempts are bounded in memory, disabling an account revokes all its sessions, and changing a password rotates the current session and revokes older ones. The authentication cookie is random, stored only by SHA-256 digest, `HttpOnly`, `SameSite=Strict`, root-scoped, and `Secure` whenever `authPublicOrigin` uses HTTPS.
+`authSecret` encrypts OIDC client secrets and hashes no passwords directly; keep it stable and outside Git. Local passwords use salted scrypt and accept 6–128 characters. The first password registration must present `authBootstrapToken` and becomes the initial super administrator. Later registrations follow the mutable policy in **System administration**. Login attempts are bounded in memory, disabling an account revokes all its sessions, and changing a password rotates the current session and revokes older ones. The authentication cookie is random, stored only by SHA-256 digest, `HttpOnly`, `SameSite=Strict`, root-scoped, and `Secure` whenever `authPublicOrigin` uses HTTPS.
 
 ### Enterprise OIDC and dsh-auth
 
@@ -365,6 +390,12 @@ The health endpoint is `/plugins/deepseek-harness-chatroom/api/health`; direct H
 corepack pnpm@10.33.4 install
 corepack pnpm@10.33.4 run check
 ```
+
+## Candidate phone and foldable layout
+
+The independent candidate includes a plugin-owned responsive layer. Settings forms use their actual container width: wide panes can show two card columns, while narrow panes stack fields. At 640 CSS pixels or below, only the native dialog displaying Chatroom settings gets horizontal settings navigation. Other native sections are unchanged. Phone/coarse-pointer controls have 44px touch targets, safe-area spacing and readable inputs. Short landscape views reserve more space for messages; compact composer actions retain accessible names.
+
+This is viewport/container adaptation, not hardware hinge detection. Chromium coverage includes 320–1440px widths, short landscape and unfold/refold draft retention. Real foldable hinges, software keyboards, Safari and the final deployed Host still need device/integration acceptance. No Harness source or database migration is involved. See [integration acceptance boundaries](docs/integration-rc1.3.md).
 
 ## License
 

@@ -146,6 +146,7 @@ export interface RoomAgentProfileRecord {
   readonly roomId: string
   readonly name: string
   readonly role: string
+  readonly instructions?: string
   readonly provider: string
   readonly model: string
   readonly reasoningEffort?: string
@@ -375,6 +376,7 @@ const roomAgentProfileSchema = z.object({
   roomId: z.string().min(1),
   name: z.string().min(1).max(80),
   role: z.string().min(1).max(120),
+  instructions: z.string().max(4_000).optional(),
   provider: z.string().min(1),
   model: z.string().min(1),
   reasoningEffort: z.string().min(1).optional(),

@@ -23,6 +23,7 @@ import { ChatroomEmojiPicker, ChatroomPendingFiles, ChatroomReplyPreview } from 
 
 export interface ChatroomAccountPanelProps {
   readonly room: ChatroomView
+  logout?(): Promise<void>
   closeAccount(): void
   changePassword(currentPassword: string, newPassword: string): Promise<boolean>
   closeAdmin(): void
@@ -39,12 +40,14 @@ export interface ChatroomAccountPanelProps {
     readonly profileId?: string
     readonly name: string
     readonly role: string
+    readonly instructions?: string
     readonly provider: string
     readonly model: string
     readonly reasoningEffort?: string
     readonly enabled: boolean
   }, roomId?: string): Promise<boolean>
   deleteAgentProfile?(profileId: string, roomId?: string): Promise<void>
+  cancelAgentProfile?(profileId: string, roomId?: string): Promise<void>
   loadAutomation?(): Promise<void>
   saveAutomation?(provider: string, model: string, meetingSummaryProvider: string, meetingSummaryModel: string, mainAgentPrompt: string, controllerPrompt: string): Promise<boolean>
   openDirect(peerId?: string): Promise<void>
@@ -92,24 +95,29 @@ type ChatroomSettingsSectionProps = PropsRuntime<'settings.section'> & InjectFac
 export function ChatroomSettingsSection(props: ChatroomSettingsSectionProps): JSX.Element {
   const room = props.useChatroom(snapshot => snapshot)
   const panelProps: ChatroomAccountPanelProps = { ...props, room }
-  const superAdmin = room.auth.account?.role === 'super-admin'
+  const superAdmin = room.auth.authenticated && room.auth.account?.role === 'super-admin'
+  const canManageSettings = room.auth.authenticated && (!room.auth.enabled || room.auth.canManageSettings === true)
   useEffect(() => {
     if (superAdmin) void props.openAdmin()
-  }, [superAdmin])
+  }, [superAdmin, room.auth.account?.participantId])
   useEffect(() => {
-    void props.loadAutomation?.()
     void props.loadWecomAuthorization?.()
     void props.loadManageableRooms?.()
-  }, [])
-  return <div className="dsh-chatroom-settings" data-testid="chatroom-settings">
+  }, [room.auth.account?.participantId])
+  useEffect(() => {
+    if (canManageSettings) void props.loadAutomation?.()
+  }, [canManageSettings, room.auth.account?.participantId])
+  return <div key={room.auth.account?.participantId ?? room.identity?.participantId ?? 'anonymous'} className="dsh-chatroom-settings" data-testid="chatroom-settings">
     <header className="dsh-chatroom-settings-header">
       <div><h2>群聊与账号</h2><p>{superAdmin ? '管理账号、平台成员与企业登录。' : '管理你的账号与协作服务。'}</p></div>
     </header>
-    <AgentMembersSettingsCard {...panelProps} />
-    <AutomationPanel {...panelProps} />
-    <PromptPanel {...panelProps} />
-    <WecomAccountPanel {...panelProps} />
     <AccountPanel {...panelProps} embedded />
+    {room.manageableRooms.length > 0 && <AgentMembersSettingsCard {...panelProps} />}
+    {canManageSettings && room.automationOverview?.canManage !== false && <>
+      <AutomationPanel {...panelProps} />
+      <PromptPanel {...panelProps} />
+    </>}
+    <WecomAccountPanel {...panelProps} />
     {superAdmin && <AdminPanel {...panelProps} embedded />}
   </div>
 }
@@ -193,12 +201,16 @@ function AgentMembersSettingsCard(props: ChatroomAccountPanelProps): JSX.Element
   const [editing, setEditing] = useState<ChatroomAgentProfile | undefined>()
   const [name, setName] = useState('')
   const [role, setRole] = useState('')
+  const [instructions, setInstructions] = useState('')
   const [modelSelection, setModelSelection] = useState('')
   const [effort, setEffort] = useState('')
   const [enabled, setEnabled] = useState(true)
+  const [saveState, setSaveState] = useState<'idle' | 'saving' | 'saved' | 'failed'>('idle')
   const canManage = view?.canManage ?? false
   const effectiveSelection = modelSelection !== '' ? modelSelection
     : models[0] === undefined ? '' : modelKey(models[0].provider, models[0].model)
+  const selectedModel = models.find(model => modelKey(model.provider, model.model) === effectiveSelection)
+  const reasoningEfforts = selectedModel?.reasoningEfforts ?? []
   useEffect(() => {
     if (activeRoomId !== undefined) void props.loadAgentProfiles?.(activeRoomId)
   }, [activeRoomId])
@@ -206,57 +218,84 @@ function AgentMembersSettingsCard(props: ChatroomAccountPanelProps): JSX.Element
     setEditing(undefined)
     setName('')
     setRole('')
+    setInstructions('')
     setModelSelection('')
     setEffort('')
     setEnabled(true)
+    setSaveState('idle')
   }
   const startEdit = (profile: ChatroomAgentProfile): void => {
     setEditing(profile)
     setName(profile.name)
     setRole(profile.role)
+    setInstructions(profile.instructions ?? '')
     setModelSelection(modelKey(profile.provider, profile.model))
     setEffort(profile.reasoningEffort ?? '')
     setEnabled(profile.enabled)
+    setSaveState('idle')
   }
   return <section className="dsh-chatroom-card" aria-label="AI 成员管理" data-testid="chatroom-settings-agents">
-    <header><div><h2>AI 成员</h2><p>为房间添加可 @ 的 AI 成员：每个成员使用自己的模型路由与独立持久会话。</p></div></header>
-    {rooms.length === 0 && <p>没有可管理的房间；需要群主、管理员或超级管理员身份。</p>}
+    <header><div><h2>AI 成员</h2><p>为房间添加可 @ 的 AI 成员；真人成员请在对应群聊的“群管理”中添加。</p></div></header>
+    {rooms.length === 0 && <p>没有可管理的房间；需要群主、管理员或超级管理员身份。每个 AI 成员使用独立的模型路由与持久会话。</p>}
     {rooms.length > 0 && <>
-      <label>房间<select
-        value={activeRoomId}
-        aria-label="选择房间"
-        disabled={props.room.agentBusy}
-        onChange={event => { setSelectedRoomId(event.target.value); reset() }}
-      >{rooms.map(room => <option key={room.id} value={room.id}>{room.title}</option>)}</select></label>
+      <label>房间<span className="dsh-chatroom-agents-room-picker">
+        <select
+          value={activeRoomId}
+          aria-label="选择房间"
+          disabled={props.room.agentBusy}
+          onChange={event => { setSelectedRoomId(event.target.value); reset() }}
+        >{rooms.map(room => <option key={room.id} value={room.id}>{room.title}</option>)}</select>
+        <button type="button" aria-label="刷新房间与成员" disabled={props.room.agentBusy}
+          onClick={() => { void props.loadManageableRooms?.(); void props.loadAgentProfiles?.(activeRoomId) }}>↻</button>
+      </span><small>其他端对成员的修改在这里刷新后可见。</small></label>
       {canManage && <form className="dsh-chatroom-agents-form" onSubmit={async event => {
         event.preventDefault()
         const model = models.find(item => modelKey(item.provider, item.model) === effectiveSelection)
         if (model === undefined || name.trim() === '' || role.trim() === '') return
-        if (await props.saveAgentProfile?.({
+        setSaveState('saving')
+        const saved = await props.saveAgentProfile?.({
           ...(editing === undefined ? {} : { profileId: editing.id }),
           name: name.trim(),
           role: role.trim(),
+          ...(instructions.trim() === '' ? {} : { instructions: instructions.trim() }),
           provider: model.provider,
           model: model.model,
-          ...(effort.trim() === '' ? {} : { reasoningEffort: effort.trim() }),
+          ...(effort === '' ? {} : { reasoningEffort: effort }),
           enabled,
-        }, activeRoomId)) reset()
+        }, activeRoomId)
+        if (saved) {
+          reset()
+          setSaveState('saved')
+        } else setSaveState('failed')
       }}>
         <label>名称<input value={name} maxLength={80} aria-label="AI 成员名称" onChange={event => { setName(event.target.value) }} /></label>
         <label>职责<input value={role} maxLength={120} aria-label="AI 成员职责" placeholder="例如：代码评审员" onChange={event => { setRole(event.target.value) }} /></label>
+        <details className="dsh-chatroom-settings-advanced">
+          <summary>高级配置（可选）</summary>
+          <label>角色指令<textarea value={instructions} maxLength={4000} aria-label="AI 成员角色指令" placeholder="详细职责、边界和输出要求" onChange={event => { setInstructions(event.target.value); setSaveState('idle') }} /></label>
+        </details>
         <label>模型<select
           value={effectiveSelection}
           disabled={props.room.agentBusy || models.length === 0}
           aria-label="AI 成员模型"
-          onChange={event => { setModelSelection(event.target.value) }}
+          onChange={event => {
+            const nextSelection = event.target.value
+            setModelSelection(nextSelection)
+            const nextModel = models.find(model => modelKey(model.provider, model.model) === nextSelection)
+            if (!(nextModel?.reasoningEfforts ?? []).includes(effort)) setEffort('')
+          }}
         >{models.map(model => <option key={modelKey(model.provider, model.model)} value={modelKey(model.provider, model.model)}>{model.label}</option>)}</select></label>
-        <label>推理强度<input value={effort} aria-label="AI 成员推理强度" placeholder="留空为默认，如 low / high" onChange={event => { setEffort(event.target.value) }} /></label>
+        <label>推理强度<select value={reasoningEfforts.includes(effort) ? effort : ''} aria-label="AI 成员推理强度" disabled={props.room.agentBusy || reasoningEfforts.length === 0} onChange={event => { setEffort(event.target.value) }}>
+          <option value="">{reasoningEfforts.length === 0 ? '该模型不支持' : '默认'}</option>
+          {reasoningEfforts.map(item => <option key={item} value={item}>{item}</option>)}
+        </select></label>
         <label className="dsh-chatroom-switch">
           <input type="checkbox" aria-label="启用 AI 成员" checked={enabled} onChange={event => { setEnabled(event.target.checked) }} />
           <span aria-hidden />
+          启用成员
         </label>
-        <button type="submit" disabled={props.room.agentBusy || name.trim() === '' || role.trim() === '' || effectiveSelection === ''}>
-          {editing === undefined ? '添加 AI 成员' : '保存修改'}
+        <button type="submit" disabled={props.room.agentBusy || saveState === 'saving' || name.trim() === '' || role.trim() === '' || effectiveSelection === ''}>
+          {saveState === 'saving' ? '保存中…' : editing === undefined ? '添加 AI 成员' : '保存修改'}
         </button>
         {editing !== undefined && <button type="button" onClick={reset}>取消编辑</button>}
       </form>}
@@ -264,37 +303,54 @@ function AgentMembersSettingsCard(props: ChatroomAccountPanelProps): JSX.Element
         {profiles.map(profile => (
           <div className="dsh-chatroom-member" key={profile.id}>
             <span className="dsh-chatroom-member-avatar">{profile.name.slice(0, 1)}</span>
-            <span><strong>{profile.name} <em>{profile.enabled ? '' : '已停用'}</em></strong><small>{profile.role} · {profile.provider} · {profile.model}{profile.reasoningEffort === undefined ? '' : ` · ${profile.reasoningEffort}`}</small></span>
-            {canManage && <span className="dsh-chatroom-agent-profile-actions">
-              <button type="button" disabled={props.room.agentBusy} onClick={() => { startEdit(profile) }}>编辑</button>
-              <button
-                type="button"
-                disabled={props.room.agentBusy}
-                onClick={() => { void props.saveAgentProfile?.({
-                  profileId: profile.id,
-                  name: profile.name,
-                  role: profile.role,
-                  provider: profile.provider,
-                  model: profile.model,
-                  ...(profile.reasoningEffort === undefined ? {} : { reasoningEffort: profile.reasoningEffort }),
-                  enabled: !profile.enabled,
-                }, activeRoomId) }}
-              >{profile.enabled ? '停用' : '启用'}</button>
-              <button type="button" disabled={props.room.agentBusy} onClick={() => { void props.deleteAgentProfile?.(profile.id, activeRoomId) }}>删除</button>
+            <span><strong>{profile.name} <em>{profile.enabled ? agentRuntimeLabel(profile.runtime.status) : '已停用'}</em></strong><small>{profile.role} · {profile.provider} · {profile.model}{profile.reasoningEffort === undefined ? '' : ` · ${profile.reasoningEffort}`}{profile.runtime.error === undefined ? '' : ` · ${profile.runtime.error}`}</small></span>
+            {(canManage || profile.runtime.status === 'running' || profile.runtime.status === 'queued') && <span className="dsh-chatroom-agent-profile-actions">
+              {(profile.runtime.status === 'running' || profile.runtime.status === 'queued') && <button type="button" disabled={props.room.agentBusy} onClick={() => { void props.cancelAgentProfile?.(profile.id, activeRoomId) }}>取消运行</button>}
+              {canManage && <>
+                <button type="button" disabled={props.room.agentBusy} onClick={() => { startEdit(profile) }}>编辑</button>
+                <button
+                  type="button"
+                  disabled={props.room.agentBusy}
+                  onClick={() => { void props.saveAgentProfile?.({
+                    profileId: profile.id,
+                    name: profile.name,
+                    role: profile.role,
+                    ...(profile.instructions === undefined ? {} : { instructions: profile.instructions }),
+                    provider: profile.provider,
+                    model: profile.model,
+                    ...(profile.reasoningEffort === undefined ? {} : { reasoningEffort: profile.reasoningEffort }),
+                    enabled: !profile.enabled,
+                  }, activeRoomId) }}
+                >{profile.enabled ? '停用' : '启用'}</button>
+                <button type="button" disabled={props.room.agentBusy} onClick={() => { void props.deleteAgentProfile?.(profile.id, activeRoomId) }}>删除</button>
+              </>}
             </span>}
           </div>
         ))}
         {profiles.length === 0 && view !== undefined && <p>{canManage ? '这个房间还没有 AI 成员，用上面的表单添加第一个。' : '本房间没有启用中的 AI 成员。'}</p>}
       </div>
+      {saveState === 'saved' && <p className="dsh-chatroom-panel-status" role="status">已保存。</p>}
+      {saveState === 'failed' && props.room.agentError === undefined && <div className="dsh-chatroom-error" role="alert">未保存，请检查后重试。</div>}
       {props.room.agentError !== undefined && <div className="dsh-chatroom-error" role="alert">{props.room.agentError}</div>}
     </>}
   </section>
+}
+
+function agentRuntimeLabel(status: ChatroomAgentProfile['runtime']['status']): string {
+  switch (status) {
+    case 'queued': return '排队中'
+    case 'running': return '运行中'
+    case 'failed': return '失败'
+    case 'cancelled': return '已取消'
+    case 'idle': return ''
+  }
 }
 
 function AutomationPanel(props: ChatroomAccountPanelProps): JSX.Element {
   const overview = props.room.automationOverview
   const [selection, setSelection] = useState('')
   const [summarySelection, setSummarySelection] = useState('')
+  const [saveState, setSaveState] = useState<'idle' | 'saving' | 'saved' | 'failed'>('idle')
   useEffect(() => {
     if (overview !== undefined) setSelection(modelKey(overview.provider, overview.model))
     if (overview !== undefined) setSummarySelection(modelKey(overview.meetingSummaryProvider, overview.meetingSummaryModel))
@@ -323,10 +379,12 @@ function AutomationPanel(props: ChatroomAccountPanelProps): JSX.Element {
       >{overview.models.map(model => <option key={`summary:${modelKey(model.provider, model.model)}`} value={modelKey(model.provider, model.model)}>{model.label}</option>)}</select></label>
       {overview.canManage && <button
         type="button"
-        disabled={props.room.automationBusy || selection === modelKey(overview.provider, overview.model)}
-        onClick={() => {
+        disabled={props.room.automationBusy || saveState === 'saving' || selection === modelKey(overview.provider, overview.model)}
+        onClick={async () => {
           const model = overview.models.find(item => modelKey(item.provider, item.model) === selection)
-          if (model !== undefined) void props.saveAutomation?.(
+          if (model === undefined) return
+          setSaveState('saving')
+          const saved = await props.saveAutomation?.(
             model.provider,
             model.model,
             overview.meetingSummaryProvider,
@@ -334,14 +392,17 @@ function AutomationPanel(props: ChatroomAccountPanelProps): JSX.Element {
             overview.mainAgentPrompt,
             overview.controllerPrompt,
           )
+          setSaveState(saved ? 'saved' : 'failed')
         }}
-      >保存判断模型</button>}
+      >{saveState === 'saving' ? '保存中…' : '保存判断模型'}</button>}
       {overview.canManage && <button
         type="button"
-        disabled={props.room.automationBusy || summarySelection === modelKey(overview.meetingSummaryProvider, overview.meetingSummaryModel)}
-        onClick={() => {
+        disabled={props.room.automationBusy || saveState === 'saving' || summarySelection === modelKey(overview.meetingSummaryProvider, overview.meetingSummaryModel)}
+        onClick={async () => {
           const model = overview.models.find(item => modelKey(item.provider, item.model) === summarySelection)
-          if (model !== undefined) void props.saveAutomation?.(
+          if (model === undefined) return
+          setSaveState('saving')
+          const saved = await props.saveAutomation?.(
             overview.provider,
             overview.model,
             model.provider,
@@ -349,10 +410,13 @@ function AutomationPanel(props: ChatroomAccountPanelProps): JSX.Element {
             overview.mainAgentPrompt,
             overview.controllerPrompt,
           )
+          setSaveState(saved ? 'saved' : 'failed')
         }}
-      >保存会议总结模型</button>}
+      >{saveState === 'saving' ? '保存中…' : '保存会议总结模型'}</button>}
       {!overview.canManage && <small>只有超级管理员可以修改判断模型。</small>}
     </div>
+    {saveState === 'saved' && <p className="dsh-chatroom-panel-status" role="status">已保存。</p>}
+    {saveState === 'failed' && props.room.automationError === undefined && <div className="dsh-chatroom-error" role="alert">未保存，请重试。</div>}
     {props.room.automationError !== undefined && <div className="dsh-chatroom-error" role="alert">{props.room.automationError}</div>}
   </section>
 }
@@ -361,6 +425,7 @@ function PromptPanel(props: ChatroomAccountPanelProps): JSX.Element | null {
   const overview = props.room.automationOverview
   const [mainAgentPrompt, setMainAgentPrompt] = useState('')
   const [controllerPrompt, setControllerPrompt] = useState('')
+  const [saveState, setSaveState] = useState<'idle' | 'saving' | 'saved' | 'failed'>('idle')
   useEffect(() => {
     if (overview === undefined) return
     setMainAgentPrompt(overview.mainAgentPrompt)
@@ -371,30 +436,39 @@ function PromptPanel(props: ChatroomAccountPanelProps): JSX.Element | null {
   return <section className="dsh-chatroom-card dsh-chatroom-prompt-card" aria-label="Agent 系统提示词设置">
     <header><div><h2>Agent 系统提示词</h2><p>仅影响聊天室主会话、分支会话和未 @AI 消息的唤起判断。</p></div></header>
     {overview.canManage
-      ? <div className="dsh-chatroom-prompt-form">
+      ? <details className="dsh-chatroom-settings-advanced">
+          <summary>编辑系统提示词</summary>
+          <div className="dsh-chatroom-prompt-form">
           <label>群聊主 Agent<textarea
             aria-label="群聊主 Agent 系统提示词"
             value={mainAgentPrompt}
-            onChange={event => { setMainAgentPrompt(event.target.value) }}
+            onChange={event => { setMainAgentPrompt(event.target.value); setSaveState('idle') }}
           /><small>作为聊天室主会话和分支 Agent 的系统提示词，下一轮对话生效。</small></label>
           <label>自动回复判断 Agent<textarea
             aria-label="自动回复判断 Agent 系统提示词"
             value={controllerPrompt}
-            onChange={event => { setControllerPrompt(event.target.value) }}
+            onChange={event => { setControllerPrompt(event.target.value); setSaveState('idle') }}
           /><small>用于判断未明确 @AI 的普通消息是否需要唤起；明确 @AI 始终跳过判断并直接唤起。</small></label>
           <button
             type="button"
-            disabled={props.room.automationBusy || unchanged}
-            onClick={() => { void props.saveAutomation?.(
+            disabled={props.room.automationBusy || saveState === 'saving' || unchanged}
+            onClick={async () => {
+              setSaveState('saving')
+              const saved = await props.saveAutomation?.(
               overview.provider,
               overview.model,
               overview.meetingSummaryProvider,
               overview.meetingSummaryModel,
               mainAgentPrompt,
               controllerPrompt,
-            ) }}
-          >保存系统提示词</button>
-        </div>
+              )
+              setSaveState(saved ? 'saved' : 'failed')
+            }}
+          >{saveState === 'saving' ? '保存中…' : '保存系统提示词'}</button>
+          {saveState === 'saved' && <p className="dsh-chatroom-panel-status" role="status">已保存。</p>}
+          {saveState === 'failed' && props.room.automationError === undefined && <div className="dsh-chatroom-error" role="alert">未保存，请重试。</div>}
+          </div>
+        </details>
       : <small>只有超级管理员可以修改系统提示词。</small>}
     {props.room.automationError !== undefined && <div className="dsh-chatroom-error" role="alert">{props.room.automationError}</div>}
   </section>
@@ -409,9 +483,27 @@ function AccountPanel(props: ChatroomAccountPanelProps & { embedded?: boolean })
   const [newPassword, setNewPassword] = useState('')
   const [confirmation, setConfirmation] = useState('')
   const account = props.room.auth.account
+  const [loggingOut, setLoggingOut] = useState(false)
+  const [logoutError, setLogoutError] = useState<string>()
+  const roleLabel = account?.role === 'super-admin' ? '平台超级管理员'
+    : account?.role === 'admin' ? '平台管理员（历史角色）' : '平台成员'
   const content = <section className="dsh-chatroom-card dsh-chatroom-account-card" aria-label="账号设置">
       <header><div><h2>账号设置</h2><p>{account === undefined ? '' : `${account.displayName} · @${account.username}`}</p></div>{!props.embedded && <button aria-label="关闭账号设置" type="button" onClick={props.closeAccount}>×</button>}</header>
-      {account?.passwordManaged !== false && <form className="dsh-chatroom-admin-form" onSubmit={async event => {
+      {props.room.auth.enabled && props.room.auth.authenticated && <>
+        <p><strong>{roleLabel}</strong>{props.room.auth.canManageSettings === true ? ' · 可管理全局配置' : ' · 无全局配置权限'}</p>
+        <p className="dsh-chatroom-panel-status">平台角色与群内角色分别授权。群主可分配群管理员；群管理员可添加真人、配置本群 AI 及自动回复；群成员可聊天、@AI 和管理自己的账号。</p>
+        {account?.role === 'super-admin' && <p className="dsh-chatroom-panel-status">你还可以管理平台账号、登录方式与所有群的 AI；这不代表可以读取其他人的私有会话。</p>}
+        {account?.role === 'admin' && <p className="dsh-chatroom-panel-status">历史 admin 角色不自动授予平台设置或群管理权限；以单独授予的配置权限和群内角色为准。</p>}
+        <button type="button" disabled={loggingOut || props.room.accountBusy || props.logout === undefined} onClick={async () => {
+          setLoggingOut(true); setLogoutError(undefined)
+          try { await props.logout?.() }
+          catch { setLogoutError('退出登录失败，请重试；当前登录尚未确认注销。') }
+          finally { setLoggingOut(false) }
+        }}>{loggingOut ? '正在退出…' : '退出登录'}</button>
+        <small>只退出当前浏览器的聊天室账号，不影响其他成员或服务器上的 AI。</small>
+        {logoutError !== undefined && <div className="dsh-chatroom-error" role="alert">{logoutError}</div>}
+      </>}
+      {account !== undefined && account.passwordManaged !== false && <form className="dsh-chatroom-admin-form" onSubmit={async event => {
         event.preventDefault()
         if (newPassword !== confirmation) return
         if (await props.changePassword(currentPassword, newPassword)) {
@@ -419,10 +511,10 @@ function AccountPanel(props: ChatroomAccountPanelProps & { embedded?: boolean })
         }
       }}>
         <label>当前密码<input type="password" autoComplete="current-password" value={currentPassword} onChange={event => { setCurrentPassword(event.target.value) }} /></label>
-        <label>新密码<input type="password" autoComplete="new-password" minLength={12} value={newPassword} onChange={event => { setNewPassword(event.target.value) }} /></label>
-        <label>确认新密码<input type="password" autoComplete="new-password" minLength={12} value={confirmation} onChange={event => { setConfirmation(event.target.value) }} /></label>
+        <label>新密码<input type="password" autoComplete="new-password" minLength={6} value={newPassword} onChange={event => { setNewPassword(event.target.value) }} /></label>
+        <label>确认新密码<input type="password" autoComplete="new-password" minLength={6} value={confirmation} onChange={event => { setConfirmation(event.target.value) }} /></label>
         {confirmation !== '' && confirmation !== newPassword && <div className="dsh-chatroom-error" role="alert">两次输入的新密码不一致。</div>}
-        <button type="submit" disabled={props.room.accountBusy || currentPassword === '' || newPassword.length < 12 || newPassword !== confirmation}>修改密码</button>
+        <button type="submit" disabled={props.room.accountBusy || currentPassword === '' || newPassword.length < 6 || newPassword.length > 128 || newPassword !== confirmation}>修改密码</button>
       </form>}
       {account?.passwordManaged === false && <p className="dsh-chatroom-panel-status">此账号由企业统一登录管理，密码请在企业登录系统中修改。</p>}
       {props.room.accountError !== undefined && <div className="dsh-chatroom-error" role="alert">{props.room.accountError}</div>}
@@ -462,9 +554,9 @@ function AdminPanel(props: ChatroomAccountPanelProps & { embedded?: boolean }): 
               }}>
                 <label>账号名<input placeholder="例如 alice" value={username} onChange={event => { setUsername(event.target.value) }} /></label>
                 <label>显示名称<input placeholder="成员看到的名称" value={displayName} onChange={event => { setDisplayName(event.target.value) }} /></label>
-                <label>初始密码<input placeholder="至少 12 位" type="password" value={password} onChange={event => { setPassword(event.target.value) }} /></label>
+                <label>初始密码<input placeholder="至少 6 位" type="password" minLength={6} value={password} onChange={event => { setPassword(event.target.value) }} /></label>
                 <label>角色<select value={role} onChange={event => { setRole(event.target.value as typeof role) }}>
-                  <option value="member">成员</option><option value="admin">管理员</option><option value="super-admin">超级管理员</option>
+                  <option value="member">平台成员</option><option value="super-admin">平台超级管理员</option>
                 </select></label>
                 <fieldset className="dsh-chatroom-settings-avatar-field"><legend>头像</legend>
                   <div className="dsh-chatroom-mini-avatars">{CHATROOM_AVATARS.map(avatar => <button
@@ -492,7 +584,7 @@ function AdminPanel(props: ChatroomAccountPanelProps & { embedded?: boolean }): 
                       value={user.role}
                       disabled={props.room.adminBusy}
                       onChange={event => { void props.adminUpdateUser(user.participantId, { role: event.target.value as typeof user.role }) }}
-                    ><option value="member">成员</option><option value="admin">管理员</option><option value="super-admin">超级管理员</option></select>
+                    ><option value="member">平台成员</option>{user.role === 'admin' && <option value="admin">历史管理员（无额外授权）</option>}<option value="super-admin">平台超级管理员</option></select>
                     <button type="button" disabled={props.room.adminBusy} onClick={() => { void props.adminUpdateUser(user.participantId, { status: user.status === 'active' ? 'disabled' : 'active' }) }}>
                       {user.status === 'active' ? '停用' : '启用'}
                     </button>

@@ -34,6 +34,8 @@ export interface ChatroomAuthProvider {
 export interface ChatroomAuthState {
     readonly enabled: boolean;
     readonly authenticated: boolean;
+    /** Server-computed deployment permission; distinct from room membership roles. */
+    readonly canManageSettings?: boolean;
     readonly authMode?: 'local' | 'hybrid' | 'dsh-auth-only';
     readonly account?: ChatroomAccount;
     readonly providers: readonly ChatroomAuthProvider[];
@@ -67,6 +69,8 @@ export interface ChatroomAutomationModel {
     readonly provider: string;
     readonly model: string;
     readonly label: string;
+    /** Exact reasoning-effort ids advertised by this model; empty means unsupported. */
+    readonly reasoningEfforts: readonly string[];
 }
 /** Global automatic-response policy and the model routes available to its administrator. */
 export interface ChatroomAutomationOverview {
@@ -85,17 +89,27 @@ export interface ChatroomAgentProfile {
     readonly roomId: string;
     readonly name: string;
     readonly role: string;
+    /** Longer model-facing role instructions, kept separate from the short UI role label. */
+    readonly instructions?: string;
     readonly provider: string;
     readonly model: string;
     readonly reasoningEffort?: string;
     readonly enabled: boolean;
     readonly createdAt: number;
     readonly updatedAt: number;
+    readonly runtime: ChatroomAgentRuntimeState;
+}
+export type ChatroomAgentRuntimeStatus = 'idle' | 'queued' | 'running' | 'failed' | 'cancelled';
+export interface ChatroomAgentRuntimeState {
+    readonly status: ChatroomAgentRuntimeStatus;
+    readonly updatedAt: number;
+    readonly error?: string;
 }
 /** Validated write input for one room-level AI participant. */
 export interface ChatroomAgentProfileInput {
     readonly name: string;
     readonly role: string;
+    readonly instructions?: string;
     readonly provider: string;
     readonly model: string;
     readonly reasoningEffort?: string;
@@ -554,6 +568,13 @@ export interface ChatroomRoomUpdatedEvent {
     readonly room: ChatroomInfo;
     readonly members: readonly ChatroomMember[];
 }
+/** Runtime/config replacement for room-level AI participants. */
+export interface ChatroomAgentProfilesEvent {
+    readonly canManage?: boolean;
+    readonly type: 'agent-profiles';
+    readonly roomId: string;
+    readonly profiles: readonly ChatroomAgentProfile[];
+}
 /** One global message alert delivered independently of active-room presence. */
 export interface ChatroomNotificationEvent {
     readonly type: 'notification';
@@ -566,7 +587,7 @@ export interface ChatroomDirectMessageEvent {
     readonly message: ChatroomDirectMessage;
 }
 export type ChatroomGlobalEvent = ChatroomNotificationEvent | ChatroomDirectMessageEvent;
-export type ChatroomServerEvent = ChatroomSnapshotEvent | ChatroomPresenceEvent | ChatroomPendingMessagesEvent | ChatroomThreadMessageEvent | ChatroomReactionEvent | ChatroomRecallEvent | ChatroomRoomUpdatedEvent;
+export type ChatroomServerEvent = ChatroomSnapshotEvent | ChatroomPresenceEvent | ChatroomPendingMessagesEvent | ChatroomThreadMessageEvent | ChatroomReactionEvent | ChatroomRecallEvent | ChatroomAgentProfilesEvent | ChatroomRoomUpdatedEvent;
 /** Browser-visible error envelope. */
 export interface ChatroomErrorResponse {
     readonly error: string;

@@ -94,9 +94,12 @@ export class NativeGateway {
       // $events/result is a native carrier message, not a reflected service call.
       if (endpoint === '$events/result') {
         const result = isRecord(args) ? args : body.payload
-        const owned = this.answerable.get(String(result.clientId) + ':' + String(result.eventId))
+        const key = String(result.clientId) + ':' + String(result.eventId)
+        const owned = this.answerable.get(key)
         if (owned?.participantId !== identity.participantId) throw new CarrierError(403, 'No authorized event delivery')
         await this.requireSession(owned.sessionId, identity)
+        // Recheck after authorization yields; one delivery permits one answer.
+        if (this.answerable.get(key) !== owned || !this.answerable.delete(key)) throw new CarrierError(403, 'No authorized event delivery')
       } else {
         if (!isRecord(args)) throw new CarrierError(400, 'Invalid Remote arguments')
         const input = isRecord(args.request) ? args.request : args
@@ -240,7 +243,6 @@ export class NativeGateway {
       this.assertOrigin(fetchRequest)
       await this.identity(fetchRequest)
       if (this.stopped || socket.destroyed) { socket.destroy(); return }
-      let clientId: string | undefined
       const mux = new this.transport.Mux(async (endpoint, payload, signal) => {
         const identity = await this.identity(fetchRequest)
         if (this.config.authEnabled) {
@@ -255,14 +257,20 @@ export class NativeGateway {
         const source = await this.transport.gateway.wireStream.open(endpoint, payload, signal)
         const self = this
         return (async function* () {
-          for await (const frame of source) {
-            signal.throwIfAborted()
-            const current = await self.identity(fetchRequest).catch(error => { socket.destroy(); throw error })
-            if (endpoint === '$events' && isRecord(frame) && frame.type === 'ready' && typeof frame.clientId === 'string') clientId = frame.clientId
-            if (!self.config.authEnabled || current === undefined) { yield frame; continue }
-            if (endpoint === 'session/follow' && isRecord(payload) && isRecord(payload.args)) await self.sessionArguments(payload.args, current)
-            const filtered = await self.filterFrame(endpoint, frame, current, clientId)
-            if (filtered !== undefined) yield filtered
+          let clientId: string | undefined
+          try {
+            for await (const frame of source) {
+              signal.throwIfAborted()
+              const current = await self.identity(fetchRequest).catch(error => { socket.destroy(); throw error })
+              if (endpoint === '$events' && isRecord(frame) && frame.type === 'ready' && typeof frame.clientId === 'string') clientId = frame.clientId
+              if (!self.config.authEnabled || current === undefined) { yield frame; continue }
+              if (endpoint === 'session/follow' && isRecord(payload) && isRecord(payload.args)) await self.sessionArguments(payload.args, current)
+              const filtered = await self.filterFrame(endpoint, frame, current, clientId)
+              if (filtered !== undefined) yield filtered
+            }
+          } finally {
+            // Logical event streams can restart without closing the socket.
+            if (clientId !== undefined) for (const key of self.answerable.keys()) if (key.startsWith(clientId + ':')) self.answerable.delete(key)
           }
         })()
       }, this.transport.gateway.wireStream.failure, 2_000)
@@ -272,7 +280,6 @@ export class NativeGateway {
       socket.once('close', () => {
         clearInterval(heartbeat)
         this.muxes.delete(socket)
-        if (clientId !== undefined) for (const key of this.answerable.keys()) if (key.startsWith(clientId + ':')) this.answerable.delete(key)
         void mux.close()
       })
       mux.handleUpgrade(request, socket, head)

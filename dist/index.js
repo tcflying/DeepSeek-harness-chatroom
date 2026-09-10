@@ -168,7 +168,7 @@ function fallbackAvatarId(seed) {
 var SCRYPT_N = 32768;
 var SCRYPT_R = 8;
 var SCRYPT_P = 1;
-var PASSWORD_MIN_POINTS = 12;
+var PASSWORD_MIN_POINTS = 6;
 var PASSWORD_MAX_POINTS = 128;
 var PASSWORD_MAX_BYTES = 1024;
 var USERNAME_MAX_POINTS = 64;
@@ -305,6 +305,7 @@ var ChatroomAuth = class {
     return {
       enabled,
       authenticated: !enabled || account !== void 0,
+      canManageSettings: !enabled || account?.status === "active" && (account.role === "super-admin" || this.config.settingsAdminParticipantIds.includes(account.participantId)),
       authMode: this.config.authMode ?? "local",
       ...account === void 0 ? {} : { account },
       providers,
@@ -312,6 +313,11 @@ var ChatroomAuth = class {
       allowSelfRegistration,
       bootstrapRequired: enabled && this.config.authMode !== "dsh-auth-only" && this.accounts.size === 0
     };
+  }
+  /** Live authority lookup for filtering room events after account demotion. */
+  isSuperAdmin(participantId) {
+    const account = this.accounts.get(participantId);
+    return account?.status === "active" && account.role === "super-admin";
   }
   /** Enabled external sign-in choices shown on the login form. */
   providers() {
@@ -964,7 +970,7 @@ function normalizeScopes(value) {
 function assertPassword(password) {
   const points = Array.from(password).length;
   if (points < PASSWORD_MIN_POINTS || points > PASSWORD_MAX_POINTS || Buffer.byteLength(password, "utf8") > PASSWORD_MAX_BYTES) {
-    throw new ChatroomAuthError("\u5BC6\u7801\u9700\u8981 12\u2013128 \u4E2A\u5B57\u7B26\uFF0C\u4E14\u4E0D\u80FD\u8D85\u8FC7 1024 \u5B57\u8282\u3002");
+    throw new ChatroomAuthError("\u5BC6\u7801\u9700\u8981 6\u2013128 \u4E2A\u5B57\u7B26\uFF0C\u4E14\u4E0D\u80FD\u8D85\u8FC7 1024 \u5B57\u8282\u3002");
   }
 }
 async function hashPassword(password) {
@@ -1091,7 +1097,7 @@ form{display:grid;gap:14px}label{display:grid;gap:7px;font-size:14px;font-weight
   ${registration ? `<div class="tabs" role="tablist"><button type="button" data-mode="login" role="tab">\u767B\u5F55</button><button type="button" data-mode="register" role="tab">${state.bootstrapRequired ? "\u521D\u59CB\u5316" : "\u6CE8\u518C"}</button></div>` : ""}
   <form id="auth-form">
     <label>\u8D26\u53F7<input name="username" autocomplete="username" minlength="3" maxlength="64" required autofocus></label>
-    <label>\u5BC6\u7801<input name="password" type="password" autocomplete="current-password" minlength="12" maxlength="128" required></label>
+    <label>\u5BC6\u7801<input name="password" type="password" autocomplete="current-password" minlength="6" maxlength="128" required></label>
     <div data-register hidden><label>\u663E\u793A\u540D\u79F0<input name="displayName" maxlength="80"></label></div>
     ${state.bootstrapRequired ? '<div data-register hidden><label>\u8D85\u7EA7\u7BA1\u7406\u5458\u521D\u59CB\u5316\u53E3\u4EE4<input name="bootstrapToken" type="password" autocomplete="off"></label></div><div class="bootstrap" data-register hidden>\u521D\u59CB\u5316\u53E3\u4EE4\u53EA\u7528\u4E8E\u521B\u5EFA\u7B2C\u4E00\u4F4D\u8D85\u7EA7\u7BA1\u7406\u5458\uFF0C\u521B\u5EFA\u6210\u529F\u540E\u4E0D\u4F1A\u5B58\u5165\u6D4F\u89C8\u5668\u3002</div>' : ""}
     <button class="primary" type="submit">\u7EE7\u7EED</button>
@@ -1846,6 +1852,7 @@ var roomAgentProfileSchema = z2.object({
   roomId: z2.string().min(1),
   name: z2.string().min(1).max(80),
   role: z2.string().min(1).max(120),
+  instructions: z2.string().max(4e3).optional(),
   provider: z2.string().min(1),
   model: z2.string().min(1),
   reasoningEffort: z2.string().min(1).optional(),
@@ -2873,6 +2880,11 @@ function parseObject(value) {
 // src/room.ts
 var ChatroomInputError = class extends Error {
 };
+var ROOM_AGENT_ACTIVATION_TIMEOUT_MS = 3e4;
+var ROOM_AGENT_RESPONSE_TIMEOUT_MS = 18e4;
+var ROOM_AGENT_INSTRUCTIONS_MAX_CHARS = 4e3;
+var SSE_DRAIN_TIMEOUT_MS = 15e3;
+var SSE_MAX_BUFFER_BYTES = 1048576;
 var ChatroomRuntime = class {
   constructor(ctx, config) {
     this.ctx = ctx;
@@ -2945,16 +2957,26 @@ var ChatroomRuntime = class {
   /** Global automatic-response settings and the available controller-model catalog. */
   async automationOverview(canManage) {
     const settings = this.resolvedAutomationSettings();
-    if (!canManage) return { canManage: false, ...settings, models: [] };
+    if (!canManage) return {
+      canManage: false,
+      provider: "",
+      model: "",
+      meetingSummaryProvider: "",
+      meetingSummaryModel: "",
+      mainAgentPrompt: "",
+      controllerPrompt: "",
+      models: []
+    };
     const models = await this.modelCatalog("automatic-response");
     if (!models.some((model) => model.provider === settings.provider && model.model === settings.model)) {
-      models.unshift({ provider: settings.provider, model: settings.model, label: `${settings.provider} \xB7 ${settings.model}` });
+      models.unshift({ provider: settings.provider, model: settings.model, label: `${settings.provider} \xB7 ${settings.model}`, reasoningEfforts: [] });
     }
     if (!models.some((model) => model.provider === settings.meetingSummaryProvider && model.model === settings.meetingSummaryModel)) {
       models.unshift({
         provider: settings.meetingSummaryProvider,
         model: settings.meetingSummaryModel,
-        label: `${settings.meetingSummaryProvider} \xB7 ${settings.meetingSummaryModel}`
+        label: `${settings.meetingSummaryProvider} \xB7 ${settings.meetingSummaryModel}`,
+        reasoningEfforts: []
       });
     }
     return { canManage: true, ...settings, models };
@@ -2974,7 +2996,7 @@ var ChatroomRuntime = class {
     const state = this.requireState(roomId);
     if (!("role" in identity && identity.role === "super-admin")) this.assertRoomAccess(roomId, identity);
     const canManage = this.canManageRoomAgents(state.record, identity);
-    const profiles = this.roomAgentProfilesFor(roomId);
+    const profiles = this.roomAgentProfilesFor(roomId).map((profile) => this.projectRoomAgentProfile(state, profile, canManage));
     if (!canManage) return { canManage: false, profiles, models: [] };
     return { canManage: true, profiles, models: await this.modelCatalog("room AI participant") };
   }
@@ -2993,6 +3015,8 @@ var ChatroomRuntime = class {
       updatedAt: now
     };
     await this.requireRoomAgentProfiles().put(record.id, record);
+    this.setRoomAgentRuntime(state, record.id, { status: "idle", updatedAt: now });
+    this.broadcastRoomAgentProfiles(state);
     return record;
   }
   /** Replace one room AI participant; changing model routing releases the live agent for re-creation. */
@@ -3012,13 +3036,23 @@ var ChatroomRuntime = class {
       updatedAt: Date.now()
     };
     await table.put(record.id, record);
-    const routingChanged = existing.provider !== record.provider || existing.model !== record.model || existing.reasoningEffort !== record.reasoningEffort;
-    if (routingChanged) {
-      const binding = state.agentBindings.get(profileId);
+    const runtimeConfigurationChanged = existing.name !== record.name || existing.role !== record.role || existing.instructions !== record.instructions || existing.provider !== record.provider || existing.model !== record.model || existing.reasoningEffort !== record.reasoningEffort || existing.enabled !== record.enabled;
+    let previous;
+    let previousInputIds;
+    if (runtimeConfigurationChanged) {
+      previousInputIds = new Set([...this.requireInputs().entries()].map(([id]) => id));
+      this.bumpRoomAgentExecutionGeneration(state, profileId);
+      previous = state.agentBindings.get(profileId);
       state.agentBindings.delete(profileId);
-      state.agentActivations.delete(profileId);
-      await binding?.release();
+      previous?.agent.cancel({ kind: "user" });
+      if (previous !== void 0) await this.retireRoomAgent(state, profileId, previous);
     }
+    this.setRoomAgentRuntime(state, profileId, {
+      status: record.enabled ? "idle" : "cancelled",
+      updatedAt: Date.now()
+    });
+    this.broadcastRoomAgentProfiles(state);
+    if (runtimeConfigurationChanged && record.enabled) this.resumeRoomAgentInputs(state, record, previous, previousInputIds);
     return record;
   }
   /** Remove one room AI participant and release its live agent; its durable Session history is left untouched. */
@@ -3030,10 +3064,32 @@ var ChatroomRuntime = class {
     const existing = table.get(profileId);
     if (existing === void 0 || existing.roomId !== roomId) return;
     await table.delete(profileId);
+    this.bumpRoomAgentExecutionGeneration(state, profileId);
     const binding = state.agentBindings.get(profileId);
     state.agentBindings.delete(profileId);
-    state.agentActivations.delete(profileId);
-    await binding?.release();
+    state.agentRuntime.delete(profileId);
+    binding?.agent.cancel({ kind: "user" });
+    if (binding !== void 0) await this.retireRoomAgent(state, profileId, binding);
+    this.broadcastRoomAgentProfiles(state);
+  }
+  /** Cancel one running room AI participant without changing its durable profile or Session history. */
+  async cancelRoomAgent(roomId, profileId, identity) {
+    this.assertReady();
+    const state = this.requireState(roomId);
+    this.assertRoomAccess(roomId, identity);
+    const profile = this.requireRoomAgentProfiles().get(profileId);
+    if (profile === void 0 || profile.roomId !== roomId) throw new ChatroomInputError("\u8BE5 AI \u6210\u5458\u4E0D\u5B58\u5728\u3002");
+    this.setRoomAgentRuntime(state, profileId, { status: "cancelled", updatedAt: Date.now() });
+    this.bumpRoomAgentExecutionGeneration(state, profileId);
+    this.broadcastRoomAgentProfiles(state);
+    const binding = state.agentBindings.get(profileId);
+    const discarded = this.discardRoomAgentInputs(state.record.id, profileId);
+    if (binding !== void 0) {
+      state.agentBindings.delete(profileId);
+      binding.agent.cancel({ kind: "user" });
+      await this.retireRoomAgent(state, profileId, binding).catch(() => void 0);
+    }
+    await discarded;
   }
   async validateRoomAgentProfile(state, input, existing) {
     const name2 = normalizeModelRoute(input.name, "AI \u6210\u5458\u540D\u79F0").trim();
@@ -3046,16 +3102,24 @@ var ChatroomRuntime = class {
     const role = normalizeModelRoute(input.role, "AI \u6210\u5458\u804C\u8D23").trim();
     if (role === "") throw new ChatroomInputError("\u8BF7\u586B\u5199 AI \u6210\u5458\u804C\u8D23\u3002");
     if (role.length > 120) throw new ChatroomInputError("AI \u6210\u5458\u804C\u8D23\u63CF\u8FF0\u8FC7\u957F\u3002");
+    const instructions = normalizeSystemPrompt(
+      input.instructions ?? "",
+      "AI \u6210\u5458\u89D2\u8272\u6307\u4EE4",
+      Math.min(ROOM_AGENT_INSTRUCTIONS_MAX_CHARS, this.config.maxMessageTextChars)
+    );
     const provider = normalizeModelRoute(input.provider, "\u6A21\u578B\u63D0\u4F9B\u65B9");
     const model = normalizeModelRoute(input.model, "\u6A21\u578B");
     const modelInfo = await this.ctx.llm.resolveModelInfo(provider, model);
     const requestedEffort = input.reasoningEffort?.trim();
-    if (requestedEffort !== void 0 && requestedEffort !== "" && modelInfo.reasoning !== void 0 && !modelInfo.reasoning.efforts.some((effort) => String(effort.id) === requestedEffort)) {
-      throw new ChatroomInputError(`\u6A21\u578B ${JSON.stringify(model)} \u4E0D\u652F\u6301\u63A8\u7406\u5F3A\u5EA6 ${JSON.stringify(requestedEffort)}\u3002`);
+    if (requestedEffort !== void 0 && requestedEffort !== "") {
+      if (modelInfo.reasoning === void 0 || !modelInfo.reasoning.efforts.some((effort) => String(effort.id) === requestedEffort)) {
+        throw new ChatroomInputError(`\u6A21\u578B ${JSON.stringify(model)} \u4E0D\u652F\u6301\u63A8\u7406\u5F3A\u5EA6 ${JSON.stringify(requestedEffort)}\u3002`);
+      }
     }
     return {
       name: name2,
       role,
+      ...instructions === "" ? {} : { instructions },
       provider,
       model,
       ...requestedEffort === void 0 || requestedEffort === "" ? {} : { reasoningEffort: requestedEffort },
@@ -3065,11 +3129,22 @@ var ChatroomRuntime = class {
   async modelCatalog(logLabel) {
     return (await Promise.all(this.ctx.llm.listProviders().map(async (provider) => {
       try {
-        return (await this.ctx.llm.listModels(provider.id)).map((model) => ({
-          provider: provider.id,
-          model: model.id,
-          label: `${provider.name} \xB7 ${model.name}`
+        const models = await this.ctx.llm.listModels(provider.id);
+        const resolved = await Promise.all(models.map(async (model) => {
+          try {
+            const info = await this.ctx.llm.resolveModelInfo(provider.id, model.id);
+            return {
+              provider: provider.id,
+              model: model.id,
+              label: `${provider.name} \xB7 ${model.name}`,
+              reasoningEfforts: info.reasoning?.efforts.map((effort) => String(effort.id)) ?? []
+            };
+          } catch (error) {
+            this.log.warn("Unable to resolve %s model %s/%s: %s", logLabel, provider.id, model.id, String(error));
+            return void 0;
+          }
         }));
+        return resolved.filter((model) => model !== void 0);
       } catch (error) {
         this.log.warn("Unable to list %s models for %s: %s", logLabel, provider.id, String(error));
         return [];
@@ -3288,10 +3363,16 @@ var ChatroomRuntime = class {
     for (const dispose of this.chatroomAgentContexts.values()) dispose();
     this.chatroomAgentContexts.clear();
     for (const state of this.states.values()) {
-      for (const client of state.clients) client.response.end();
+      for (const client of state.clients) {
+        clearSseDrain(client);
+        client.response.end();
+      }
       state.clients.clear();
     }
-    for (const client of this.notificationClients) client.response.end();
+    for (const client of this.notificationClients) {
+      clearSseDrain(client);
+      client.response.end();
+    }
     this.notificationClients.clear();
     await Promise.allSettled(this.inputCommits.values());
     await Promise.allSettled(this.roomTitleWrites.values());
@@ -3307,6 +3388,8 @@ var ChatroomRuntime = class {
       state.binding = void 0;
       await Promise.allSettled([...state.agentBindings.values()].map((binding) => binding.release()));
       state.agentBindings.clear();
+      await Promise.allSettled(state.agentRetirements.values());
+      state.agentRetirements.clear();
       state.agentActivations.clear();
     }));
     this.states.clear();
@@ -3809,6 +3892,7 @@ var ChatroomRuntime = class {
     state.record = record;
     const members = this.roomMembers(state);
     this.broadcast(state, { type: "room-updated", room: this.projectRoom(state), members });
+    this.broadcastRoomAgentProfiles(state);
     return members;
   }
   /** Add active platform accounts to a room as ordinary members. */
@@ -3851,6 +3935,10 @@ var ChatroomRuntime = class {
     const state = this.requireState(roomId);
     this.assertRoomAccess(roomId, identity);
     await this.assertPromptReferences(identity, content);
+    const durable = await this.durableContent(roomId, identity, identifyPrompt(content, identity, reply));
+    const mentionedProfiles = this.enabledRoomAgentProfiles(roomId).filter((profile) => mentionsName(content, profile.name));
+    const profileMentions = await this.acceptRoomAgentMentions(state, mentionedProfiles, identity, durable, requestId);
+    if (profileMentions.length > 0) this.dispatchRoomAgentMentions(state, profileMentions);
     const task = state.admission.then(async () => {
       const binding = await this.ensureRoom(roomId);
       const aiTriggered = mentionsAi(content, state.record.aiDisplayName) || state.record.autoTriggerEnabled === true && addressesAi(content, state.record.aiDisplayName);
@@ -3861,7 +3949,6 @@ var ChatroomRuntime = class {
           throw new ChatroomInputError(`\u6A21\u578B ${JSON.stringify(modelId)} \u4E0D\u652F\u6301\u56FE\u7247\u8F93\u5165\u3002`);
         }
       }
-      const durable = await this.durableContent(roomId, identity, identifyPrompt(content, identity, reply));
       const message = createUserMessage3({ content: durable, source: { kind: "user", chatroomParticipantId: identity.participantId, ...requestId === void 0 ? {} : { rpcId: requestId } } });
       await this.persistInput(state, binding, identity, message, aiTriggered ? "respond" : state.record.autoTriggerEnabled === true ? "decide" : "passive");
       const pending = binding.agent.status === "running" && mode === "queue" && (aiTriggered || state.record.autoTriggerEnabled === true) ? this.publishPendingMessage(state, identity, message, aiTriggered ? "queued" : "deciding") : void 0;
@@ -3880,8 +3967,6 @@ var ChatroomRuntime = class {
         binding.agent.followup(message);
       }
       if (aiTriggered) await this.commitInput(binding.agent.session, String(message.id));
-      const mentionedProfiles = this.enabledRoomAgentProfiles(roomId).filter((profile) => mentionsName(content, profile.name));
-      if (mentionedProfiles.length > 0) this.dispatchRoomAgentMentions(state, mentionedProfiles, identity, durable, requestId);
       if (!aiTriggered && state.record.autoTriggerEnabled === true) {
         this.scheduleAutomaticResponse(
           state,
@@ -3978,12 +4063,12 @@ var ChatroomRuntime = class {
     });
     return this.projectRoom(state, identity.participantId);
   }
-  /** Enable or disable model-controlled automatic AI responses as a room member. */
+  /** Enable or disable model-controlled automatic AI responses as a room manager. */
   async setRoomAutoTrigger(roomId, enabled, identity) {
     this.assertReady();
     const state = this.requireState(roomId);
     const task = state.admission.then(async () => {
-      this.assertRoomMember(roomId, identity.participantId);
+      this.assertRoomAgentAccess(roomId, identity);
       const record = await this.requireRoomRecords().update(roomId, (current) => ({
         ...current,
         autoTriggerEnabled: enabled,
@@ -4198,8 +4283,6 @@ var ChatroomRuntime = class {
     const state = this.requireState(roomId);
     this.assertRoomAccess(roomId, identity);
     if (state.binding === void 0) throw new Error(`chatroom room ${JSON.stringify(roomId)} is not active`);
-    const client = { participantId: identity.participantId, response };
-    state.clients.add(client);
     const snapshot = {
       type: "snapshot",
       room: this.projectRoom(state, identity.participantId),
@@ -4211,23 +4294,27 @@ var ChatroomRuntime = class {
       threadPreviews: this.threadPreviewsForRoom(roomId),
       pendingMessages: this.pendingMessagesForRoom(state)
     };
-    writeSse(response, snapshot);
+    const client = { participantId: identity.participantId, response, drainTimer: void 0, snapshotAllowance: 0 };
+    state.clients.add(client);
+    if (!writeSse(client, snapshot, () => removeSseClient(state.clients, client))) {
+      return () => void 0;
+    }
     this.broadcastPresence(state);
     let disposed = false;
     return () => {
       if (disposed) return;
       disposed = true;
-      state.clients.delete(client);
+      removeSseClient(state.clients, client);
       if (!this.stopping) this.broadcastPresence(state);
     };
   }
   /** Attach one identity to the global message-notification stream. */
   subscribeNotifications(identity, response) {
     this.assertReady();
-    const client = { participantId: identity.participantId, response };
+    const client = { participantId: identity.participantId, response, drainTimer: void 0, snapshotAllowance: 0 };
     this.notificationClients.add(client);
     return () => {
-      this.notificationClients.delete(client);
+      removeSseClient(this.notificationClients, client);
     };
   }
   /** List active peers and private conversations visible only to the requesting account. */
@@ -4388,7 +4475,7 @@ var ChatroomRuntime = class {
     for (const client of [...this.notificationClients]) {
       if (!conversation.participantIds.includes(client.participantId)) continue;
       const projected = client.participantId === senderId ? event : { ...event, conversation: this.publicDirectConversation(conversation, client.participantId) };
-      if (!writeNotificationSse(client.response, projected)) this.notificationClients.delete(client);
+      if (!writeNotificationSse(client, projected, () => removeSseClient(this.notificationClients, client))) removeSseClient(this.notificationClients, client);
     }
     return event;
   }
@@ -4531,9 +4618,10 @@ var ChatroomRuntime = class {
     if (text === "") return;
     const agentSession = parseRoomAgentSessionId(String(session.id));
     if (agentSession !== void 0) {
+      const room2 = this.requireState(agentSession.roomId);
       const profile = this.roomAgentProfilesFor(agentSession.roomId).find((profile2) => profile2.id === agentSession.profileId);
-      if (profile !== void 0 && profile.enabled) {
-        void this.projectRoomAgentMessage(this.requireState(agentSession.roomId), profile, text).catch((error) => {
+      if (profile !== void 0 && profile.enabled && room2.agentBindings.get(profile.id)?.agent.session === session) {
+        void this.projectRoomAgentMessage(room2, profile, text, session).catch((error) => {
           this.log.warn("Room AI participant projection failed: %s", String(error));
         });
       }
@@ -4719,7 +4807,7 @@ var ChatroomRuntime = class {
   }
   roomMembers(state) {
     const online = new Set([...state.clients].map((client) => client.participantId));
-    return [...this.requireMembers().entries()].map(([, record]) => record).filter((record) => record.roomId === state.record.id).sort((left, right) => Number(online.has(right.participantId)) - Number(online.has(left.participantId)) || right.lastSeenAt - left.lastSeenAt).map((record) => ({
+    return [...this.requireMembers().entries()].map(([, record]) => record).filter((record) => record.roomId === state.record.id).sort((left, right) => Number(online.has(right.participantId)) - Number(online.has(left.participantId)) || right.lastSeenAt - left.lastSeenAt || left.participantId.localeCompare(right.participantId)).map((record) => ({
       participantId: record.participantId,
       displayName: record.displayName,
       avatarId: record.avatarId,
@@ -4756,7 +4844,7 @@ var ChatroomRuntime = class {
     const event = { type: "notification", notification };
     for (const client of [...this.notificationClients]) {
       if (client.participantId === notification.participantId) continue;
-      if (!writeNotificationSse(client.response, event)) this.notificationClients.delete(client);
+      if (!writeNotificationSse(client, event, () => removeSseClient(this.notificationClients, client))) removeSseClient(this.notificationClients, client);
     }
   }
   publicDirectConversation(record, viewerId) {
@@ -5157,24 +5245,87 @@ var ChatroomRuntime = class {
   enabledRoomAgentProfiles(roomId) {
     return this.roomAgentProfilesFor(roomId).filter((profile) => profile.enabled);
   }
+  projectRoomAgentProfile(state, profile, canManage) {
+    const { instructions, provider, model, reasoningEffort, ...publicFields } = profile;
+    return {
+      ...publicFields,
+      provider: canManage ? provider : "",
+      model: canManage ? model : "",
+      ...canManage ? { instructions, reasoningEffort } : {},
+      runtime: state.agentRuntime.get(profile.id) ?? {
+        status: profile.enabled ? "idle" : "cancelled",
+        updatedAt: profile.updatedAt
+      }
+    };
+  }
+  setRoomAgentRuntime(state, profileId, runtime) {
+    state.agentRuntime.set(profileId, runtime);
+  }
+  /** Invalidate every in-flight execution for this profile; dispatches capture the returned generation. */
+  bumpRoomAgentExecutionGeneration(state, profileId) {
+    const next = (state.agentExecutionGenerations.get(profileId) ?? 0) + 1;
+    state.agentExecutionGenerations.set(profileId, next);
+    state.agentExecutionCounts.delete(profileId);
+    return next;
+  }
+  isCurrentRoomAgentExecution(state, profileId, generation) {
+    return state.agentExecutionGenerations.get(profileId) === generation;
+  }
+  broadcastRoomAgentProfiles(state) {
+    const profiles = this.roomAgentProfilesFor(state.record.id);
+    for (const client of [...state.clients]) {
+      const canManage = state.record.ownerParticipantId === client.participantId || (state.record.adminParticipantIds ?? []).includes(client.participantId) || this.auth.isSuperAdmin(client.participantId);
+      const event = {
+        type: "agent-profiles",
+        roomId: state.record.id,
+        canManage,
+        profiles: profiles.map((profile) => this.projectRoomAgentProfile(state, profile, canManage))
+      };
+      if (!writeSse(client, event, () => removeSseClient(state.clients, client))) removeSseClient(state.clients, client);
+    }
+  }
   /** Durable Session id owning one profile's private context: isolation is one Session per room + agent. */
   roomAgentSessionId(roomId, profileId) {
     return `chatroom-agent-v1-${roomId}-${profileId}`;
   }
-  async ensureRoomAgent(state, profile) {
+  retireRoomAgent(state, profileId, binding) {
+    const previous = state.agentRetirements.get(profileId);
+    const retirement = Promise.resolve(previous).then(() => binding.release()).finally(() => {
+      if (state.agentRetirements.get(profileId) === retirement) state.agentRetirements.delete(profileId);
+    });
+    state.agentRetirements.set(profileId, retirement);
+    return retirement;
+  }
+  async ensureRoomAgent(state, profile, generation) {
+    for (; ; ) {
+      if (!this.isCurrentRoomAgentExecution(state, profile.id, generation)) {
+        throw new ChatroomInputError("AI \u6210\u5458\u914D\u7F6E\u5DF2\u53D8\u5316\uFF0C\u8BF7\u91CD\u8BD5\u3002");
+      }
+      const retirement = state.agentRetirements.get(profile.id);
+      if (retirement !== void 0) {
+        await retirement;
+        continue;
+      }
+      const pending = state.agentActivations.get(profile.id);
+      if (pending === void 0) break;
+      if (pending.generation === generation) return await pending.promise;
+      await pending.promise.catch(() => void 0);
+    }
     const existing = state.agentBindings.get(profile.id);
     if (existing !== void 0) return existing;
-    let activation = state.agentActivations.get(profile.id);
-    if (activation === void 0) {
-      activation = this.activateRoomAgent(state, profile).then((binding) => {
-        state.agentBindings.set(profile.id, binding);
-        return binding;
-      }).finally(() => {
-        state.agentActivations.delete(profile.id);
-      });
-      state.agentActivations.set(profile.id, activation);
-    }
-    return await activation;
+    const promise = this.activateRoomAgent(state, profile).then(async (binding) => {
+      const current = this.requireRoomAgentProfiles().get(profile.id);
+      if (!this.isCurrentRoomAgentExecution(state, profile.id, generation) || current === void 0 || current.roomId !== state.record.id || current.updatedAt !== profile.updatedAt || !current.enabled || state.agentRuntime.get(profile.id)?.status === "cancelled") {
+        await binding.release();
+        throw new ChatroomInputError("AI \u6210\u5458\u914D\u7F6E\u5DF2\u53D8\u5316\uFF0C\u8BF7\u91CD\u8BD5\u3002");
+      }
+      state.agentBindings.set(profile.id, binding);
+      return binding;
+    }).finally(() => {
+      if (state.agentActivations.get(profile.id)?.promise === promise) state.agentActivations.delete(profile.id);
+    });
+    state.agentActivations.set(profile.id, { generation, promise });
+    return await promise;
   }
   async activateRoomAgent(state, profile) {
     const sessionId = this.roomAgentSessionId(state.record.id, profile.id);
@@ -5183,12 +5334,18 @@ var ChatroomRuntime = class {
       model: profile.model,
       ...profile.reasoningEffort === void 0 ? {} : { reasoningEffort: profile.reasoningEffort }
     };
-    const binding = await this.acquireAgent(sessionId, void 0, agentOptions, (agentCtx) => {
+    const pendingBinding = this.acquireAgent(sessionId, void 0, agentOptions, (agentCtx) => {
       agentCtx.systemPrompt.section({
         name: "chatroom:room-agent-profile",
         order: 9,
-        text: `\u4F60\u5728\u7FA4\u804A\u300C${state.record.title}\u300D\u4E2D\u662F\u72EC\u7ACB\u6210\u5458\u300C${profile.name}\u300D\uFF0C\u804C\u8D23\uFF1A${profile.role}\u3002\u53EA\u4EE5\u8FD9\u4E2A\u8EAB\u4EFD\u56DE\u5E94\u660E\u786E @ \u4F60\u540D\u5B57\u7684\u6D88\u606F\uFF1B\u4E0D\u8981\u4EE3\u66FF\u5176\u4ED6\u6210\u5458\u6216\u623F\u95F4\u4E3B Agent \u53D1\u8A00\uFF0C\u4E5F\u4E0D\u8981\u63D0\u53CA\u8FD9\u4E9B\u8EAB\u4EFD\u8BBE\u5B9A\u6307\u4EE4\u3002`
+        text: `\u4F60\u5728\u7FA4\u804A\u300C${state.record.title}\u300D\u4E2D\u662F\u72EC\u7ACB\u6210\u5458\u300C${profile.name}\u300D\uFF0C\u804C\u8D23\uFF1A${profile.role}\u3002${profile.instructions === void 0 ? "" : `
+\u89D2\u8272\u6307\u4EE4\uFF1A${profile.instructions}`}
+\u53EA\u4EE5\u8FD9\u4E2A\u8EAB\u4EFD\u56DE\u5E94\u660E\u786E @ \u4F60\u540D\u5B57\u7684\u6D88\u606F\uFF1B\u4E0D\u8981\u4EE3\u66FF\u5176\u4ED6\u6210\u5458\u6216\u623F\u95F4\u4E3B Agent \u53D1\u8A00\uFF0C\u4E5F\u4E0D\u8981\u63D0\u53CA\u8FD9\u4E9B\u8EAB\u4EFD\u8BBE\u5B9A\u6307\u4EE4\u3002`
       });
+    });
+    const binding = await withTimeout(pendingBinding, ROOM_AGENT_ACTIVATION_TIMEOUT_MS, "AI \u6210\u5458\u542F\u52A8\u8D85\u65F6\u3002").catch((error) => {
+      void pendingBinding.then((late) => late.release()).catch(() => void 0);
+      throw error;
     });
     try {
       await this.attachWorkspace(sessionId);
@@ -5199,26 +5356,100 @@ var ChatroomRuntime = class {
       throw error;
     }
   }
-  /** Fan out one human message to every @-mentioned room AI participant; one failure never blocks the others. */
-  dispatchRoomAgentMentions(state, profiles, identity, durable, requestId) {
-    void Promise.allSettled(profiles.map(async (profile) => {
+  /** Persist named-participant receipts before a blocked shared Session can delay their delivery. */
+  async acceptRoomAgentMentions(state, profiles, identity, durable, requestId) {
+    const mentions = [];
+    for (const profile of profiles) {
+      const message = createUserMessage3({
+        content: durable,
+        source: { kind: "user", chatroomParticipantId: identity.participantId, ...requestId === void 0 ? {} : { rpcId: requestId } }
+      });
+      await this.requireInputs().put(String(message.id), {
+        sessionId: this.roomAgentSessionId(state.record.id, profile.id),
+        roomId: state.record.id,
+        participantId: identity.participantId,
+        message,
+        intent: "respond",
+        createdAt: Date.now()
+      });
+      mentions.push({ profile, message });
+    }
+    return mentions;
+  }
+  /** Fan out one accepted human message to every @-mentioned room AI participant; one failure never blocks the others. */
+  dispatchRoomAgentMentions(state, mentions) {
+    void Promise.allSettled(mentions.map(async ({ profile, message }) => {
+      const generation = state.agentExecutionGenerations.get(profile.id);
+      const isCurrent = () => this.isCurrentRoomAgentExecution(state, profile.id, generation);
+      state.agentExecutionCounts.set(profile.id, (state.agentExecutionCounts.get(profile.id) ?? 0) + 1);
+      let finished = false;
+      const finish = () => {
+        if (finished || !isCurrent()) return false;
+        finished = true;
+        const remaining = Math.max(0, (state.agentExecutionCounts.get(profile.id) ?? 1) - 1);
+        if (remaining === 0) state.agentExecutionCounts.delete(profile.id);
+        else state.agentExecutionCounts.set(profile.id, remaining);
+        return remaining === 0;
+      };
       try {
-        const binding = await this.ensureRoomAgent(state, profile);
-        const message = createUserMessage3({
-          content: durable,
-          source: { kind: "user", chatroomParticipantId: identity.participantId, ...requestId === void 0 ? {} : { rpcId: requestId } }
-        });
+        this.setRoomAgentRuntime(state, profile.id, { status: "queued", updatedAt: Date.now() });
+        this.broadcastRoomAgentProfiles(state);
+        const binding = await this.ensureRoomAgent(state, profile, generation);
+        if (!isCurrent() || state.agentRuntime.get(profile.id)?.status === "cancelled") {
+          return;
+        }
         binding.agent.followup(message);
         await this.commitInput(binding.agent.session, String(message.id));
+        if (!isCurrent()) return;
+        this.setRoomAgentRuntime(state, profile.id, { status: "running", updatedAt: Date.now() });
+        this.broadcastRoomAgentProfiles(state);
+        try {
+          await withTimeout(binding.agent.whenIdle(), ROOM_AGENT_RESPONSE_TIMEOUT_MS, "AI \u6210\u5458\u54CD\u5E94\u8D85\u65F6\u3002");
+          if (finish()) {
+            this.setRoomAgentRuntime(state, profile.id, { status: "idle", updatedAt: Date.now() });
+            this.broadcastRoomAgentProfiles(state);
+          }
+        } catch (error) {
+          if (!isCurrent()) return;
+          binding.agent.cancel({ kind: "user" });
+          if (state.agentBindings.get(profile.id) === binding) state.agentBindings.delete(profile.id);
+          await this.retireRoomAgent(state, profile.id, binding).catch(() => void 0);
+          if (!isCurrent()) return;
+          if (state.agentBindings.get(profile.id) === binding) state.agentBindings.delete(profile.id);
+          this.setRoomAgentRuntime(state, profile.id, {
+            status: "failed",
+            updatedAt: Date.now(),
+            error: error instanceof Error && error.message.includes("\u8D85\u65F6") ? "\u54CD\u5E94\u8D85\u65F6\uFF0C\u5DF2\u53D6\u6D88\uFF1B\u4E0B\u4E00\u6B21 @ \u5C06\u91CD\u65B0\u6062\u590D\u3002" : "\u8FD0\u884C\u5931\u8D25\uFF1B\u4E0B\u4E00\u6B21 @ \u5C06\u91CD\u65B0\u6062\u590D\u3002"
+          });
+          this.broadcastRoomAgentProfiles(state);
+          throw error;
+        }
       } catch (error) {
         this.log.warn("Room AI participant %s could not accept the message: %s", profile.name, String(error));
-        await this.projectRoomAgentMessage(state, profile, `\uFF08\u63A5\u6536\u6D88\u606F\u5931\u8D25\uFF1A${String(error)}\uFF09`).catch(() => void 0);
+        if (!isCurrent() || state.agentRuntime.get(profile.id)?.status === "cancelled") return;
+        this.setRoomAgentRuntime(state, profile.id, {
+          status: "failed",
+          updatedAt: Date.now(),
+          error: "AI \u6210\u5458\u6682\u65F6\u4E0D\u53EF\u7528\uFF1B\u4E0B\u4E00\u6B21 @ \u4F1A\u81EA\u52A8\u91CD\u8BD5\u3002"
+        });
+        this.broadcastRoomAgentProfiles(state);
+        await this.projectRoomAgentMessage(
+          state,
+          profile,
+          "\uFF08\u6682\u65F6\u65E0\u6CD5\u54CD\u5E94\uFF1B\u4E0B\u4E00\u6B21 @ \u4F1A\u81EA\u52A8\u91CD\u8BD5\u3002\uFF09",
+          void 0,
+          () => isCurrent() && state.agentRuntime.get(profile.id)?.status === "failed"
+        ).catch(() => void 0);
+      } finally {
+        finish();
       }
     }));
   }
   /** Project one room AI participant utterance into the shared room message stream under its own name. */
-  async projectRoomAgentMessage(state, profile, text) {
+  async projectRoomAgentMessage(state, profile, text, sourceSession, isCurrent) {
     const binding = await this.ensureRoom(state.record.id);
+    if (isCurrent !== void 0 && !isCurrent()) return;
+    if (sourceSession !== void 0 && state.agentBindings.get(profile.id)?.agent.session !== sourceSession) return;
     const participantId = `chatroom-agent-${profile.id}`;
     const content = [{ type: "text", text: identifyChatroomText(text, {
       participantId,
@@ -5790,6 +6021,22 @@ ${meeting.summary ?? ""}` }],
     if (this.requireInputs().get(messageId) === void 0) return;
     await this.requireInputs().update(messageId, (record) => ({ ...record, intent }));
   }
+  async discardRoomAgentInputs(roomId, profileId) {
+    const sessionId = this.roomAgentSessionId(roomId, profileId);
+    for (const [id, record] of [...this.requireInputs().entries()]) {
+      if (record.sessionId === sessionId) await this.requireInputs().delete(id);
+    }
+  }
+  /** Re-drive receipts not yet claimed by the replaced profile Session. */
+  resumeRoomAgentInputs(state, profile, previous, inputIds) {
+    const sessionId = this.roomAgentSessionId(state.record.id, profile.id);
+    const accepted = [...this.requireInputs().entries()].flatMap(([id, record]) => {
+      if (record.sessionId !== sessionId || inputIds !== void 0 && !inputIds.has(id)) return [];
+      const claimed = previous?.agent.session.snapshotEvents().some((event) => event.type === "user/message" && String(event.data.id) === id) || previous?.agent.inbox.nextTurn.some((message) => String(message.id) === id) || previous?.agent.inbox.nextStep.some((message) => String(message.id) === id);
+      return claimed ? [] : [{ profile, message: freezeMessage(record.message) }];
+    });
+    if (accepted.length > 0) this.dispatchRoomAgentMentions(state, accepted);
+  }
   commitInput(session, messageId) {
     const existing = this.inputCommits.get(messageId);
     if (existing !== void 0) return existing;
@@ -5810,6 +6057,16 @@ ${meeting.summary ?? ""}` }],
   async recoverInputs() {
     for (const [id, record] of this.requireInputs().entries()) {
       const room = this.requireState(record.roomId);
+      const roomAgent = parseRoomAgentSessionId(record.sessionId);
+      if (roomAgent !== void 0) {
+        const profile = this.roomAgentProfilesFor(roomAgent.roomId).find((candidate) => candidate.id === roomAgent.profileId);
+        if (profile === void 0 || !profile.enabled || profile.roomId !== room.record.id) {
+          await this.requireInputs().delete(id);
+          continue;
+        }
+        this.dispatchRoomAgentMentions(room, [{ profile, message: freezeMessage(record.message) }]);
+        continue;
+      }
       const thread = record.threadId === void 0 ? void 0 : this.requireThreadState(record.threadId);
       const binding = thread === void 0 ? await this.ensureRoom(room.record.id) : await this.ensureThread(thread.record.id);
       if (String(binding.agent.session.id) !== record.sessionId) throw new Error("Accepted input refers to a replaced Session");
@@ -5868,7 +6125,7 @@ ${meeting.summary ?? ""}` }],
   }
   broadcast(state, event) {
     for (const client of [...state.clients]) {
-      if (!writeSse(client.response, event)) state.clients.delete(client);
+      if (!writeSse(client, event, () => removeSseClient(state.clients, client))) removeSseClient(state.clients, client);
     }
   }
   assertReady() {
@@ -6367,7 +6624,11 @@ function newRoomState(record) {
     automation: Promise.resolve(),
     rotation: void 0,
     agentBindings: /* @__PURE__ */ new Map(),
-    agentActivations: /* @__PURE__ */ new Map()
+    agentActivations: /* @__PURE__ */ new Map(),
+    agentRetirements: /* @__PURE__ */ new Map(),
+    agentExecutionGenerations: /* @__PURE__ */ new Map(),
+    agentExecutionCounts: /* @__PURE__ */ new Map(),
+    agentRuntime: /* @__PURE__ */ new Map()
   };
 }
 function newThreadState(record) {
@@ -6911,27 +7172,70 @@ function publicDirectMessage(record) {
     createdAt: record.createdAt
   };
 }
-function writeSse(response, event) {
+function writeSse(client, event, remove) {
+  return writeSseEvent(client, event, remove);
+}
+function writeNotificationSse(client, event, remove) {
+  return writeSseEvent(client, event, remove);
+}
+function writeSseEvent(client, event, remove) {
+  const response = client.response;
   if (response.destroyed || response.writableEnded) return false;
-  try {
-    response.write(`data: ${JSON.stringify(event)}
-
-`);
-    return true;
-  } catch {
+  const buffered = "writableLength" in response && typeof response.writableLength === "number" ? response.writableLength : 0;
+  if (buffered > SSE_MAX_BUFFER_BYTES + client.snapshotAllowance) {
+    remove();
+    closeSse(response);
     return false;
+  }
+  try {
+    const frame = `data: ${JSON.stringify(event)}
+
+`;
+    if (response.write(frame)) return true;
+    if (event.type === "snapshot") client.snapshotAllowance = Buffer.byteLength(frame);
+  } catch {
+    remove();
+    closeSse(response);
+    return false;
+  }
+  if (typeof response.once !== "function") {
+    remove();
+    closeSse(response);
+    return false;
+  }
+  const drain = () => {
+    if (client.drainTimer !== void 0) clearTimeout(client.drainTimer);
+    client.drainTimer = void 0;
+    client.snapshotAllowance = 0;
+  };
+  if (client.drainTimer === void 0) {
+    client.drainTimer = setTimeout(() => {
+      client.drainTimer = void 0;
+      remove();
+      closeSse(response);
+    }, SSE_DRAIN_TIMEOUT_MS);
+    response.once("drain", drain);
+  }
+  return true;
+}
+function closeSse(response) {
+  if (response.destroyed || response.writableEnded) return;
+  try {
+    response.destroy();
+  } catch {
+    try {
+      response.end();
+    } catch {
+    }
   }
 }
-function writeNotificationSse(response, event) {
-  if (response.destroyed || response.writableEnded) return false;
-  try {
-    response.write(`data: ${JSON.stringify(event)}
-
-`);
-    return true;
-  } catch {
-    return false;
-  }
+function clearSseDrain(client) {
+  if (client.drainTimer !== void 0) clearTimeout(client.drainTimer);
+  client.drainTimer = void 0;
+}
+function removeSseClient(clients, client) {
+  clearSseDrain(client);
+  clients.delete(client);
 }
 async function waitForIdle(agent, signal) {
   if (signal.aborted) return;
@@ -6944,6 +7248,17 @@ async function waitForIdle(agent, signal) {
     await Promise.race([agent.whenIdle(), stopped]);
   } finally {
     signal.removeEventListener("abort", release);
+  }
+}
+async function withTimeout(promise, timeoutMs, message) {
+  let timer;
+  const timeout = new Promise((_resolve, reject) => {
+    timer = setTimeout(() => reject(new Error(message)), timeoutMs);
+  });
+  try {
+    return await Promise.race([promise, timeout]);
+  } finally {
+    if (timer !== void 0) clearTimeout(timer);
   }
 }
 
@@ -7662,15 +7977,23 @@ var ChatroomHttpController = class {
     const roomId = fieldString(body, "roomId");
     const action = fieldString(body, "action");
     const effort = body["reasoningEffort"];
+    const instructions = body["instructions"];
+    if (action === "cancel") {
+      await this.runtime.cancelRoomAgent(roomId, fieldString(body, "profileId"), identity);
+      json(response, 200, await this.runtime.agentProfilesOverview(roomId, identity));
+      return;
+    }
     if (action === "delete") {
       await this.runtime.deleteRoomAgentProfile(roomId, fieldString(body, "profileId"), identity);
       json(response, 200, await this.runtime.agentProfilesOverview(roomId, identity));
       return;
     }
     if (effort !== void 0 && typeof effort !== "string") throw new ChatroomInputError("\u5B57\u6BB5 reasoningEffort \u5FC5\u987B\u662F\u5B57\u7B26\u4E32\u3002");
+    if (instructions !== void 0 && typeof instructions !== "string") throw new ChatroomInputError("\u5B57\u6BB5 instructions \u5FC5\u987B\u662F\u5B57\u7B26\u4E32\u3002");
     const input = {
       name: fieldString(body, "name"),
       role: fieldString(body, "role"),
+      ...typeof instructions === "string" ? { instructions } : {},
       provider: fieldString(body, "provider"),
       model: fieldString(body, "model"),
       ...typeof effort === "string" && effort !== "" ? { reasoningEffort: effort } : {},
@@ -8685,9 +9008,11 @@ var NativeGateway = class {
       const args = body.payload.args;
       if (endpoint === "$events/result") {
         const result = isRecord(args) ? args : body.payload;
-        const owned = this.answerable.get(String(result.clientId) + ":" + String(result.eventId));
+        const key = String(result.clientId) + ":" + String(result.eventId);
+        const owned = this.answerable.get(key);
         if (owned?.participantId !== identity.participantId) throw new CarrierError(403, "No authorized event delivery");
         await this.requireSession(owned.sessionId, identity);
+        if (this.answerable.get(key) !== owned || !this.answerable.delete(key)) throw new CarrierError(403, "No authorized event delivery");
       } else {
         if (!isRecord(args)) throw new CarrierError(400, "Invalid Remote arguments");
         const input = isRecord(args.request) ? args.request : args;
@@ -8843,7 +9168,6 @@ var NativeGateway = class {
         socket.destroy();
         return;
       }
-      let clientId;
       const mux = new this.transport.Mux(async (endpoint, payload, signal) => {
         const identity = await this.identity(fetchRequest);
         if (this.config.authEnabled) {
@@ -8858,20 +9182,27 @@ var NativeGateway = class {
         const source = await this.transport.gateway.wireStream.open(endpoint, payload, signal);
         const self = this;
         return (async function* () {
-          for await (const frame of source) {
-            signal.throwIfAborted();
-            const current = await self.identity(fetchRequest).catch((error) => {
-              socket.destroy();
-              throw error;
-            });
-            if (endpoint === "$events" && isRecord(frame) && frame.type === "ready" && typeof frame.clientId === "string") clientId = frame.clientId;
-            if (!self.config.authEnabled || current === void 0) {
-              yield frame;
-              continue;
+          let clientId;
+          try {
+            for await (const frame of source) {
+              signal.throwIfAborted();
+              const current = await self.identity(fetchRequest).catch((error) => {
+                socket.destroy();
+                throw error;
+              });
+              if (endpoint === "$events" && isRecord(frame) && frame.type === "ready" && typeof frame.clientId === "string") clientId = frame.clientId;
+              if (!self.config.authEnabled || current === void 0) {
+                yield frame;
+                continue;
+              }
+              if (endpoint === "session/follow" && isRecord(payload) && isRecord(payload.args)) await self.sessionArguments(payload.args, current);
+              const filtered = await self.filterFrame(endpoint, frame, current, clientId);
+              if (filtered !== void 0) yield filtered;
             }
-            if (endpoint === "session/follow" && isRecord(payload) && isRecord(payload.args)) await self.sessionArguments(payload.args, current);
-            const filtered = await self.filterFrame(endpoint, frame, current, clientId);
-            if (filtered !== void 0) yield filtered;
+          } finally {
+            if (clientId !== void 0) {
+              for (const key of self.answerable.keys()) if (key.startsWith(clientId + ":")) self.answerable.delete(key);
+            }
           }
         })();
       }, this.transport.gateway.wireStream.failure, 2e3);
@@ -8883,9 +9214,6 @@ var NativeGateway = class {
       socket.once("close", () => {
         clearInterval(heartbeat);
         this.muxes.delete(socket);
-        if (clientId !== void 0) {
-          for (const key of this.answerable.keys()) if (key.startsWith(clientId + ":")) this.answerable.delete(key);
-        }
         void mux.close();
       });
       mux.handleUpgrade(request, socket, head);

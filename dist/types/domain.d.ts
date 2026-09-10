@@ -88,6 +88,7 @@ export interface RoomAgentProfileRecord {
     readonly roomId: string;
     readonly name: string;
     readonly role: string;
+    readonly instructions?: string;
     readonly provider: string;
     readonly model: string;
     readonly reasoningEffort?: string;

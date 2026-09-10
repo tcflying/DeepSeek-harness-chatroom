@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest'
 import { createChatroomAgentProfileSource } from '../src/client/agent-mention-source.js'
 import type { ChatroomAgentProfile, ChatroomAgentProfilesView } from '../src/types.js'
+import type { ChatroomClientStore } from '../src/client/store.js'
 
 const profile = (patch: Partial<ChatroomAgentProfile> = {}): ChatroomAgentProfile => ({
   id: 'profile-1',
@@ -12,6 +13,7 @@ const profile = (patch: Partial<ChatroomAgentProfile> = {}): ChatroomAgentProfil
   enabled: true,
   createdAt: 1,
   updatedAt: 1,
+  runtime: { status: 'idle', updatedAt: 1 },
   ...patch,
 })
 
@@ -21,7 +23,7 @@ function fakeStore(view: ChatroomAgentProfilesView | undefined, roomId = 'room-1
     getSnapshot: vi.fn(() => ({ agentProfiles: view })),
     ensureAgentProfiles: vi.fn(async () => undefined),
     subscribe: vi.fn(() => () => undefined),
-  } as never
+  } as unknown as ChatroomClientStore
 }
 
 const session = { sessionId: 'chatroom-v1-room-1' } as never
@@ -49,6 +51,16 @@ describe('createChatroomAgentProfileSource', () => {
     const filtered = await source.candidates(session, { query: 'ter', position: 'inline', drilled: false, signal: new AbortController().signal })
     expect(filtered.map(candidate => candidate.name)).toEqual(['Terra'])
     expect(source.onPick({ candidate: { name: 'Terra', value: 'profile-1' }, session, position: 'inline', via: 'menu', action: 'pick', span: {} as never })).toEqual({ text: '@Terra ' })
+  })
+
+  it('loads the roster for the candidate session room', async () => {
+    const view: ChatroomAgentProfilesView = { canManage: true, profiles: [profile()], models: [] }
+    const store = fakeStore(view)
+    const source = createChatroomAgentProfileSource(store)
+
+    await source.candidates(session, { query: '', position: 'inline', drilled: false, signal: new AbortController().signal })
+
+    expect(store.ensureAgentProfiles).toHaveBeenCalledWith('room-1')
   })
 
   it('rolls the lexicon from enabled profiles and returns empty without a room', () => {

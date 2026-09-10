@@ -242,6 +242,7 @@ function installChatroom(ctx: ClientContext): void {
       loadAgentProfiles: store.loadAgentProfiles,
       saveAgentProfile: store.saveAgentProfile,
       deleteAgentProfile: store.deleteAgentProfile,
+      cancelAgentProfile: store.cancelAgentProfile,
       renameRoom: store.renameRoom,
       setMemberRole: store.setMemberRole,
       addRoomMembers: store.addRoomMembers,
@@ -292,6 +293,7 @@ function installChatroom(ctx: ClientContext): void {
     label: () => '群聊与账号',
     inject: () => ({
       hooks: { chatroom: store },
+      logout: store.logout,
       closeAccount: store.closeAccount,
       changePassword: store.changePassword,
       openAdmin: store.openAdmin,
@@ -308,6 +310,7 @@ function installChatroom(ctx: ClientContext): void {
       loadAgentProfiles: store.loadAgentProfiles,
       saveAgentProfile: store.saveAgentProfile,
       deleteAgentProfile: store.deleteAgentProfile,
+      cancelAgentProfile: store.cancelAgentProfile,
       openDirect: store.openDirect,
       closeDirect: store.closeDirect,
       sendDirect: store.sendDirect,

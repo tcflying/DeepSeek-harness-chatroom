@@ -71,6 +71,8 @@ export declare class ChatroomRuntime {
     updateRoomAgentProfile(roomId: string, profileId: string, identity: ChatroomIdentity, input: ChatroomAgentProfileInput): Promise<RoomAgentProfileRecord>;
     /** Remove one room AI participant and release its live agent; its durable Session history is left untouched. */
     deleteRoomAgentProfile(roomId: string, profileId: string, identity: ChatroomIdentity): Promise<void>;
+    /** Cancel one running room AI participant without changing its durable profile or Session history. */
+    cancelRoomAgent(roomId: string, profileId: string, identity: ChatroomIdentity): Promise<void>;
     private validateRoomAgentProfile;
     private modelCatalog;
     /** Validate and persist the controller model plus both chatroom prompt roles. */
@@ -206,7 +208,7 @@ export declare class ChatroomRuntime {
     }>;
     /** Persist one participant's personal sidebar pin for a room. */
     setRoomPinned(roomId: string, pinned: boolean, identity: ChatroomIdentity): Promise<ChatroomInfo>;
-    /** Enable or disable model-controlled automatic AI responses as a room member. */
+    /** Enable or disable model-controlled automatic AI responses as a room manager. */
     setRoomAutoTrigger(roomId: string, enabled: boolean, identity: ChatroomIdentity): Promise<ChatroomInfo>;
     /** Recall one caller-owned human message while retaining an auditable tombstone. */
     recallMessage(roomId: string, messageId: string, identity: ChatroomIdentity): Promise<ChatroomRecall>;
@@ -291,11 +293,20 @@ export declare class ChatroomRuntime {
     /** Rooms the identity may manage AI participants in (super-admin: every room). */
     manageableRooms(identity: ChatroomIdentity): readonly ChatroomInfo[];
     private enabledRoomAgentProfiles;
+    private projectRoomAgentProfile;
+    private setRoomAgentRuntime;
+    /** Invalidate every in-flight execution for this profile; dispatches capture the returned generation. */
+    private bumpRoomAgentExecutionGeneration;
+    private isCurrentRoomAgentExecution;
+    private broadcastRoomAgentProfiles;
     /** Durable Session id owning one profile's private context: isolation is one Session per room + agent. */
     private roomAgentSessionId;
+    private retireRoomAgent;
     private ensureRoomAgent;
     private activateRoomAgent;
-    /** Fan out one human message to every @-mentioned room AI participant; one failure never blocks the others. */
+    /** Persist named-participant receipts before a blocked shared Session can delay their delivery. */
+    private acceptRoomAgentMentions;
+    /** Fan out one accepted human message to every @-mentioned room AI participant; one failure never blocks the others. */
     private dispatchRoomAgentMentions;
     /** Project one room AI participant utterance into the shared room message stream under its own name. */
     private projectRoomAgentMessage;
@@ -327,6 +338,9 @@ export declare class ChatroomRuntime {
     private requireInputs;
     private persistInput;
     private setInputIntent;
+    private discardRoomAgentInputs;
+    /** Re-drive receipts not yet claimed by the replaced profile Session. */
+    private resumeRoomAgentInputs;
     private commitInput;
     private recoverInputs;
     private publishPendingMessage;

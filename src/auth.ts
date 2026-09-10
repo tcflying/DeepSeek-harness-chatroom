@@ -31,7 +31,7 @@ import type {
 const SCRYPT_N = 32_768
 const SCRYPT_R = 8
 const SCRYPT_P = 1
-const PASSWORD_MIN_POINTS = 12
+const PASSWORD_MIN_POINTS = 6
 const PASSWORD_MAX_POINTS = 128
 const PASSWORD_MAX_BYTES = 1_024
 const USERNAME_MAX_POINTS = 64
@@ -238,6 +238,8 @@ export class ChatroomAuth {
     return {
       enabled,
       authenticated: !enabled || account !== undefined,
+      canManageSettings: !enabled || (account?.status === 'active'
+        && (account.role === 'super-admin' || this.config.settingsAdminParticipantIds.includes(account.participantId))),
       authMode: this.config.authMode ?? 'local',
       ...(account === undefined ? {} : { account }),
       providers,
@@ -245,6 +247,12 @@ export class ChatroomAuth {
       allowSelfRegistration,
       bootstrapRequired: enabled && this.config.authMode !== 'dsh-auth-only' && this.accounts.size === 0,
     }
+  }
+
+  /** Live authority lookup for filtering room events after account demotion. */
+  isSuperAdmin(participantId: string): boolean {
+    const account = this.accounts.get(participantId)
+    return account?.status === 'active' && account.role === 'super-admin'
   }
 
   /** Enabled external sign-in choices shown on the login form. */
@@ -1030,7 +1038,7 @@ function normalizeScopes(value: string): string {
 function assertPassword(password: string): void {
   const points = Array.from(password).length
   if (points < PASSWORD_MIN_POINTS || points > PASSWORD_MAX_POINTS || Buffer.byteLength(password, 'utf8') > PASSWORD_MAX_BYTES) {
-    throw new ChatroomAuthError('密码需要 12–128 个字符，且不能超过 1024 字节。')
+    throw new ChatroomAuthError('密码需要 6–128 个字符，且不能超过 1024 字节。')
   }
 }
 

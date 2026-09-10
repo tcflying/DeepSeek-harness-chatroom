@@ -10,7 +10,7 @@ export function createChatroomAgentProfileSource(store: ChatroomClientStore): In
     async candidates(session, { query }) {
       const room = store.roomForSession(String(session.sessionId))
       if (room === undefined) return []
-      await store.ensureAgentProfiles()
+      await store.ensureAgentProfiles(room.id)
       const needle = query.toLocaleLowerCase()
       return (store.getSnapshot().agentProfiles?.profiles ?? [])
         .filter(profile => profile.roomId === room.id && profile.enabled)

@@ -35,7 +35,7 @@ form{display:grid;gap:14px}label{display:grid;gap:7px;font-size:14px;font-weight
   ${registration ? `<div class="tabs" role="tablist"><button type="button" data-mode="login" role="tab">登录</button><button type="button" data-mode="register" role="tab">${state.bootstrapRequired ? '初始化' : '注册'}</button></div>` : ''}
   <form id="auth-form">
     <label>账号<input name="username" autocomplete="username" minlength="3" maxlength="64" required autofocus></label>
-    <label>密码<input name="password" type="password" autocomplete="current-password" minlength="12" maxlength="128" required></label>
+    <label>密码<input name="password" type="password" autocomplete="current-password" minlength="6" maxlength="128" required></label>
     <div data-register hidden><label>显示名称<input name="displayName" maxlength="80"></label></div>
     ${state.bootstrapRequired ? '<div data-register hidden><label>超级管理员初始化口令<input name="bootstrapToken" type="password" autocomplete="off"></label></div><div class="bootstrap" data-register hidden>初始化口令只用于创建第一位超级管理员，创建成功后不会存入浏览器。</div>' : ''}
     <button class="primary" type="submit">继续</button>

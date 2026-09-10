@@ -116,6 +116,10 @@ export declare class ChatroomClientStore implements HostObservable<ChatroomView>
     private readonly openSession;
     private readonly nativeOwnershipLookups;
     private readonly nativeSessionAccess;
+    private readonly agentProfileLoads;
+    private sessionGeneration;
+    private agentBusyGeneration;
+    private agentBusyRoomId;
     private snapshot;
     private readonly listeners;
     private eventSource;
@@ -132,6 +136,14 @@ export declare class ChatroomClientStore implements HostObservable<ChatroomView>
     private roomEnsure;
     private readonly pendingAutoTriggerWrites;
     private pendingQuickMeetingTarget;
+    private beginSessionGeneration;
+    private isCurrentSessionGeneration;
+    private isCurrentAgentProfileTarget;
+    private selectAgentProfileTarget;
+    private beginAgentBusy;
+    private finishAgentBusy;
+    private invalidateAgentBusy;
+    private invalidateActiveRoomAgentBusy;
     constructor(openSession?: (sessionId: string) => boolean, branchFrame?: ChatroomBranchFrame);
     /** Current immutable room projection. */
     getSnapshot: () => ChatroomView;
@@ -254,7 +266,7 @@ export declare class ChatroomClientStore implements HostObservable<ChatroomView>
     /** Load one room's AI participant roster and, for managers, the model catalog. Defaults to the active room. */
     loadAgentProfiles: (roomId?: string) => Promise<void>;
     /** Warm the room AI participant roster once (used by the @ mention menu). */
-    ensureAgentProfiles: () => Promise<void>;
+    ensureAgentProfiles: (roomId?: string) => Promise<void>;
     /** Load the room directory the signed-in identity may manage AI participants in. */
     loadManageableRooms: () => Promise<void>;
     /** Create or update one room AI participant with its own model routing. */
@@ -262,6 +274,7 @@ export declare class ChatroomClientStore implements HostObservable<ChatroomView>
         readonly profileId?: string;
         readonly name: string;
         readonly role: string;
+        readonly instructions?: string;
         readonly provider: string;
         readonly model: string;
         readonly reasoningEffort?: string;
@@ -269,6 +282,8 @@ export declare class ChatroomClientStore implements HostObservable<ChatroomView>
     }, agentRoomId?: string) => Promise<boolean>;
     /** Remove one room AI participant; its durable Session history stays intact. */
     deleteAgentProfile: (profileId: string, roomId?: string) => Promise<void>;
+    /** Cancel a running room AI participant without changing its persisted configuration. */
+    cancelAgentProfile: (profileId: string, roomId?: string) => Promise<void>;
     /** Add selected active platform accounts to the current room. */
     addRoomMembers: (participantIds: readonly string[]) => Promise<boolean>;
     /** Pin or unpin one room for the current participant. */

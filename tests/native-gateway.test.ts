@@ -37,11 +37,13 @@ function fixture() {
     return Response.json({ type: 'server-response', rpcId: body.rpcId, result: { ok: true, value: {} } })
   })
   const ready = Promise.withResolvers<void>()
+  const eventsClosed = Promise.withResolvers<void>()
   const available = Promise.withResolvers<void>()
   const queue: Array<Record<string, unknown>> = []
   let notify: () => void = () => available.resolve()
   const events = async function* (_request: unknown, signal: AbortSignal) {
     ready.resolve()
+    try {
     while (!signal.aborted) {
       if (queue.length === 0) {
         const pending = Promise.withResolvers<void>()
@@ -52,11 +54,12 @@ function fixture() {
       const frame = queue.shift()
       if (frame !== undefined) yield frame
     }
+    } finally { eventsClosed.resolve() }
   }
   const ctx = {} as Context
   const transport = { Mux: RemoteStreamMuxServer, gateway: { wireStream: { open: (_endpoint: string, payload: unknown, signal: AbortSignal) => events(payload, signal), failure: (error: Error) => ({ code: 'internal', message: error.message }) } } } as unknown as NativeTransport
   const gateway = new NativeGateway(ctx, runtime, config, dispatch, transport)
-  return { gateway, runtime, dispatch, permitted, ready, revoke: () => { active = false }, push: (frame: (typeof queue)[number]) => { queue.push(frame); notify() } }
+  return { gateway, runtime, dispatch, permitted, account, config, ready, eventsClosed, revoke: () => { active = false }, push: (frame: (typeof queue)[number]) => { queue.push(frame); notify() } }
 }
 
 function rpc(method: string, payload: Record<string, unknown> = {}, token = 'alice-token'): Request {
@@ -67,6 +70,26 @@ function rpc(method: string, payload: Record<string, unknown> = {}, token = 'ali
 }
 
 describe('native account gateway', () => {
+  it.each(['member', 'admin'])('does not give the platform %s role deployment or filesystem access', async role => {
+    const f = fixture()
+    f.account.role = role
+    try {
+      for (const method of ['settings/describe', 'settings/mutate', 'credentials/list', 'fs/read', 'plugins/install']) {
+        expect((await f.gateway.fetch(rpc(method))).status).toBe(403)
+      }
+      expect(f.dispatch).not.toHaveBeenCalled()
+    } finally { await f.gateway.close() }
+  })
+
+  it.each(['super-admin', 'allowlisted'])('retains settings access for %s without widening member privileges', async role => {
+    const f = fixture()
+    if (role === 'super-admin') f.account.role = role
+    else f.config.settingsAdminParticipantIds.push('alice')
+    try {
+      expect((await f.gateway.fetch(rpc('settings/describe'))).status).toBe(200)
+      expect(f.dispatch).toHaveBeenCalledOnce()
+    } finally { await f.gateway.close() }
+  })
   it.each(['session/list', 'session/page', 'session/prompt', 'settings/describe', 'commands/execute'])('rejects unauthenticated %s before dispatch', async method => {
     const f = fixture()
     try {
@@ -223,13 +246,28 @@ describe('native account gateway', () => {
       await vi.waitFor(() => expect(seen).toHaveLength(2))
       expect(seen[1]).toContain('owned-approval')
       expect(seen.join()).not.toContain('bob-solo')
-      const response = rpc('$events/result', { clientId: 'client-a', eventId: 'owned-approval', outcome: { ok: true, value: {} } })
-      expect((await f.gateway.fetch(response)).status).toBe(200)
+      const result = { clientId: 'client-a', eventId: 'owned-approval', outcome: { kind: 'result', value: {} } }
+      const answers = await Promise.all(Array.from({ length: 16 }, () => f.gateway.fetch(rpc('$events/result', result))))
+      expect(answers.map(answer => answer.status).sort()).toEqual([200, ...Array(15).fill(403)])
+      expect(f.dispatch).toHaveBeenCalledTimes(1)
+      expect((await f.gateway.fetch(rpc('$events/result', result))).status).toBe(403)
+      f.push({ type: 'waterfall', event: 'approval/request', eventId: 'unanswered', agentId: 'alice-solo', request: {} })
+      await vi.waitFor(() => expect(seen).toHaveLength(3))
+      socket.send(JSON.stringify({ type: 'cancel', streamId: 'events' }))
+      await f.eventsClosed.promise
+      await new Promise<void>(resolve => setImmediate(resolve))
+      expect(socket.readyState).toBe(WebSocket.OPEN)
+      expect((await f.gateway.fetch(rpc('$events/result', { ...result, eventId: 'unanswered' }))).status).toBe(403)
+      socket.send(JSON.stringify({ type: 'open', streamId: 'events-2', endpoint: '$events', payload: { args: {} } }))
+      f.push({ type: 'ready', clientId: 'client-b', host: { home: '/home' } })
+      f.push({ type: 'waterfall', event: 'approval/request', eventId: 'unanswered', agentId: 'alice-solo', request: {} })
+      await vi.waitFor(() => expect(seen).toHaveLength(5))
+      expect((await f.gateway.fetch(rpc('$events/result', { ...result, clientId: 'client-b', eventId: 'unanswered' }))).status).toBe(200)
       f.revoke()
       const closed = once(socket, 'close')
       f.push({ type: 'emit', event: 'api-session/status', args: ['alice-solo', 'running'] })
       await closed
-      expect(seen).toHaveLength(2)
+      expect(seen).toHaveLength(5)
     } finally {
       socket.terminate()
       await f.gateway.close()

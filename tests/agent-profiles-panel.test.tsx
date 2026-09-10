@@ -15,6 +15,7 @@ function profile(patch: Partial<ChatroomAgentProfile> = {}): ChatroomAgentProfil
     enabled: true,
     createdAt: 1,
     updatedAt: 1,
+    runtime: { status: 'idle', updatedAt: 1 },
     ...patch,
   }
 }
@@ -23,7 +24,7 @@ function view(profiles: readonly ChatroomAgentProfile[], canManage = true): Chat
   return {
     canManage,
     profiles,
-    models: [{ provider: 'deepseek', model: 'chat', label: 'DeepSeek · Chat' }],
+    models: [{ provider: 'deepseek', model: 'chat', label: 'DeepSeek · Chat', reasoningEfforts: ['off', 'high'] }],
   }
 }
 
@@ -71,14 +72,30 @@ describe('AgentProfilesPanel', () => {
     renderPanel(view([], true), { saveAgentProfile })
     fireEvent.change(screen.getByLabelText('AI 成员名称'), { target: { value: 'Nova' } })
     fireEvent.change(screen.getByLabelText('AI 成员职责'), { target: { value: '设计员' } })
+    fireEvent.change(screen.getByLabelText('AI 成员角色指令'), { target: { value: '只检查架构和边界条件。' } })
+    fireEvent.change(screen.getByLabelText('AI 成员推理强度'), { target: { value: 'high' } })
     fireEvent.click(screen.getByRole('button', { name: '添加 AI 成员' }))
     await waitFor(() => expect(saveAgentProfile).toHaveBeenCalledWith(expect.objectContaining({
       name: 'Nova',
       role: '设计员',
+      instructions: '只检查架构和边界条件。',
       provider: 'deepseek',
       model: 'chat',
+      reasoningEffort: 'high',
       enabled: true,
     })))
+  })
+
+  it('shows live runtime state and disables reasoning selection for unsupported models', () => {
+    const unsupported: ChatroomAgentProfilesView = {
+      canManage: true,
+      profiles: [profile({ runtime: { status: 'failed', updatedAt: 2, error: '响应超时，已取消；下一次 @ 将重新恢复。' } })],
+      models: [{ provider: 'deepseek', model: 'chat', label: 'DeepSeek · Chat', reasoningEfforts: [] }],
+    }
+    renderPanel(unsupported)
+    expect(screen.getByText('失败')).toBeTruthy()
+    expect(screen.getByText(/响应超时/)).toBeTruthy()
+    expect(screen.getByLabelText('AI 成员推理强度')).toHaveProperty('disabled', true)
   })
 
   it('stays read-only for members without management rights', () => {
@@ -97,5 +114,17 @@ describe('AgentProfilesPanel', () => {
       agentError: 'AI 成员保存失败。',
     } })
     expect(screen.getByRole('alert').textContent).toBe('AI 成员保存失败。')
+  })
+
+  it('keeps the draft and never reports success when profile saving fails', async () => {
+    const saveAgentProfile = vi.fn(async () => false)
+    renderPanel(view([], true), { saveAgentProfile })
+    fireEvent.change(screen.getByLabelText('AI 成员名称'), { target: { value: 'Nova' } })
+    fireEvent.change(screen.getByLabelText('AI 成员职责'), { target: { value: '审查员' } })
+    fireEvent.click(screen.getByRole('button', { name: '添加 AI 成员' }))
+
+    await waitFor(() => expect(screen.getByRole('alert').textContent).toBe('未保存，请检查后重试。'))
+    expect((screen.getByLabelText('AI 成员名称') as HTMLInputElement).value).toBe('Nova')
+    expect(screen.queryByText('已保存。')).toBeNull()
   })
 })

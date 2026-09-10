@@ -23,6 +23,9 @@ export function RoomIdentityAction(props: RoomIdentityActionProps): JSX.Element 
   const identity = room.identity
   const selected = room.room?.id === current.id
   const presence = selected && room.connection === 'online' ? `${room.online} 人在线` : '共享会话'
+  const groupRole = selected ? room.members.find(member => member.participantId === identity?.participantId)?.role : undefined
+  const canManage = room.auth.account?.role === 'super-admin' || groupRole === 'owner' || groupRole === 'admin'
+    || current.canManageAgents === true
   return (
     <span className="dsh-chatroom-header-actions">
       <span className="dsh-chatroom-identity-action" title="当前群聊身份">
@@ -35,7 +38,7 @@ export function RoomIdentityAction(props: RoomIdentityActionProps): JSX.Element 
         mainName={current.aiDisplayName}
       />}
       {props.openAgents !== undefined && <button className="dsh-chatroom-manage-action" type="button" onClick={props.openAgents}>AI 成员</button>}
-      <button className="dsh-chatroom-manage-action" type="button" onClick={props.openMembers}>群管理</button>
+      <button className="dsh-chatroom-manage-action" type="button" onClick={props.openMembers}>{canManage ? '群管理' : '群成员'}</button>
     </span>
   )
 }

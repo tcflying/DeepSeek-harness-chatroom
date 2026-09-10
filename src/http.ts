@@ -783,15 +783,23 @@ export class ChatroomHttpController {
     const roomId = fieldString(body, 'roomId')
     const action = fieldString(body, 'action')
     const effort = body['reasoningEffort']
+    const instructions = body['instructions']
+    if (action === 'cancel') {
+      await this.runtime.cancelRoomAgent(roomId, fieldString(body, 'profileId'), identity)
+      json(response, 200, await this.runtime.agentProfilesOverview(roomId, identity) satisfies ChatroomAgentProfilesView)
+      return
+    }
     if (action === 'delete') {
       await this.runtime.deleteRoomAgentProfile(roomId, fieldString(body, 'profileId'), identity)
       json(response, 200, await this.runtime.agentProfilesOverview(roomId, identity) satisfies ChatroomAgentProfilesView)
       return
     }
     if (effort !== undefined && typeof effort !== 'string') throw new ChatroomInputError('字段 reasoningEffort 必须是字符串。')
+    if (instructions !== undefined && typeof instructions !== 'string') throw new ChatroomInputError('字段 instructions 必须是字符串。')
     const input = {
       name: fieldString(body, 'name'),
       role: fieldString(body, 'role'),
+      ...(typeof instructions === 'string' ? { instructions } : {}),
       provider: fieldString(body, 'provider'),
       model: fieldString(body, 'model'),
       ...(typeof effort === 'string' && effort !== '' ? { reasoningEffort: effort } : {}),
