@@ -1,0 +1,883 @@
+{
+  "version": "1.5.0-codex.rc1.42",
+  "at": "2026-09-12T04:39:38.632Z",
+  "mode": "isolated-guest",
+  "base": "http://127.0.0.1:3186",
+  "roles": [
+    {
+      "role": "guest",
+      "rpc": [],
+      "errors": [],
+      "geometry": {
+        "320": {
+          "width": 320,
+          "height": 720,
+          "documentWidth": 320,
+          "bodyWidth": 320,
+          "control": "设置",
+          "nativeSidebar": {
+            "viewportWidth": 320,
+            "settingsTextVisible": true,
+            "leftControls": [
+              {
+                "ariaLabel": "新建会话",
+                "text": "",
+                "left": 16,
+                "top": 24,
+                "width": 200,
+                "height": 24
+              },
+              {
+                "ariaLabel": "新建会话",
+                "text": "新会话",
+                "left": 14,
+                "top": 74,
+                "width": 236,
+                "height": 38
+              },
+              {
+                "ariaLabel": null,
+                "text": "⌄群聊0",
+                "left": 25,
+                "top": 170,
+                "width": 212,
+                "height": 34
+              },
+              {
+                "ariaLabel": null,
+                "text": "⌄Solo5",
+                "left": 25,
+                "top": 215,
+                "width": 212,
+                "height": 34
+              },
+              {
+                "ariaLabel": null,
+                "text": "⌄私聊29",
+                "left": 25,
+                "top": 430,
+                "width": 212,
+                "height": 34
+              },
+              {
+                "ariaLabel": "与 连接验收 私聊",
+                "text": "连接验收@连接验收",
+                "left": 26,
+                "top": 469,
+                "width": 216,
+                "height": 44
+              },
+              {
+                "ariaLabel": "与 媒体验收 私聊",
+                "text": "媒体验收@媒体验收",
+                "left": 26,
+                "top": 517,
+                "width": 216,
+                "height": 44
+              },
+              {
+                "ariaLabel": "与 媒体验收 私聊",
+                "text": "媒体验收@媒体验收",
+                "left": 26,
+                "top": 565,
+                "width": 216,
+                "height": 44
+              },
+              {
+                "ariaLabel": "与 媒体验收 私聊",
+                "text": "媒体验收@媒体验收",
+                "left": 26,
+                "top": 613,
+                "width": 216,
+                "height": 44
+              },
+              {
+                "ariaLabel": "与 媒体验收 私聊",
+                "text": "媒体验收@媒体验收",
+                "left": 26,
+                "top": 661,
+                "width": 216,
+                "height": 44
+              },
+              {
+                "ariaLabel": "与 权限与进展隔离验收 私聊",
+                "text": "权限与进展隔离验收@权限与进展隔离验收",
+                "left": 26,
+                "top": 709,
+                "width": 216,
+                "height": 44
+              },
+              {
+                "ariaLabel": "与 生图验收 私聊",
+                "text": "生图验收@生图验收",
+                "left": 26,
+                "top": 757,
+                "width": 216,
+                "height": 44
+              },
+              {
+                "ariaLabel": "与 同步连接验收 私聊",
+                "text": "同步连接验收@同步连接验收",
+                "left": 26,
+                "top": 805,
+                "width": 216,
+                "height": 44
+              },
+              {
+                "ariaLabel": "与 同步连接验收 私聊",
+                "text": "同步连接验收@同步连接验收",
+                "left": 26,
+                "top": 853,
+                "width": 216,
+                "height": 44
+              },
+              {
+                "ariaLabel": "与 同步连接验收 私聊",
+                "text": "同步连接验收@同步连接验收",
+                "left": 26,
+                "top": 901,
+                "width": 216,
+                "height": 44
+              },
+              {
+                "ariaLabel": "与 同步连接验收 私聊",
+                "text": "同步连接验收@同步连接验收",
+                "left": 26,
+                "top": 949,
+                "width": 216,
+                "height": 44
+              },
+              {
+                "ariaLabel": "与 验收员甲 私聊",
+                "text": "验收员甲@验收员甲",
+                "left": 26,
+                "top": 997,
+                "width": 216,
+                "height": 44
+              },
+              {
+                "ariaLabel": "与 整合验收 私聊",
+                "text": "整合验收@整合验收",
+                "left": 26,
+                "top": 1045,
+                "width": 216,
+                "height": 44
+              },
+              {
+                "ariaLabel": "与 整合验收 私聊",
+                "text": "整合验收@整合验收",
+                "left": 26,
+                "top": 1093,
+                "width": 216,
+                "height": 44
+              },
+              {
+                "ariaLabel": "与 整合验收 私聊",
+                "text": "整合验收@整合验收",
+                "left": 26,
+                "top": 1141,
+                "width": 216,
+                "height": 44
+              },
+              {
+                "ariaLabel": "与 datoo 私聊",
+                "text": "datoo@datoo",
+                "left": 26,
+                "top": 1189,
+                "width": 216,
+                "height": 44
+              },
+              {
+                "ariaLabel": "与 RC133 隔离验收访客 私聊",
+                "text": "RC133 隔离验收访客@RC133 隔离验收访客",
+                "left": 26,
+                "top": 1237,
+                "width": 216,
+                "height": 44
+              },
+              {
+                "ariaLabel": "与 RC133 隔离验收访客 私聊",
+                "text": "RC133 隔离验收访客@RC133 隔离验收访客",
+                "left": 26,
+                "top": 1285,
+                "width": 216,
+                "height": 44
+              },
+              {
+                "ariaLabel": "与 RC133 隔离验收访客 私聊",
+                "text": "RC133 隔离验收访客@RC133 隔离验收访客",
+                "left": 26,
+                "top": 1333,
+                "width": 216,
+                "height": 44
+              },
+              {
+                "ariaLabel": "与 RC133 隔离验收访客 私聊",
+                "text": "RC133 隔离验收访客@RC133 隔离验收访客",
+                "left": 26,
+                "top": 1381,
+                "width": 216,
+                "height": 44
+              },
+              {
+                "ariaLabel": "与 RC133 隔离验收访客 私聊",
+                "text": "RC133 隔离验收访客@RC133 隔离验收访客",
+                "left": 26,
+                "top": 1429,
+                "width": 216,
+                "height": 44
+              },
+              {
+                "ariaLabel": "与 RC133 隔离验收访客 私聊",
+                "text": "RC133 隔离验收访客@RC133 隔离验收访客",
+                "left": 26,
+                "top": 1477,
+                "width": 216,
+                "height": 44
+              },
+              {
+                "ariaLabel": "与 RC133 隔离验收访客 私聊",
+                "text": "RC133 隔离验收访客@RC133 隔离验收访客",
+                "left": 26,
+                "top": 1525,
+                "width": 216,
+                "height": 44
+              },
+              {
+                "ariaLabel": "与 RC133 隔离验收访客 私聊",
+                "text": "RC133 隔离验收访客@RC133 隔离验收访客",
+                "left": 26,
+                "top": 1573,
+                "width": 216,
+                "height": 44
+              },
+              {
+                "ariaLabel": "与 RC133 隔离验收访客 私聊",
+                "text": "RC133 隔离验收访客@RC133 隔离验收访客",
+                "left": 26,
+                "top": 1621,
+                "width": 216,
+                "height": 44
+              },
+              {
+                "ariaLabel": "与 RC133 隔离验收访客 私聊",
+                "text": "RC133 隔离验收访客@RC133 隔离验收访客",
+                "left": 26,
+                "top": 1669,
+                "width": 216,
+                "height": 44
+              },
+              {
+                "ariaLabel": "与 RC133 隔离验收访客 私聊",
+                "text": "RC133 隔离验收访客@RC133 隔离验收访客",
+                "left": 26,
+                "top": 1717,
+                "width": 216,
+                "height": 44
+              },
+              {
+                "ariaLabel": "与 RC133 隔离验收访客 私聊",
+                "text": "RC133 隔离验收访客@RC133 隔离验收访客",
+                "left": 26,
+                "top": 1765,
+                "width": 216,
+                "height": 44
+              },
+              {
+                "ariaLabel": "与 RC133 隔离验收访客 私聊",
+                "text": "RC133 隔离验收访客@RC133 隔离验收访客",
+                "left": 26,
+                "top": 1813,
+                "width": 216,
+                "height": 44
+              },
+              {
+                "ariaLabel": null,
+                "text": "设置",
+                "left": 10,
+                "top": 668,
+                "width": 244,
+                "height": 42
+              },
+              {
+                "ariaLabel": null,
+                "text": "群聊",
+                "left": 83,
+                "top": 300,
+                "width": 132,
+                "height": 52
+              },
+              {
+                "ariaLabel": "选择工作区",
+                "text": "群聊",
+                "left": 76,
+                "top": 385,
+                "width": 78,
+                "height": 28
+              },
+              {
+                "ariaLabel": "指令",
+                "text": "",
+                "left": 72,
+                "top": 497,
+                "width": 28,
+                "height": 28
+              },
+              {
+                "ariaLabel": "访问模式，当前：工作区内修改",
+                "text": "工作区内修改",
+                "left": 116,
+                "top": 497,
+                "width": 44,
+                "height": 28
+              }
+            ]
+          },
+          "account": {
+            "left": 10,
+            "right": 254,
+            "top": 668,
+            "bottom": 710,
+            "width": 244,
+            "height": 42,
+            "viewportWidth": 320,
+            "viewportHeight": 720,
+            "hit": true
+          },
+          "style": {
+            "left": 218,
+            "right": 296,
+            "top": 16,
+            "bottom": 52,
+            "width": 78,
+            "height": 36,
+            "viewportWidth": 320,
+            "viewportHeight": 720,
+            "hit": true
+          }
+        },
+        "390": {
+          "width": 390,
+          "height": 844,
+          "documentWidth": 390,
+          "bodyWidth": 390,
+          "control": "设置",
+          "nativeSidebar": {
+            "viewportWidth": 390,
+            "settingsTextVisible": true,
+            "leftControls": [
+              {
+                "ariaLabel": "新建会话",
+                "text": "",
+                "left": 16,
+                "top": 24,
+                "width": 216,
+                "height": 24
+              },
+              {
+                "ariaLabel": "新建会话",
+                "text": "新会话",
+                "left": 14,
+                "top": 74,
+                "width": 252,
+                "height": 38
+              },
+              {
+                "ariaLabel": "搜索会话",
+                "text": "",
+                "left": 176,
+                "top": 126,
+                "width": 28,
+                "height": 28
+              },
+              {
+                "ariaLabel": null,
+                "text": "⌄群聊0",
+                "left": 25,
+                "top": 170,
+                "width": 228,
+                "height": 34
+              },
+              {
+                "ariaLabel": null,
+                "text": "⌄Solo5",
+                "left": 25,
+                "top": 215,
+                "width": 228,
+                "height": 34
+              },
+              {
+                "ariaLabel": null,
+                "text": "⌄私聊29",
+                "left": 25,
+                "top": 430,
+                "width": 228,
+                "height": 34
+              },
+              {
+                "ariaLabel": "与 连接验收 私聊",
+                "text": "连接验收@连接验收",
+                "left": 26,
+                "top": 469,
+                "width": 232,
+                "height": 44
+              },
+              {
+                "ariaLabel": "与 媒体验收 私聊",
+                "text": "媒体验收@媒体验收",
+                "left": 26,
+                "top": 517,
+                "width": 232,
+                "height": 44
+              },
+              {
+                "ariaLabel": "与 媒体验收 私聊",
+                "text": "媒体验收@媒体验收",
+                "left": 26,
+                "top": 565,
+                "width": 232,
+                "height": 44
+              },
+              {
+                "ariaLabel": "与 媒体验收 私聊",
+                "text": "媒体验收@媒体验收",
+                "left": 26,
+                "top": 613,
+                "width": 232,
+                "height": 44
+              },
+              {
+                "ariaLabel": "与 媒体验收 私聊",
+                "text": "媒体验收@媒体验收",
+                "left": 26,
+                "top": 661,
+                "width": 232,
+                "height": 44
+              },
+              {
+                "ariaLabel": "与 权限与进展隔离验收 私聊",
+                "text": "权限与进展隔离验收@权限与进展隔离验收",
+                "left": 26,
+                "top": 709,
+                "width": 232,
+                "height": 44
+              },
+              {
+                "ariaLabel": "与 生图验收 私聊",
+                "text": "生图验收@生图验收",
+                "left": 26,
+                "top": 757,
+                "width": 232,
+                "height": 44
+              },
+              {
+                "ariaLabel": "与 同步连接验收 私聊",
+                "text": "同步连接验收@同步连接验收",
+                "left": 26,
+                "top": 805,
+                "width": 232,
+                "height": 44
+              },
+              {
+                "ariaLabel": "与 同步连接验收 私聊",
+                "text": "同步连接验收@同步连接验收",
+                "left": 26,
+                "top": 853,
+                "width": 232,
+                "height": 44
+              },
+              {
+                "ariaLabel": "与 同步连接验收 私聊",
+                "text": "同步连接验收@同步连接验收",
+                "left": 26,
+                "top": 901,
+                "width": 232,
+                "height": 44
+              },
+              {
+                "ariaLabel": "与 同步连接验收 私聊",
+                "text": "同步连接验收@同步连接验收",
+                "left": 26,
+                "top": 949,
+                "width": 232,
+                "height": 44
+              },
+              {
+                "ariaLabel": "与 验收员甲 私聊",
+                "text": "验收员甲@验收员甲",
+                "left": 26,
+                "top": 997,
+                "width": 232,
+                "height": 44
+              },
+              {
+                "ariaLabel": "与 整合验收 私聊",
+                "text": "整合验收@整合验收",
+                "left": 26,
+                "top": 1045,
+                "width": 232,
+                "height": 44
+              },
+              {
+                "ariaLabel": "与 整合验收 私聊",
+                "text": "整合验收@整合验收",
+                "left": 26,
+                "top": 1093,
+                "width": 232,
+                "height": 44
+              },
+              {
+                "ariaLabel": "与 整合验收 私聊",
+                "text": "整合验收@整合验收",
+                "left": 26,
+                "top": 1141,
+                "width": 232,
+                "height": 44
+              },
+              {
+                "ariaLabel": "与 datoo 私聊",
+                "text": "datoo@datoo",
+                "left": 26,
+                "top": 1189,
+                "width": 232,
+                "height": 44
+              },
+              {
+                "ariaLabel": "与 RC133 隔离验收访客 私聊",
+                "text": "RC133 隔离验收访客@RC133 隔离验收访客",
+                "left": 26,
+                "top": 1237,
+                "width": 232,
+                "height": 44
+              },
+              {
+                "ariaLabel": "与 RC133 隔离验收访客 私聊",
+                "text": "RC133 隔离验收访客@RC133 隔离验收访客",
+                "left": 26,
+                "top": 1285,
+                "width": 232,
+                "height": 44
+              },
+              {
+                "ariaLabel": "与 RC133 隔离验收访客 私聊",
+                "text": "RC133 隔离验收访客@RC133 隔离验收访客",
+                "left": 26,
+                "top": 1333,
+                "width": 232,
+                "height": 44
+              },
+              {
+                "ariaLabel": "与 RC133 隔离验收访客 私聊",
+                "text": "RC133 隔离验收访客@RC133 隔离验收访客",
+                "left": 26,
+                "top": 1381,
+                "width": 232,
+                "height": 44
+              },
+              {
+                "ariaLabel": "与 RC133 隔离验收访客 私聊",
+                "text": "RC133 隔离验收访客@RC133 隔离验收访客",
+                "left": 26,
+                "top": 1429,
+                "width": 232,
+                "height": 44
+              },
+              {
+                "ariaLabel": "与 RC133 隔离验收访客 私聊",
+                "text": "RC133 隔离验收访客@RC133 隔离验收访客",
+                "left": 26,
+                "top": 1477,
+                "width": 232,
+                "height": 44
+              },
+              {
+                "ariaLabel": "与 RC133 隔离验收访客 私聊",
+                "text": "RC133 隔离验收访客@RC133 隔离验收访客",
+                "left": 26,
+                "top": 1525,
+                "width": 232,
+                "height": 44
+              },
+              {
+                "ariaLabel": "与 RC133 隔离验收访客 私聊",
+                "text": "RC133 隔离验收访客@RC133 隔离验收访客",
+                "left": 26,
+                "top": 1573,
+                "width": 232,
+                "height": 44
+              },
+              {
+                "ariaLabel": "与 RC133 隔离验收访客 私聊",
+                "text": "RC133 隔离验收访客@RC133 隔离验收访客",
+                "left": 26,
+                "top": 1621,
+                "width": 232,
+                "height": 44
+              },
+              {
+                "ariaLabel": "与 RC133 隔离验收访客 私聊",
+                "text": "RC133 隔离验收访客@RC133 隔离验收访客",
+                "left": 26,
+                "top": 1669,
+                "width": 232,
+                "height": 44
+              },
+              {
+                "ariaLabel": "与 RC133 隔离验收访客 私聊",
+                "text": "RC133 隔离验收访客@RC133 隔离验收访客",
+                "left": 26,
+                "top": 1717,
+                "width": 232,
+                "height": 44
+              },
+              {
+                "ariaLabel": "与 RC133 隔离验收访客 私聊",
+                "text": "RC133 隔离验收访客@RC133 隔离验收访客",
+                "left": 26,
+                "top": 1765,
+                "width": 232,
+                "height": 44
+              },
+              {
+                "ariaLabel": "与 RC133 隔离验收访客 私聊",
+                "text": "RC133 隔离验收访客@RC133 隔离验收访客",
+                "left": 26,
+                "top": 1813,
+                "width": 232,
+                "height": 44
+              },
+              {
+                "ariaLabel": null,
+                "text": "设置",
+                "left": 10,
+                "top": 792,
+                "width": 260,
+                "height": 42
+              },
+              {
+                "ariaLabel": null,
+                "text": "群聊",
+                "left": 83,
+                "top": 350,
+                "width": 167,
+                "height": 52
+              },
+              {
+                "ariaLabel": "选择工作区",
+                "text": "群聊",
+                "left": 76,
+                "top": 435,
+                "width": 78,
+                "height": 28
+              },
+              {
+                "ariaLabel": "指令",
+                "text": "",
+                "left": 72,
+                "top": 547,
+                "width": 28,
+                "height": 28
+              },
+              {
+                "ariaLabel": "访问模式，当前：工作区内修改",
+                "text": "工作区内修改",
+                "left": 116,
+                "top": 547,
+                "width": 44,
+                "height": 28
+              }
+            ]
+          },
+          "account": {
+            "left": 10,
+            "right": 270,
+            "top": 792,
+            "bottom": 834,
+            "width": 260,
+            "height": 42,
+            "viewportWidth": 390,
+            "viewportHeight": 844,
+            "hit": true
+          },
+          "style": {
+            "left": 288,
+            "right": 366,
+            "top": 16,
+            "bottom": 52,
+            "width": 78,
+            "height": 36,
+            "viewportWidth": 390,
+            "viewportHeight": 844,
+            "hit": true
+          }
+        },
+        "768": {
+          "width": 768,
+          "height": 900,
+          "documentWidth": 768,
+          "bodyWidth": 768,
+          "control": "设置",
+          "nativeSidebar": {
+            "viewportWidth": 768,
+            "settingsTextVisible": false,
+            "leftControls": [
+              {
+                "ariaLabel": "打开侧边栏",
+                "text": "",
+                "left": 10,
+                "top": 18,
+                "width": 36,
+                "height": 36
+              },
+              {
+                "ariaLabel": "新建会话",
+                "text": "",
+                "left": 10,
+                "top": 66,
+                "width": 36,
+                "height": 36
+              },
+              {
+                "ariaLabel": "添加工作区",
+                "text": "",
+                "left": 10,
+                "top": 114,
+                "width": 36,
+                "height": 36
+              },
+              {
+                "ariaLabel": "搜索会话",
+                "text": "",
+                "left": 10,
+                "top": 162,
+                "width": 36,
+                "height": 36
+              },
+              {
+                "ariaLabel": "重新连接服务器",
+                "text": "↻重连",
+                "left": 6,
+                "top": 792,
+                "width": 44,
+                "height": 44
+              },
+              {
+                "ariaLabel": null,
+                "text": "",
+                "left": 10,
+                "top": 848,
+                "width": 36,
+                "height": 36
+              },
+              {
+                "ariaLabel": null,
+                "text": "群聊",
+                "left": 131,
+                "top": 383,
+                "width": 276,
+                "height": 52
+              },
+              {
+                "ariaLabel": "选择工作区",
+                "text": "群聊",
+                "left": 76,
+                "top": 468,
+                "width": 78,
+                "height": 28
+              },
+              {
+                "ariaLabel": null,
+                "text": "PTC 模式",
+                "left": 158,
+                "top": 468,
+                "width": 106,
+                "height": 28
+              },
+              {
+                "ariaLabel": "指令",
+                "text": "",
+                "left": 73,
+                "top": 583,
+                "width": 28,
+                "height": 28
+              },
+              {
+                "ariaLabel": "访问模式，当前：工作区内修改",
+                "text": "工作区内修改",
+                "left": 117,
+                "top": 583,
+                "width": 126,
+                "height": 28
+              }
+            ]
+          },
+          "account": {
+            "left": 10,
+            "right": 270,
+            "top": 848,
+            "bottom": 890,
+            "width": 260,
+            "height": 42,
+            "viewportWidth": 768,
+            "viewportHeight": 900,
+            "hit": true
+          },
+          "style": {
+            "left": 666,
+            "right": 744,
+            "top": 16,
+            "bottom": 46,
+            "width": 78,
+            "height": 30,
+            "viewportWidth": 768,
+            "viewportHeight": 900,
+            "hit": true
+          }
+        },
+        "native": {
+          "width": 1440,
+          "height": 900,
+          "documentWidth": 1440,
+          "bodyWidth": 1440,
+          "styleControl": {
+            "left": 1338,
+            "right": 1416,
+            "top": 16,
+            "bottom": 46,
+            "width": 78,
+            "height": 30,
+            "viewportWidth": 1440,
+            "viewportHeight": 900,
+            "hit": true
+          }
+        },
+        "qq2007": {
+          "width": 1440,
+          "height": 900,
+          "documentWidth": 1440,
+          "bodyWidth": 1440,
+          "styleControl": {
+            "left": 1338,
+            "right": 1416,
+            "top": 16,
+            "bottom": 46,
+            "width": 78,
+            "height": 30,
+            "viewportWidth": 1440,
+            "viewportHeight": 900,
+            "hit": true
+          }
+        }
+      },
+      "servedClient": {
+        "manifest": true,
+        "status": 200,
+        "marker": "rc135-assistant-actions-and-auth-aware-auto-reply"
+      }
+    }
+  ],
+  "screenshots": [
+    "RC142-isolated-settings.png"
+  ],
+  "passed": true
+}

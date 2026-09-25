@@ -1,0 +1,38 @@
+{
+  "version": "1.5.0-codex.rc1.35",
+  "at": "2026-09-12T00:22:38.231Z",
+  "mode": "public-super-admin-continuation",
+  "scope": [
+    "fresh headless context",
+    "existing super-admin account and 全国可飞 room",
+    "read-only gallery and network observation",
+    "browser-local styles only",
+    "no message, input, upload, AI request, role change, or setting mutation"
+  ],
+  "passed": false,
+  "readbacks": {
+    "mediaRoom": { "kind": "national-fly", "preflightItems": 3 },
+    "deepLink": {
+      "requested": true,
+      "requestSent": true,
+      "active": true,
+      "nativeSelected": true,
+      "selectedNativeTitle": true,
+      "galleryRequestMatchedTarget": true
+    },
+    "gallery": {
+      "thumbnails": 3,
+      "original": { "naturalWidth": 1024, "naturalHeight": 1536 },
+      "previousNext": true,
+      "closed": true,
+      "inflightAfterClose": 0,
+      "startedAfterClose": 0
+    },
+    "styles": {
+      "native1440": true,
+      "qq2007_1440": true,
+      "viewport768_390_320": "no horizontal overflow; gallery and style controls hit-testable"
+    }
+  },
+  "error": "Native details slot was present but no visible Files entry appeared within 20 seconds; AI/group top-layer and manual reconnect were not attempted."
+}

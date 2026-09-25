@@ -1,0 +1,42 @@
+{
+  "at": "2026-09-11T11:03:29.764Z",
+  "dns": [
+    {
+      "address": "172.67.207.147",
+      "family": 4
+    },
+    {
+      "address": "104.21.22.232",
+      "family": 4
+    }
+  ],
+  "proxyEnvironment": [
+    "all_proxy",
+    "https_proxy",
+    "http_proxy",
+    "NO_PROXY",
+    "WSS_PROXY"
+  ],
+  "probes": [
+    {
+      "client": "node-fetch",
+      "kind": "health",
+      "error": "ECONNRESET"
+    },
+    {
+      "client": "curl",
+      "kind": "health",
+      "result": "200 127.0.0.1 0.745088"
+    },
+    {
+      "client": "node-fetch",
+      "kind": "client-module",
+      "error": "ECONNRESET"
+    },
+    {
+      "client": "curl",
+      "kind": "client-module",
+      "result": "200 127.0.0.1 1.351492"
+    }
+  ]
+}

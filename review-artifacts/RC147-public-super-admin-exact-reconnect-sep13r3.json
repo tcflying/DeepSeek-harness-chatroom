@@ -1,0 +1,288 @@
+{
+  "version": "1.5.0-codex.rc1.47",
+  "at": "2026-09-12T17:12:40.574Z",
+  "mode": "public-super-admin-exact-reconnect",
+  "scope": [
+    "fresh headless context",
+    "one existing super-admin login",
+    "one authorized-room deep-link",
+    "open native Files only if the host entry is actually available",
+    "AI/group top-layer checks when Files opened",
+    "one UI reconnect after ready",
+    "no login retry, refresh, message, input, upload, AI request, role change, or server setting mutation"
+  ],
+  "passed": true,
+  "readbacks": {
+    "role": "super-admin-exact-reconnect",
+    "errors": [],
+    "files": {
+      "attempted": true,
+      "opened": true,
+      "nativeSlot": "workbench-right-pane",
+      "openedExistingFilesEntry": true,
+      "controlRole": "div",
+      "controlAriaSelected": null,
+      "panelContract": "true",
+      "panelVisible": true,
+      "composerControls": {
+        "trailing": {
+          "left": 465.03125,
+          "right": 904,
+          "top": 818,
+          "bottom": 854,
+          "width": 438.96875,
+          "height": 36,
+          "hit": true
+        },
+        "buttonShapes": [
+          {
+            "label": "■ 停止",
+            "type": "button",
+            "disabled": true,
+            "slot": "conversation.input.right",
+            "rect": {
+              "left": 465.03125,
+              "right": 516.03125,
+              "top": 818,
+              "bottom": 854,
+              "width": 51,
+              "height": 36,
+              "hit": true
+            }
+          },
+          {
+            "label": "＋ 新会话",
+            "type": "button",
+            "disabled": false,
+            "slot": "conversation.input.right",
+            "rect": {
+              "left": 521.03125,
+              "right": 588.78125,
+              "top": 818,
+              "bottom": 854,
+              "width": 67.75,
+              "height": 36,
+              "hit": true
+            }
+          },
+          {
+            "label": "⚡ 快速会议",
+            "type": "button",
+            "disabled": false,
+            "slot": "conversation.input.right",
+            "rect": {
+              "left": 593.78125,
+              "right": 677.78125,
+              "top": 818,
+              "bottom": 854,
+              "width": 84,
+              "height": 36,
+              "hit": true
+            }
+          },
+          {
+            "label": "选择模型，当前 MiniMax-M3，推理等级 High",
+            "type": "button",
+            "disabled": false,
+            "slot": "conversation.input.model",
+            "rect": {
+              "left": 689.78125,
+              "right": 818,
+              "top": 822,
+              "bottom": 850,
+              "width": 128.21875,
+              "height": 28,
+              "hit": true
+            }
+          },
+          {
+            "label": "上下文已用 6%",
+            "type": "button",
+            "disabled": false,
+            "slot": "conversation.composer.bar",
+            "rect": {
+              "left": 830,
+              "right": 858,
+              "top": 822,
+              "bottom": 850,
+              "width": 28,
+              "height": 28,
+              "hit": true
+            }
+          },
+          {
+            "label": "发送消息",
+            "type": "button",
+            "disabled": true,
+            "slot": "conversation.composer.bar",
+            "rect": {
+              "left": 870,
+              "right": 904,
+              "top": 817,
+              "bottom": 851,
+              "width": 34,
+              "height": 34,
+              "hit": true
+            }
+          }
+        ],
+        "controls": {
+          "model": {
+            "left": 689.78125,
+            "right": 818,
+            "top": 822,
+            "bottom": 850,
+            "width": 128.21875,
+            "height": 28,
+            "hit": true
+          },
+          "context": {
+            "left": 830,
+            "right": 858,
+            "top": 822,
+            "bottom": 850,
+            "width": 28,
+            "height": 28,
+            "hit": true
+          },
+          "send": {
+            "left": 870,
+            "right": 904,
+            "top": 817,
+            "bottom": 851,
+            "width": 34,
+            "height": 34,
+            "hit": true
+          }
+        },
+        "primaryActions": [
+          {
+            "left": 870,
+            "right": 904,
+            "top": 817,
+            "bottom": 851,
+            "width": 34,
+            "height": 34,
+            "hit": true
+          }
+        ],
+        "overlaps": {
+          "modelContext": false,
+          "modelSend": false,
+          "contextSend": false
+        }
+      }
+    },
+    "deepLink": {
+      "readinessDeadlineMs": 30000,
+      "requested": true,
+      "requestSent": true,
+      "selectResponseSucceeded": true,
+      "active": true,
+      "nativeSelected": true,
+      "selectedNativeTitle": true,
+      "timeline": [
+        {
+          "atMs": 6232,
+          "atUtc": "2026-09-12T17:12:47.821Z",
+          "event": "request",
+          "path": "/api/session/list",
+          "method": "POST"
+        },
+        {
+          "atMs": 10948,
+          "atUtc": "2026-09-12T17:12:52.537Z",
+          "event": "response",
+          "path": "/api/session/list",
+          "status": 200
+        },
+        {
+          "atMs": 10949,
+          "atUtc": "2026-09-12T17:12:52.538Z",
+          "event": "requestfinished",
+          "path": "/api/session/list",
+          "status": 200,
+          "timing": {
+            "queueOrBlockedMs": 1,
+            "dnsMs": null,
+            "connectMs": null,
+            "requestMs": 4728,
+            "downloadMs": 1,
+            "responseEndMs": 4729
+          }
+        },
+        {
+          "atMs": 10996,
+          "atUtc": "2026-09-12T17:12:52.585Z",
+          "event": "request",
+          "path": "/rooms/select",
+          "method": "POST"
+        },
+        {
+          "atMs": 10996,
+          "atUtc": "2026-09-12T17:12:52.585Z",
+          "event": "request",
+          "path": "/api/session/list",
+          "method": "POST"
+        },
+        {
+          "atMs": 11339,
+          "atUtc": "2026-09-12T17:12:52.928Z",
+          "event": "response",
+          "path": "/rooms/select",
+          "status": 200
+        },
+        {
+          "atMs": 11340,
+          "atUtc": "2026-09-12T17:12:52.929Z",
+          "event": "requestfinished",
+          "path": "/rooms/select",
+          "status": 200,
+          "timing": {
+            "queueOrBlockedMs": 0,
+            "dnsMs": null,
+            "connectMs": null,
+            "requestMs": 385,
+            "downloadMs": 1,
+            "responseEndMs": 386
+          }
+        }
+      ]
+    },
+    "AI 成员": {
+      "modal": true,
+      "pointOwnedByDialog": true,
+      "rect": {
+        "left": 360,
+        "right": 1080,
+        "top": 384,
+        "bottom": 516
+      }
+    },
+    "群管理": {
+      "modal": true,
+      "pointOwnedByDialog": true,
+      "rect": {
+        "left": 360,
+        "right": 1080,
+        "top": 109.5,
+        "bottom": 790.5
+      }
+    },
+    "reconnect": {
+      "oneClick": true,
+      "sessionListRequests": 1,
+      "roomStillSelected": true,
+      "before": {
+        "native": "connected",
+        "room": "online",
+        "notifications": "online"
+      },
+      "after": {
+        "native": "connected",
+        "room": "online",
+        "notifications": "online"
+      }
+    }
+  }
+}

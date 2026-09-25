@@ -1,0 +1,23 @@
+{
+  "at": "2026-09-11T09:26:12.246Z",
+  "version": "1.5.0-codex.rc1.20",
+  "bundles": [
+    {
+      "name": "dist/index.js",
+      "sha256": "7c86488109902174b7aa06fe39b523ad8ffae5109f310522d68fb197c83096ef"
+    },
+    {
+      "name": "dist/client.js",
+      "sha256": "7228d801c76b95abfe61693cb7133506d06a7e6bd3e471deeabb0a5e524d759f"
+    }
+  ],
+  "publicImage": {
+    "originalBytes": 2636898,
+    "previewBytes": 16592,
+    "savedPercent": 99.37
+  },
+  "probe": "2026-09-11T09:14:35.663Z",
+  "bridgeRegression": "2026-09-11T09:04:01.988Z",
+  "originalBrowserAt": "2026-09-11T09:25:14.381Z",
+  "evidenceScope": "Current source/deployment hashes and retained actual-browser/provider-transport receipts; not a new paid generation or a boot/restart endurance test."
+}

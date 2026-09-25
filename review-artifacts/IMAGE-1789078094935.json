@@ -1,0 +1,62 @@
+{
+  "base": "http://127.0.0.1:3186",
+  "roomId": "c51b2fd4-1656-4e4f-9968-4f02517709b7",
+  "profiles": [
+    {
+      "id": "dd1512e4-7d3b-4c0e-8e5a-7e7bac409d6b",
+      "roomId": "c51b2fd4-1656-4e4f-9968-4f02517709b7",
+      "name": "GPT生图验收",
+      "role": "生图工具实测",
+      "enabled": true,
+      "createdAt": 1789078096537,
+      "updatedAt": 1789078096537,
+      "provider": "oc-gpt6-low",
+      "model": "gpt-6-astra",
+      "instructions": "本轮只调用一次 chatroom_generate_image，prompt 由用户指定，size 为 1024x1024，quality 为 low。不要用 pwsh、代码画图、搜索或其他工具。图片成功后发送工具返回的真实图片预览和下载；错误时报告错误，不能重试。",
+      "reasoningEffort": "low",
+      "runtime": {
+        "status": "idle",
+        "updatedAt": 1789078096537
+      }
+    },
+    {
+      "id": "6c6db92d-0673-40a5-b72b-72736bf256f2",
+      "roomId": "c51b2fd4-1656-4e4f-9968-4f02517709b7",
+      "name": "M3生图验收",
+      "role": "生图工具实测",
+      "enabled": true,
+      "createdAt": 1789078096611,
+      "updatedAt": 1789078096611,
+      "provider": "minimax-cn",
+      "model": "MiniMax-M3",
+      "instructions": "本轮只调用一次 chatroom_generate_image，prompt 由用户指定，size 为 1024x1024，quality 为 low。不要用 pwsh、代码画图、搜索或其他工具。图片成功后发送工具返回的真实图片预览和下载；错误时报告错误，不能重试。",
+      "reasoningEffort": "high",
+      "runtime": {
+        "status": "idle",
+        "updatedAt": 1789078096611
+      }
+    }
+  ],
+  "results": [
+    {
+      "model": "GPT生图验收",
+      "fileId": "838d3187-4f4e-4e4d-a162-f327d068261a",
+      "artifact": "G:/codex-project/dsh-chatroom-next/review-artifacts/IMAGE-1789078094935-0.png",
+      "bytes": 821191,
+      "width": 1278,
+      "height": 1230,
+      "sha256": "72a6c6d987f65866ae1c24d297d0065c28f512727c2d48beae2f7ba1caba6362",
+      "elapsedMs": 120464
+    },
+    {
+      "model": "M3生图验收",
+      "fileId": "6a1b2095-ada3-4966-b7fd-b98370864dbc",
+      "artifact": "G:/codex-project/dsh-chatroom-next/review-artifacts/IMAGE-1789078094935-1.png",
+      "bytes": 1650591,
+      "width": 1254,
+      "height": 1254,
+      "sha256": "0c1eb97b9a868b905d6b2a3afc46cf6de444f7670587653ef8ffa51dcfada60a",
+      "elapsedMs": 64495
+    }
+  ]
+}

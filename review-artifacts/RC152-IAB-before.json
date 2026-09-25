@@ -1,0 +1,17 @@
+{
+  "dateLocal": "2026-09-14",
+  "origin": "https://talk.opcvip.net/",
+  "surface": "actual Codex in-app browser",
+  "beforeRelease": "1.5.0-codex.rc1.52",
+  "activeRelease": "1.5.0-codex.rc1.51",
+  "evidenceSource": "cua_repl supported DOM snapshot and read-only locator geometry",
+  "status": "目录同步超时 · 请重连。原生会话：未连接；通知：已连接",
+  "reconnectButton": { "x": -38.150001525878906, "y": 844, "width": 44, "height": 44, "centerHitStack": [] },
+  "viewport": { "width": 926, "height": 952 },
+  "statusContainer": { "wide": false, "x": -25.399999618530273, "width": 18.48750114440918 },
+  "nativeFooterActions": { "x": -25.399999618530273, "width": 106, "flexDirection": "row" },
+  "nativeFootArea": { "x": 10, "width": 35.20000076293945, "flexDirection": "column" },
+  "observedMisclick": "Update panel appeared after an attempted reconnect; closed without requesting an update.",
+  "inference": "Centered horizontal multi-action native footer overflows the collapsed rail; reconnect center is outside the viewport. A successful tool click is not proof that reconnect ran.",
+  "passed": false
+}

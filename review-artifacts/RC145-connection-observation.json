@@ -1,0 +1,92 @@
+{
+  "artifact": "RC145 connection observation",
+  "observedAt": "2026-09-12T07:12:43.118Z",
+  "scope": {
+    "readOnly": true,
+    "noServiceOrProxyMutation": true,
+    "noBrowserProbe": true,
+    "noPaidRequest": true,
+    "redaction": "No identities, URLs beyond named health surfaces, messages, credentials, room data, or raw log lines are included."
+  },
+  "servy": {
+    "dsh-chatroom-origin": "Running",
+    "dsh-chatroom-lan": "Running",
+    "dsh-chatroom": "Running"
+  },
+  "listeners": [
+    { "port": 3181, "address": "127.0.0.1", "pid": 45580 },
+    { "port": 3185, "address": "127.0.0.1", "pid": 42372 },
+    { "port": 10100, "address": "127.0.0.1", "pid": 68140 }
+  ],
+  "currentHealth": {
+    "local3181": {
+      "status": 200,
+      "ready": true,
+      "elapsedMs": 32,
+      "journalHealthy": true
+    },
+    "originBridge3185": {
+      "status": 200,
+      "ready": true,
+      "elapsedMs": 2,
+      "pid": 42372,
+      "upstreamActive": 11,
+      "upstreamErrors": 178,
+      "websocketOpened": 946,
+      "websocketClosed": 985
+    },
+    "opencodex10100": {
+      "status": 200,
+      "healthy": true,
+      "pid": 68140,
+      "startedAt": "2026-09-12T06:31:58.924Z"
+    },
+    "publicHealth": {
+      "observerAt": "2026-09-12T07:02:12.641Z",
+      "observerResult": { "healthy": false, "errorKind": "TimeoutError", "elapsedMs": 8002 },
+      "currentDirectWithoutEnvironmentProxy": { "healthy": false, "errorKind": "TypeError", "causeCode": "ECONNRESET", "elapsedMs": 260 },
+      "currentWithConfiguredEnvironmentProxy": { "status": 200, "ready": true, "journalHealthy": true, "elapsedMs": 1212 }
+    }
+  },
+  "observerSnapshot": {
+    "at": "2026-09-12T07:02:12.641Z",
+    "gapSeconds": 2488,
+    "evidenceHealthy": true,
+    "local": { "status": 200, "elapsedMs": 23, "journalHealthy": true },
+    "public": { "healthy": false, "errorKind": "TimeoutError", "elapsedMs": 8002 },
+    "originBridge": { "upstreamActive": 12, "upstreamErrors": 178, "newUpstreamErrors": 0, "possibleLeak": false },
+    "transport": { "closes": 1, "shortCloses": 0, "flapping": false }
+  },
+  "recentFiveMinuteJournal": {
+    "windowStart": "2026-09-12T07:07:43.118Z",
+    "windowEnd": "2026-09-12T07:12:43.118Z",
+    "events": 37,
+    "newFailureEvents": 0,
+    "firstEventAt": "2026-09-12T07:07:56.420Z",
+    "lastEventAt": "2026-09-12T07:12:08.921Z"
+  },
+  "priorRefusedWindow": {
+    "localTimes": [
+      "2026-09-12T14:28:00.050+08:00",
+      "2026-09-12T14:29:00.090+08:00",
+      "2026-09-12T14:30:00.195+08:00",
+      "2026-09-12T14:31:00.217+08:00",
+      "2026-09-12T14:32:00.493+08:00"
+    ],
+    "layer": "provider.probe",
+    "error": { "kind": "Error", "code": "ECONNREFUSED" },
+    "count": 5,
+    "relationToCurrentOpenCodex": "All five precede the current PID 68140 start at 14:31:58.924+08:00."
+  },
+  "supportedAttribution": [
+    "The loopback chatroom, origin bridge, and current OpenCodex health surfaces were live at observation time.",
+    "The observer public timeout at 15:02 is not reproducible through the configured environment-proxy route at 15:12; the public path remains route-dependent because the same current direct non-proxy probe reset.",
+    "The five historical provider.probe refusals are temporally before the current OpenCodex process and are a separate upstream-availability episode from the current healthy state."
+  ],
+  "unsupportedAttribution": [
+    "This does not prove that the public timeout is permanently resolved; only one current proxy-routed health read passed.",
+    "This does not prove the historical refused episode caused, or did not cause, the IAB/page freeze; no shared client runtime correlation was collected.",
+    "Bridge upstreamErrors=178 is cumulative. The observer saw no increment in its snapshot, so it is not evidence of a current bridge error burst.",
+    "Health observations do not establish chat delivery, SSE continuity, browser responsiveness, or paid-provider success."
+  ]
+}

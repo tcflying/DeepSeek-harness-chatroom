@@ -1,0 +1,43 @@
+{
+  "version": "1.5.0-codex.rc1.53",
+  "at": "2026-09-13T19:44:30.741Z",
+  "localChecksPassed": true,
+  "fullCi": {
+    "file": "RC153-check-ci-r2.exit.json",
+    "sourceUnchanged": true
+  },
+  "overlay": {
+    "persisted": true,
+    "onlyReleasePathChanged": true,
+    "beforeSha256": "9eccd23241d8a091fee87cf6ddecac9f66cf69b06b0c478120459d8dc837ad32",
+    "afterSha256": "e3e3b8e956ee15d8a91cd26b8f22458296d66675d32d65324301400fe0ffc66f"
+  },
+  "hostBundleUnchanged": true,
+  "bundles": {
+    "dist/client.js": "bb23b707fa807dfd8da05c903d762b864e52cf44a54af2a175dedbe5d1750bf8",
+    "dist/client.js.map": "ce3b9fa1f6669154771027ae6a754da83268d782ca444f48c591acea23c6e1fd",
+    "dist/index.js": "7df5c74027da1441e304ee3f8a6c63dd19e1a582026e503b8baa069748c4653c",
+    "dist/index.js.map": "9f612b9063ed88d5c76dae75591f1ac3b3c14f95abd6a8226cceea42fe461f79"
+  },
+  "surfaces": [
+    {
+      "base": "http://127.0.0.1:3181",
+      "health": {
+        "ready": true,
+        "diagnostics": {
+          "enabled": true,
+          "healthy": true,
+          "dropped": 0
+        }
+      },
+      "exactClientPayload": true,
+      "sha256": "718997f88ef6424d10b02012d3679638d0ab2759438d7cfa87751c77f4cdc798"
+    }
+  ],
+  "publicNodeTlsProbe": {
+    "passed": false,
+    "attempts": 2,
+    "error": "TypeError: fetch failed; cause: read ECONNRESET (-4077), TLSWrap.onStreamRead"
+  },
+  "boundary": "Local package/config/served-payload proof only; no WAN Node transport pass. Actual IAB startup and reload proof is recorded separately."
+}

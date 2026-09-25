@@ -1,0 +1,379 @@
+{
+  "version": "1.5.0-codex.rc1.50",
+  "at": "2026-09-12T19:00:23.017Z",
+  "mode": "public-super-admin-320-narrow-geometry-probe",
+  "scope": [
+    "fresh headless context",
+    "one existing super-admin login",
+    "one authorized-room deep-link",
+    "browser-local QQ style only",
+    "contentless geometry/computed-style observation",
+    "no gallery, message, input, upload, AI request, role change, or setting mutation",
+    "one reversible native left-sidebar expansion/collapse with5s bounded state observation"
+  ],
+  "passed": false,
+  "readbacks": {
+    "deepLink": {
+      "readinessDeadlineMs": 60000,
+      "requested": true,
+      "requestSent": true,
+      "selectResponseSucceeded": true,
+      "active": true,
+      "nativeSelected": true,
+      "selectedNativeTitle": true,
+      "timeline": [
+        {
+          "atMs": 7043,
+          "atUtc": "2026-09-12T19:00:31.158Z",
+          "event": "request",
+          "path": "/api/session/list",
+          "method": "POST"
+        },
+        {
+          "atMs": 18118,
+          "atUtc": "2026-09-12T19:00:42.233Z",
+          "event": "response",
+          "path": "/api/session/list",
+          "status": 200
+        },
+        {
+          "atMs": 18120,
+          "atUtc": "2026-09-12T19:00:42.235Z",
+          "event": "requestfinished",
+          "path": "/api/session/list",
+          "status": 200,
+          "timing": {
+            "queueOrBlockedMs": 0,
+            "dnsMs": null,
+            "connectMs": null,
+            "requestMs": 11087,
+            "downloadMs": 2,
+            "responseEndMs": 11089
+          }
+        },
+        {
+          "atMs": 18169,
+          "atUtc": "2026-09-12T19:00:42.284Z",
+          "event": "request",
+          "path": "/rooms/select",
+          "method": "POST"
+        },
+        {
+          "atMs": 18170,
+          "atUtc": "2026-09-12T19:00:42.285Z",
+          "event": "request",
+          "path": "/api/session/list",
+          "method": "POST"
+        },
+        {
+          "atMs": 18567,
+          "atUtc": "2026-09-12T19:00:42.682Z",
+          "event": "response",
+          "path": "/rooms/select",
+          "status": 200
+        },
+        {
+          "atMs": 18568,
+          "atUtc": "2026-09-12T19:00:42.683Z",
+          "event": "requestfinished",
+          "path": "/rooms/select",
+          "status": 200,
+          "timing": {
+            "queueOrBlockedMs": 0,
+            "dnsMs": null,
+            "connectMs": null,
+            "requestMs": 442,
+            "downloadMs": 1,
+            "responseEndMs": 442
+          }
+        }
+      ]
+    },
+    "state": {
+      "conversationWidth": 264,
+      "bubble": {
+        "className": "dsh-chatroom-human-bubble",
+        "width": 208,
+        "right": 288,
+        "scrollWidth": 208,
+        "clientWidth": 208,
+        "maxWidth": "100%",
+        "widthProperty": "208px",
+        "hasImageSlot": false,
+        "directChildren": [
+          {
+            "tag": "DIV",
+            "className": "",
+            "dataSlot": null,
+            "rect": {
+              "left": 93,
+              "right": 275,
+              "top": -618.265625,
+              "bottom": -364.75,
+              "width": 182,
+              "height": 253.515625
+            },
+            "width": "182px",
+            "maxWidth": "none",
+            "display": "block",
+            "hasImageSlot": false
+          }
+        ],
+        "ancestors": [
+          {
+            "tag": "DIV",
+            "className": "dsh-chatroom-human-bubble",
+            "role": null,
+            "dataSlot": null,
+            "dataDshAttributeNames": [],
+            "rect": {
+              "left": 80,
+              "right": 288,
+              "top": -643.265625,
+              "bottom": -339.75,
+              "width": 208,
+              "height": 303.515625
+            },
+            "width": "208px",
+            "maxWidth": "100%",
+            "display": "block"
+          },
+          {
+            "tag": "DIV",
+            "className": "dsh-chatroom-message-column",
+            "role": null,
+            "dataSlot": null,
+            "dataDshAttributeNames": [],
+            "rect": {
+              "left": 0,
+              "right": 0,
+              "top": 0,
+              "bottom": 0,
+              "width": 0,
+              "height": 0
+            },
+            "width": "auto",
+            "maxWidth": "100%",
+            "display": "contents"
+          },
+          {
+            "tag": "DIV",
+            "className": "dsh-chatroom-participant-message",
+            "role": null,
+            "dataSlot": null,
+            "dataDshAttributeNames": [
+              "data-dsh-chatroom-message-id",
+              "data-dsh-chatroom-own",
+              "data-dsh-chatroom-group-position"
+            ],
+            "rect": {
+              "left": 80,
+              "right": 288,
+              "top": -683.265625,
+              "bottom": -175.5625,
+              "width": 208,
+              "height": 507.703125
+            },
+            "width": "208px",
+            "maxWidth": "none",
+            "display": "grid"
+          },
+          {
+            "tag": "DIV",
+            "className": "",
+            "role": null,
+            "dataSlot": "conversation.chat.node",
+            "dataDshAttributeNames": [],
+            "rect": {
+              "left": 0,
+              "right": 0,
+              "top": 0,
+              "bottom": 0,
+              "width": 0,
+              "height": 0
+            },
+            "width": "auto",
+            "maxWidth": "none",
+            "display": "contents"
+          },
+          {
+            "tag": "DIV",
+            "className": "EvIC1a_flowItem",
+            "role": null,
+            "dataSlot": null,
+            "dataDshAttributeNames": [
+              "data-dsh-chatroom-group-sender",
+              "data-dsh-chatroom-group-time",
+              "data-dsh-chatroom-group-position",
+              "data-dsh-chatroom-action-group",
+              "data-dsh-chatroom-actions-visible",
+              "data-dsh-part"
+            ],
+            "rect": {
+              "left": 80,
+              "right": 288,
+              "top": -683.265625,
+              "bottom": -175.5625,
+              "width": 208,
+              "height": 507.703125
+            },
+            "width": "208px",
+            "maxWidth": "none",
+            "display": "block"
+          },
+          {
+            "tag": "DIV",
+            "className": "EvIC1a_column",
+            "role": null,
+            "dataSlot": null,
+            "dataDshAttributeNames": [],
+            "rect": {
+              "left": 80,
+              "right": 288,
+              "top": -1707,
+              "bottom": 1993.71875,
+              "width": 208,
+              "height": 3700.71875
+            },
+            "width": "208px",
+            "maxWidth": "100%",
+            "display": "flex"
+          },
+          {
+            "tag": "DIV",
+            "className": "EvIC1a_scroll",
+            "role": null,
+            "dataSlot": null,
+            "dataDshAttributeNames": [],
+            "rect": {
+              "left": 56,
+              "right": 312,
+              "top": -1723,
+              "bottom": 2009.71875,
+              "width": 256,
+              "height": 3732.71875
+            },
+            "width": "208px",
+            "maxWidth": "none",
+            "display": "block"
+          },
+          {
+            "tag": "DIV",
+            "className": "EvIC1a_root",
+            "role": null,
+            "dataSlot": null,
+            "dataDshAttributeNames": [],
+            "rect": {
+              "left": 56,
+              "right": 312,
+              "top": -1723,
+              "bottom": 2009.71875,
+              "width": 256,
+              "height": 3732.71875
+            },
+            "width": "256px",
+            "maxWidth": "none",
+            "display": "flex"
+          },
+          {
+            "tag": "DIV",
+            "className": "",
+            "role": null,
+            "dataSlot": "conversation.view",
+            "dataDshAttributeNames": [],
+            "rect": {
+              "left": 0,
+              "right": 0,
+              "top": 0,
+              "bottom": 0,
+              "width": 0,
+              "height": 0
+            },
+            "width": "auto",
+            "maxWidth": "none",
+            "display": "contents"
+          },
+          {
+            "tag": "DIV",
+            "className": "wSkVaW_viewArea",
+            "role": null,
+            "dataSlot": null,
+            "dataDshAttributeNames": [],
+            "rect": {
+              "left": 56,
+              "right": 312,
+              "top": -1723,
+              "bottom": 2009.71875,
+              "width": 256,
+              "height": 3732.71875
+            },
+            "width": "256px",
+            "maxWidth": "none",
+            "display": "flex"
+          },
+          {
+            "tag": "DIV",
+            "className": "",
+            "role": null,
+            "dataSlot": "conversation.session",
+            "dataDshAttributeNames": [],
+            "rect": {
+              "left": 0,
+              "right": 0,
+              "top": 0,
+              "bottom": 0,
+              "width": 0,
+              "height": 0
+            },
+            "width": "auto",
+            "maxWidth": "none",
+            "display": "contents"
+          },
+          {
+            "tag": "DIV",
+            "className": "wSkVaW_scrollBody",
+            "role": null,
+            "dataSlot": null,
+            "dataDshAttributeNames": [
+              "data-dsh-part"
+            ],
+            "rect": {
+              "left": 56,
+              "right": 320,
+              "top": 257,
+              "bottom": 720,
+              "width": 264,
+              "height": 463
+            },
+            "width": "256px",
+            "maxWidth": "none",
+            "display": "flex"
+          }
+        ],
+        "ratioOfConversation": 0.7879
+      }
+    },
+    "acceptance": {
+      "longBubbleAtLeast200": true,
+      "noHorizontalOverflow": true
+    },
+    "sidebar": {
+      "sidebar": {
+        "left": 0,
+        "right": 0,
+        "width": 0,
+        "scrollWidth": 0,
+        "clientWidth": 0
+      },
+      "categories": {
+        "left": 8,
+        "right": 260,
+        "width": 252,
+        "scrollWidth": 244,
+        "clientWidth": 244
+      }
+    },
+    "sidebarRestored": true
+  },
+  "error": "Error: Playwright browser close timed out after 15000ms"
+}

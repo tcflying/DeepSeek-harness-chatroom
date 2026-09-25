@@ -1,0 +1,58 @@
+{
+  "at": "2026-09-12T17:03:51.972Z",
+  "probes": [
+    {
+      "name": "local",
+      "status": 403,
+      "headersMs": 5,
+      "elapsedMs": 5,
+      "rpcOk": false
+    },
+    {
+      "name": "bridge",
+      "status": 200,
+      "headersMs": 10,
+      "elapsedMs": 11,
+      "rpcOk": false
+    },
+    {
+      "name": "public",
+      "status": 200,
+      "headersMs": 997,
+      "elapsedMs": 998,
+      "rpcOk": false
+    }
+  ],
+  "journal": [
+    {
+      "at": "2026-09-12T17:03:53.670Z",
+      "pid": 45580,
+      "event": "native.session-list.complete",
+      "sessionList": {
+        "upstreamElapsedMs": 1,
+        "jsonElapsedMs": 1,
+        "totalElapsedMs": 1,
+        "status": 200
+      }
+    },
+    {
+      "at": "2026-09-12T17:03:54.456Z",
+      "pid": 45580,
+      "event": "native.session-list.complete",
+      "sessionList": {
+        "upstreamElapsedMs": 0,
+        "jsonElapsedMs": 0,
+        "totalElapsedMs": 0,
+        "status": 200
+      }
+    }
+  ],
+  "boundary": "Existing admin login; catalogue reads only; no credentials, cookies, session ids, titles or content retained. Local and bridge calls target the same service, not another origin. No IAB, TUN, configuration or service changes.",
+  "login": {
+    "status": 200,
+    "elapsedMs": 1686,
+    "role": "super-admin"
+  },
+  "completedAt": "2026-09-12T17:03:54.681Z",
+  "passed": false
+}

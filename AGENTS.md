@@ -1,5 +1,10 @@
 # DeepSeek Harness Chatroom Agent Contract
 
+## Local collaboration context
+
+For this independent worktree, read [the collaboration record](review-artifacts/COLLABORATION.md)
+when resuming work or coordinating with the paired ZCode session.
+
 This repository is the source of truth for the public Chatroom plugin. Keep the
 plugin out-of-tree from DeepSeek Harness and preserve the native Session, model,
 permission, trajectory, and composer surfaces.

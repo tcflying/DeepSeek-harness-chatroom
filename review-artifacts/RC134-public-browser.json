@@ -1,0 +1,113 @@
+{
+  "version": "1.5.0-codex.rc1.34",
+  "at": "2026-09-11T23:27:04.879Z",
+  "mode": "public-authenticated",
+  "base": "https://talk.opcvip.net",
+  "roles": [
+    {
+      "role": "member",
+      "rpc": [
+        {
+          "method": "settings/describe",
+          "status": 403
+        },
+        {
+          "method": "credentials/list",
+          "status": 403
+        },
+        {
+          "method": "session/selectModel",
+          "status": 403
+        },
+        {
+          "method": "agentPresets/select",
+          "status": 403
+        },
+        {
+          "method": "commands/execute",
+          "status": 403
+        }
+      ],
+      "errors": [],
+      "roomSelected": true,
+      "geometry": {},
+      "mediaRoom": {
+        "kind": "owned-accessible-room",
+        "contentClaim": "not asserted"
+      },
+      "failure": "TimeoutError: locator.waitFor: Timeout 30000ms exceeded.\nCall log:\n\u001b[2m  - waiting for getByRole('button', { name: '我的账号', exact: true }) to be visible\u001b[22m\n"
+    },
+    {
+      "role": "super-admin",
+      "rpc": [],
+      "errors": [],
+      "roomSelected": true,
+      "geometry": {
+        "native": {
+          "width": 1440,
+          "height": 900,
+          "documentWidth": 1440,
+          "bodyWidth": 1440,
+          "styleControl": {
+            "left": 1284,
+            "right": 1362,
+            "top": 13,
+            "bottom": 43,
+            "width": 78,
+            "height": 30,
+            "viewportWidth": 1440,
+            "viewportHeight": 900,
+            "hit": true
+          }
+        },
+        "qq2007": {
+          "width": 1440,
+          "height": 900,
+          "documentWidth": 1440,
+          "bodyWidth": 1440,
+          "styleControl": {
+            "left": 1284,
+            "right": 1362,
+            "top": 11,
+            "bottom": 41,
+            "width": 78,
+            "height": 30,
+            "viewportWidth": 1440,
+            "viewportHeight": 900,
+            "hit": true
+          }
+        }
+      },
+      "mediaRoom": {
+        "kind": "national-fly",
+        "preflightItems": 3
+      },
+      "deepLink": {
+        "requested": true,
+        "requestSent": true,
+        "active": true,
+        "nativeSelected": true,
+        "selectedNativeTitle": true,
+        "galleryRequestMatchedTarget": true
+      },
+      "gallery": {
+        "thumbnails": 3,
+        "original": {
+          "naturalWidth": 1024,
+          "naturalHeight": 1536
+        },
+        "previousNext": true,
+        "closed": true,
+        "inflightAfterClose": 0,
+        "startedAfterClose": 0
+      },
+      "failure": "AssertionError [ERR_ASSERTION]: super-admin/768/style: control is covered"
+    }
+  ],
+  "screenshots": [
+    "RC134-public-super-admin-gallery.png"
+  ],
+  "passed": false,
+  "anonymousGallery": 401,
+  "error": "Error: member: TimeoutError: locator.waitFor: Timeout 30000ms exceeded.\nCall log:\n\u001b[2m  - waiting for getByRole('button', { name: '我的账号', exact: true }) to be visible\u001b[22m\n\nsuper-admin: AssertionError [ERR_ASSERTION]: super-admin/768/style: control is covered"
+}

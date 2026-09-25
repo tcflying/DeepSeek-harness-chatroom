@@ -1,0 +1,72 @@
+{
+  "version": "1.5.0-codex.rc1.47",
+  "at": "2026-09-12T11:43:49.899Z",
+  "deployed": true,
+  "authorization": "User explicitly requested publication of the staged RC147 candidate",
+  "overlay": {
+    "beforeSha256": "186c68ca0debaecf33d38c3caa48f4a00ec9b3da91d8aa35354773f92bb11d8f",
+    "afterSha256": "310f6f0362207577f4c06fa56d43d29a106e452ab826061b50bca9b0452f664f",
+    "onlyReleasePathChanged": true,
+    "rollback": "C:/Users/datoo/.dsh/chatroom-server/profiles/web/cordis.patch.rc147-prepublish.bak"
+  },
+  "phases": [
+    {
+      "at": "2026-09-12T11:31:49.286Z",
+      "event": "runtime.stop",
+      "pid": 45580,
+      "source": "plugin diagnostics journal"
+    },
+    {
+      "at": "2026-09-12T11:31:49.366Z",
+      "event": "old plugin disposed",
+      "healthStatus": 404
+    },
+    {
+      "at": "2026-09-12T11:32:21.194Z",
+      "event": "runtime.start",
+      "pid": 45580,
+      "source": "plugin diagnostics journal"
+    },
+    {
+      "at": "2026-09-12T11:32:24.429Z",
+      "event": "initialization still pending",
+      "healthStatus": 503,
+      "artifact": "RC147-aggregate-publishinitial.json"
+    },
+    {
+      "at": "2026-09-12T11:32:54.839Z",
+      "event": "ready",
+      "healthStatus": 200,
+      "diagnosticsHealthy": true,
+      "dropped": 0
+    }
+  ],
+  "service": "Service status for 'dsh-chatroom': Running",
+  "listeners": [
+    {
+      "LocalAddress": "127.0.0.1",
+      "LocalPort": 3185,
+      "OwningProcess": 42372
+    },
+    {
+      "LocalAddress": "127.0.0.1",
+      "LocalPort": 3181,
+      "OwningProcess": 45580
+    }
+  ],
+  "hostAndBridgeNotRestarted": true,
+  "failuresRetained": {
+    "firstPublic": "RC147-public-browser.json",
+    "firstPublicError": "anonymous gallery read must be denied: 502 !== 401",
+    "firstHarnessCleanup": "Receipt saved false but Node PID 60796 and owned headless browser remained. Only this verified test process tree was terminated; first run is not a natural-exit pass.",
+    "iab": "RC147-IAB-live-published.json",
+    "diagnosticCorrection": "Ad hoc Node HTTPS checks initially omitted NODE_USE_ENV_PROXY and returned ECONNRESET. They are not evidence of production downtime. With the existing environment proxy honored, local/origin/public anonymous gallery reads returned 401 at 11:41:07Z.",
+    "attribution": "A bridge request hit its 30-second header timeout at 11:34:50Z, but its sanitized record lacks a route and cannot be conclusively matched to the anonymous 502. Do not claim the first failure root cause is fixed."
+  },
+  "boundaries": [
+    "No DSH core, account, credential, sandbox or other-plugin edits",
+    "No Git commit, push, npm publication or new paid generation",
+    "Original IAB was not refreshed; its current rendering remains unverified",
+    "Existing native heartbeat pause state was preserved"
+  ]
+}

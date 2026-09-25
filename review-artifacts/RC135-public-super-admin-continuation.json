@@ -1,0 +1,21 @@
+{
+  "version": "1.5.0-codex.rc1.35",
+  "at": "2026-09-12T00:38:51.212Z",
+  "mode": "public-super-admin-continuation",
+  "scope": [
+    "fresh headless context",
+    "existing super-admin account and 全国可飞 room",
+    "read-only gallery and network observation",
+    "browser-local styles only",
+    "one UI reconnect",
+    "no message, input, upload, AI request, role change, or setting mutation"
+  ],
+  "passed": false,
+  "readbacks": {
+    "role": "super-admin",
+    "rpc": [],
+    "errors": [],
+    "geometry": {}
+  },
+  "error": "TimeoutError: auth/login exceeded the 20000ms client deadline although an HTTP 200 response header arrived afterwards; response completion was not accepted as a pass. Sensitive response headers redacted."
+}

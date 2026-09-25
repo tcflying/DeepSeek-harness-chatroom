@@ -1,0 +1,16 @@
+{
+  "at": "2026-09-11T09:04:01.988Z",
+  "originalSha256": "28f06fbe3366835f9c259719f43e5782a5eb1a5356e8236700308d69670c522b",
+  "results": [
+    {
+      "version": "old-production-source",
+      "clientDisconnects": 20,
+      "remainingUpstreamStreams": 20
+    },
+    {
+      "version": "fixed",
+      "clientDisconnects": 20,
+      "remainingUpstreamStreams": 0
+    }
+  ]
+}

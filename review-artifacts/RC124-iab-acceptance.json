@@ -1,0 +1,110 @@
+{
+  "ai": {
+    "addButton": {
+      "bottom": 579.9000244140625,
+      "height": 46,
+      "left": 120,
+      "right": 806.4000244140625,
+      "top": 533.9000244140625,
+      "width": 686.4000244140625,
+      "x": 120,
+      "y": 533.9000244140625
+    },
+    "at": "2026-09-11T13:02:27.187Z",
+    "files": true,
+    "hit": true,
+    "loadedMembers": true,
+    "overflow": false,
+    "rect": {
+      "bottom": 738.8999938964844,
+      "height": 525.7999877929688,
+      "left": 103.20000457763672,
+      "right": 823.2000045776367,
+      "top": 213.1000061035156,
+      "width": 720,
+      "x": 103.20000457763672,
+      "y": 213.1000061035156
+    },
+    "title": "AI 成员",
+    "topLayer": true
+  },
+  "group": {
+    "at": "2026-09-11T13:01:59.174Z",
+    "bodyScrollable": false,
+    "close": {
+      "bottom": 84.9000015258789,
+      "height": 44,
+      "left": 762.4000244140625,
+      "right": 806.4000244140625,
+      "top": 40.900001525878906,
+      "width": 44,
+      "x": 762.4000244140625,
+      "y": 40.900001525878906
+    },
+    "files": true,
+    "hit": true,
+    "overflow": false,
+    "rect": {
+      "bottom": 919.8999900817872,
+      "height": 887.7999877929688,
+      "left": 103.20000457763672,
+      "right": 823.2000045776367,
+      "top": 32.10000228881836,
+      "width": 720,
+      "x": 103.20000457763672,
+      "y": 32.10000228881836
+    },
+    "title": "群管理",
+    "topLayer": true
+  },
+  "nativeGroup": {
+    "at": "2026-09-11T13:04:06.946Z",
+    "files": true,
+    "hit": true,
+    "overflow": false,
+    "rect": {
+      "bottom": 928.3000373840332,
+      "height": 904.6000366210938,
+      "left": 103.20000457763672,
+      "right": 823.2000045776367,
+      "top": 23.700000762939453,
+      "width": 720,
+      "x": 103.20000457763672,
+      "y": 23.700000762939453
+    },
+    "skin": null,
+    "topLayer": true
+  },
+  "reconnect": {
+    "before": {
+      "at": 1789131747553,
+      "drafts": [
+        ""
+      ],
+      "selected": "全国可飞33分钟",
+      "state": {
+        "native": "connected",
+        "notifications": "online",
+        "room": "online",
+        "state": "connected",
+        "wide": "true"
+      }
+    },
+    "after": {
+      "at": 1789131805441,
+      "drafts": [
+        ""
+      ],
+      "selected": "全国可飞34分钟",
+      "state": {
+        "native": "connected",
+        "notifications": "online",
+        "room": "online",
+        "state": "connected",
+        "wide": "true"
+      }
+    },
+    "draftWasEmpty": true
+  },
+  "scope": "Original in-app browser tab 1, Files kept open. No membership, model, account or message changes. No filled-draft claim for this run."
+}

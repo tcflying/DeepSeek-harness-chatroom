@@ -1,0 +1,235 @@
+{
+  "version": "1.5.0-codex.rc1.34",
+  "at": "2026-09-11T23:41:02.785Z",
+  "mode": "public-super-admin-768-style-dom-probe",
+  "scope": [
+    "fresh headless context",
+    "existing super-admin account and room",
+    "deep-link selection",
+    "browser-local QQ style only",
+    "no gallery click, message, input, upload, AI request, role change, or setting mutation"
+  ],
+  "passed": true,
+  "readbacks": {
+    "viewport": {
+      "width": 768,
+      "height": 900
+    },
+    "style": {
+      "target": {
+        "tag": "SELECT",
+        "role": null,
+        "ariaLabel": "界面风格",
+        "className": "",
+        "dataSlot": null,
+        "dataTestId": null,
+        "title": null
+      },
+      "hit": {
+        "tag": "rect",
+        "role": null,
+        "ariaLabel": null,
+        "className": null,
+        "dataSlot": null,
+        "dataTestId": null,
+        "title": null
+      },
+      "center": {
+        "x": 713,
+        "y": 30
+      },
+      "rect": {
+        "left": 674,
+        "right": 752,
+        "top": 15,
+        "bottom": 45,
+        "width": 78,
+        "height": 30
+      },
+      "hitIsTarget": false,
+      "hitInsideStyleSelect": false,
+      "styleSelectContainsHit": false,
+      "closestButton": {
+        "tag": "BUTTON",
+        "role": null,
+        "ariaLabel": "展开底部面板",
+        "className": "nArs4W_toggleButton",
+        "dataSlot": null,
+        "dataTestId": null,
+        "title": null
+      },
+      "closestButtonIsAbsolute": false,
+      "ancestry": [
+        {
+          "tag": "rect",
+          "role": null,
+          "ariaLabel": null,
+          "className": null,
+          "dataSlot": null,
+          "dataTestId": null,
+          "title": null,
+          "rect": {
+            "left": 707.25,
+            "right": 716.75,
+            "top": 30,
+            "bottom": 32.75,
+            "width": 9.5,
+            "height": 2.75
+          },
+          "pointerEvents": "auto",
+          "position": "static",
+          "zIndex": "auto",
+          "containsStyleSelect": false
+        },
+        {
+          "tag": "svg",
+          "role": null,
+          "ariaLabel": null,
+          "className": null,
+          "dataSlot": null,
+          "dataTestId": null,
+          "title": null,
+          "rect": {
+            "left": 704,
+            "right": 720,
+            "top": 20,
+            "bottom": 36,
+            "width": 16,
+            "height": 16
+          },
+          "pointerEvents": "auto",
+          "position": "static",
+          "zIndex": "auto",
+          "containsStyleSelect": false
+        },
+        {
+          "tag": "BUTTON",
+          "role": null,
+          "ariaLabel": "展开底部面板",
+          "className": "nArs4W_toggleButton",
+          "dataSlot": null,
+          "dataTestId": null,
+          "title": null,
+          "rect": {
+            "left": 698,
+            "right": 726,
+            "top": 14,
+            "bottom": 42,
+            "width": 28,
+            "height": 28
+          },
+          "pointerEvents": "auto",
+          "position": "static",
+          "zIndex": "auto",
+          "containsStyleSelect": false
+        },
+        {
+          "tag": "DIV",
+          "role": null,
+          "ariaLabel": null,
+          "className": "nArs4W_toggleCluster",
+          "dataSlot": null,
+          "dataTestId": null,
+          "title": null,
+          "rect": {
+            "left": 698,
+            "right": 758,
+            "top": 14,
+            "bottom": 42,
+            "width": 60,
+            "height": 28
+          },
+          "pointerEvents": "auto",
+          "position": "absolute",
+          "zIndex": "45",
+          "containsStyleSelect": false
+        },
+        {
+          "tag": "DIV",
+          "role": null,
+          "ariaLabel": null,
+          "className": "",
+          "dataSlot": null,
+          "dataTestId": null,
+          "title": null,
+          "rect": {
+            "left": 0,
+            "right": 768,
+            "top": 0,
+            "bottom": 900,
+            "width": 768,
+            "height": 900
+          },
+          "pointerEvents": "none",
+          "position": "fixed",
+          "zIndex": "25",
+          "containsStyleSelect": false
+        },
+        {
+          "tag": "DIV",
+          "role": null,
+          "ariaLabel": null,
+          "className": "",
+          "dataSlot": null,
+          "dataTestId": null,
+          "title": null,
+          "rect": {
+            "left": 0,
+            "right": 768,
+            "top": 900,
+            "bottom": 900,
+            "width": 768,
+            "height": 0
+          },
+          "pointerEvents": "auto",
+          "position": "static",
+          "zIndex": "auto",
+          "containsStyleSelect": false
+        },
+        {
+          "tag": "BODY",
+          "role": null,
+          "ariaLabel": null,
+          "className": "",
+          "dataSlot": null,
+          "dataTestId": null,
+          "title": null,
+          "rect": {
+            "left": 0,
+            "right": 768,
+            "top": 0,
+            "bottom": 900,
+            "width": 768,
+            "height": 900
+          },
+          "pointerEvents": "auto",
+          "position": "static",
+          "zIndex": "auto",
+          "containsStyleSelect": true
+        },
+        {
+          "tag": "HTML",
+          "role": null,
+          "ariaLabel": null,
+          "className": "",
+          "dataSlot": null,
+          "dataTestId": null,
+          "title": null,
+          "rect": {
+            "left": 0,
+            "right": 768,
+            "top": 0,
+            "bottom": 900,
+            "width": 768,
+            "height": 900
+          },
+          "pointerEvents": "auto",
+          "position": "static",
+          "zIndex": "auto",
+          "containsStyleSelect": true
+        }
+      ]
+    },
+    "detailsPresent": 1
+  }
+}

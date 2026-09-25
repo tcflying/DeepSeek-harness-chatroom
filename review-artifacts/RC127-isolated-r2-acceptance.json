@@ -1,0 +1,12 @@
+{
+  "version": "1.5.0-codex.rc1.27",
+  "at": "2026-09-11T15:21:49.767Z",
+  "kind": "isolated-native-host",
+  "passed": true,
+  "errors": [],
+  "responses": [],
+  "nativeLogin": 200,
+  "settings": true,
+  "progressBundle": true,
+  "clientUrl": "/plugins/??deepseek-harness-chatroom/client.js&rev=17ed6de8a0317d5c-44"
+}

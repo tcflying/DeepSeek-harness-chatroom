@@ -1,0 +1,62 @@
+{
+  "at": "2026-09-12T19:24:22.582Z",
+  "boundary": "Read-only bounded probe; reads at most 8192 compressed bytes per session without decoding or retaining contents. Independent process, not in-Host persistence timing. Existing admin authentication and one catalogue read only. No TUN, proxy, service or source changes.",
+  "io": {
+    "files": 159,
+    "totalMs": 68,
+    "stages": {
+      "readdir": {
+        "count": 161,
+        "totalMs": 31,
+        "p95Ms": 0,
+        "maxMs": 7
+      },
+      "open": {
+        "count": 159,
+        "totalMs": 12,
+        "p95Ms": 0,
+        "maxMs": 0
+      },
+      "read-first-8192": {
+        "count": 159,
+        "totalMs": 8,
+        "p95Ms": 0,
+        "maxMs": 0
+      },
+      "close": {
+        "count": 159,
+        "totalMs": 5,
+        "p95Ms": 0,
+        "maxMs": 0
+      },
+      "stat": {
+        "count": 159,
+        "totalMs": 8,
+        "p95Ms": 0,
+        "maxMs": 0
+      }
+    }
+  },
+  "health": [
+    {
+      "stage": "during-disk",
+      "status": 200,
+      "elapsedMs": 27
+    },
+    {
+      "stage": "during-catalogue",
+      "status": 200,
+      "elapsedMs": 6
+    }
+  ],
+  "catalogue": {
+    "status": 200,
+    "headersMs": 16564,
+    "totalMs": 16566,
+    "rpcOk": true,
+    "items": 74
+  },
+  "completedAt": "2026-09-12T19:24:41.121Z",
+  "observationComplete": true,
+  "latencyFixed": false
+}

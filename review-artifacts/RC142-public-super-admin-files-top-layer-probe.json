@@ -1,0 +1,20 @@
+{
+  "version": "1.5.0-codex.rc1.42",
+  "at": "2026-09-12T05:01:54.887Z",
+  "mode": "public-super-admin-files-top-layer-probe",
+  "scope": [
+    "fresh headless context",
+    "one existing super-admin login",
+    "one authorized-room deep-link",
+    "open existing native Files entry when operable",
+    "AI and group-management top-layer checks",
+    "no gallery, reconnect, message, input, upload, AI request, role change, or setting mutation"
+  ],
+  "passed": false,
+  "readbacks": {
+    "currentStage": null,
+    "files": null,
+    "dialogSummary": []
+  },
+  "error": "TimeoutError: page.waitForFunction: Timeout 30000ms exceeded."
+}

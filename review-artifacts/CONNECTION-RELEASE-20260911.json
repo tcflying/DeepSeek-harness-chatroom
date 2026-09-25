@@ -1,0 +1,85 @@
+{
+  "at": "2026-09-11T07:45:37.179Z",
+  "version": "1.5.0-codex.rc1.16",
+  "hashes": {
+    "dist/index.js": "d3ca79ee18ca98b500eaddc3da794a51819f72d006af4866a82ce5616e3849de",
+    "dist/client.js": "e24a6e3a004fce326c22805d6b8421ec10601caff880474f32bb918d52707bdb"
+  },
+  "startupSha256": "4dbe5244a55eaf875c80d7069ee8de13232bad24a6ef7b54fda520bcb5cbba3e",
+  "coreSha256": "20daa1648fda862247d78840e52472e84f4c6846394cb69b79db213d8ed79b6a",
+  "services": [
+    {
+      "base": "http://127.0.0.1:3181",
+      "status": 200,
+      "health": {
+        "ready": true,
+        "diagnostics": {
+          "enabled": true,
+          "healthy": true,
+          "dropped": 0
+        }
+      },
+      "anonymousFileStatus": 401
+    },
+    {
+      "base": "https://talk.opcvip.net",
+      "status": 200,
+      "health": {
+        "ready": true,
+        "diagnostics": {
+          "enabled": true,
+          "healthy": true,
+          "dropped": 0
+        }
+      },
+      "anonymousFileStatus": 401
+    }
+  ],
+  "journal": [
+    {
+      "version": 1,
+      "at": "2026-09-11T07:42:24.303Z",
+      "pid": 76140,
+      "event": "provider.probe",
+      "elapsedMs": 5,
+      "providerPid": 5780,
+      "healthy": true
+    },
+    {
+      "version": 1,
+      "at": "2026-09-11T07:43:22.898Z",
+      "pid": 76140,
+      "event": "runtime.stop"
+    },
+    {
+      "version": 1,
+      "at": "2026-09-11T07:43:39.692Z",
+      "pid": 76140,
+      "event": "runtime.start"
+    },
+    {
+      "version": 1,
+      "at": "2026-09-11T07:43:39.722Z",
+      "pid": 76140,
+      "event": "provider.probe",
+      "elapsedMs": 37,
+      "providerPid": 5780,
+      "healthy": true
+    },
+    {
+      "version": 1,
+      "at": "2026-09-11T07:44:39.773Z",
+      "pid": 76140,
+      "event": "provider.probe",
+      "elapsedMs": 5,
+      "providerPid": 5780,
+      "healthy": true
+    }
+  ],
+  "automation": {
+    "id": "automation-4",
+    "active": true,
+    "intervalMinutes": 5,
+    "schedulerExecution": "not claimed; immediate observer samples verified"
+  }
+}

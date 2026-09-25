@@ -1,0 +1,891 @@
+{
+  "version": "1.5.0-codex.rc1.51",
+  "at": "2026-09-13T17:34:12.482Z",
+  "mode": "isolated-guest",
+  "base": "http://127.0.0.1:3186",
+  "roles": [
+    {
+      "role": "guest",
+      "rpc": [],
+      "errors": [],
+      "geometry": {
+        "320": {
+          "width": 320,
+          "height": 720,
+          "documentWidth": 320,
+          "bodyWidth": 320,
+          "control": "设置",
+          "nativeSidebar": {
+            "viewportWidth": 320,
+            "settingsTextVisible": true,
+            "leftStaticChrome": [
+              {
+                "ariaLabel": "新建会话",
+                "text": "",
+                "left": 16,
+                "top": 24,
+                "width": 200,
+                "height": 24
+              },
+              {
+                "ariaLabel": "新建会话",
+                "text": "新会话",
+                "left": 14,
+                "top": 74,
+                "width": 236,
+                "height": 38
+              },
+              {
+                "ariaLabel": null,
+                "text": "设置",
+                "left": 10,
+                "top": 668,
+                "width": 244,
+                "height": 42
+              }
+            ]
+          },
+          "account": {
+            "left": 10,
+            "right": 254,
+            "top": 668,
+            "bottom": 710,
+            "width": 244,
+            "height": 42,
+            "viewportWidth": 320,
+            "viewportHeight": 720,
+            "hit": true
+          },
+          "navigationDismissed": true,
+          "style": {
+            "left": 218,
+            "right": 296,
+            "top": 16,
+            "bottom": 52,
+            "width": 78,
+            "height": 36,
+            "viewportWidth": 320,
+            "viewportHeight": 720,
+            "hit": true
+          }
+        },
+        "390": {
+          "width": 390,
+          "height": 844,
+          "documentWidth": 390,
+          "bodyWidth": 390,
+          "control": "设置",
+          "nativeSidebar": {
+            "viewportWidth": 390,
+            "settingsTextVisible": true,
+            "leftStaticChrome": [
+              {
+                "ariaLabel": "新建会话",
+                "text": "",
+                "left": 16,
+                "top": 24,
+                "width": 216,
+                "height": 24
+              },
+              {
+                "ariaLabel": "新建会话",
+                "text": "新会话",
+                "left": 14,
+                "top": 74,
+                "width": 252,
+                "height": 38
+              },
+              {
+                "ariaLabel": null,
+                "text": "设置",
+                "left": 10,
+                "top": 792,
+                "width": 260,
+                "height": 42
+              }
+            ]
+          },
+          "account": {
+            "left": 10,
+            "right": 270,
+            "top": 792,
+            "bottom": 834,
+            "width": 260,
+            "height": 42,
+            "viewportWidth": 390,
+            "viewportHeight": 844,
+            "hit": true
+          },
+          "navigationDismissed": true,
+          "style": {
+            "left": 288,
+            "right": 366,
+            "top": 16,
+            "bottom": 52,
+            "width": 78,
+            "height": 36,
+            "viewportWidth": 390,
+            "viewportHeight": 844,
+            "hit": true
+          }
+        },
+        "768": {
+          "width": 768,
+          "height": 900,
+          "documentWidth": 768,
+          "bodyWidth": 768,
+          "control": "设置",
+          "nativeSidebar": {
+            "viewportWidth": 768,
+            "settingsTextVisible": true,
+            "leftStaticChrome": [
+              {
+                "ariaLabel": "新建会话",
+                "text": "",
+                "left": 16,
+                "top": 24,
+                "width": 216,
+                "height": 24
+              },
+              {
+                "ariaLabel": "新建会话",
+                "text": "新会话",
+                "left": 14,
+                "top": 74,
+                "width": 252,
+                "height": 38
+              },
+              {
+                "ariaLabel": "重新连接服务器",
+                "text": "↻重连",
+                "left": 203,
+                "top": 796,
+                "width": 63,
+                "height": 44
+              },
+              {
+                "ariaLabel": null,
+                "text": "设置",
+                "left": 10,
+                "top": 848,
+                "width": 260,
+                "height": 42
+              }
+            ]
+          },
+          "account": {
+            "left": 10,
+            "right": 270,
+            "top": 848,
+            "bottom": 890,
+            "width": 260,
+            "height": 42,
+            "viewportWidth": 768,
+            "viewportHeight": 900,
+            "hit": true
+          },
+          "navigationDismissed": true,
+          "style": {
+            "left": 666,
+            "right": 744,
+            "top": 16,
+            "bottom": 46,
+            "width": 78,
+            "height": 30,
+            "viewportWidth": 768,
+            "viewportHeight": 900,
+            "hit": true
+          }
+        },
+        "native": {
+          "width": 1440,
+          "height": 900,
+          "documentWidth": 1440,
+          "bodyWidth": 1440,
+          "styleControl": {
+            "left": 1338,
+            "right": 1416,
+            "top": 16,
+            "bottom": 46,
+            "width": 78,
+            "height": 30,
+            "viewportWidth": 1440,
+            "viewportHeight": 900,
+            "hit": true
+          }
+        },
+        "qq2007": {
+          "width": 1440,
+          "height": 900,
+          "documentWidth": 1440,
+          "bodyWidth": 1440,
+          "styleControl": {
+            "left": 1338,
+            "right": 1416,
+            "top": 16,
+            "bottom": 46,
+            "width": 78,
+            "height": 30,
+            "viewportWidth": 1440,
+            "viewportHeight": 900,
+            "hit": true
+          }
+        }
+      },
+      "servedClient": {
+        "manifest": true,
+        "status": 200,
+        "servedSha256": "c302b77ed0e4307174af25f8ac39b54bfdfdc771a7a84e51450cbb4ad5ee525e",
+        "candidateSha256": "528d9da157b436cef723ba44302f8e5d9b44d4f12cd91d305f8be330e472d92b",
+        "servedBytes": 1158781,
+        "candidateBytes": 1158717,
+        "exactCandidate": true,
+        "normalizedPayload": true,
+        "normalization": "terminal-semicolon-and-source-map-footer-v1",
+        "servedNormalizedSha256": "2da5f10d1a8d8e8b743f0480dd1a5deb074da18da28a0a4ed7a07655887b6c02",
+        "candidateNormalizedSha256": "2da5f10d1a8d8e8b743f0480dd1a5deb074da18da28a0a4ed7a07655887b6c02",
+        "servedSourceMapFooter": true,
+        "candidateSourceMapFooter": true,
+        "difference": {
+          "firstDifference": 1158683,
+          "commonSuffixBytes": 0,
+          "lengthDelta": 64,
+          "servedFooterKind": "line-source-map",
+          "candidateFooterKind": "line-source-map"
+        },
+        "structure": "host-terminal-source-map-wrapper-normalized",
+        "marker": "rc135-assistant-actions-and-auth-aware-auto-reply"
+      },
+      "settingsReadback": {
+        "auth": {
+          "sessionStatus": 200,
+          "enabled": false,
+          "authenticated": true,
+          "accountRole": null
+        },
+        "manageableRooms": {
+          "status": 200,
+          "count": 0,
+          "requestFailed": false
+        }
+      },
+      "settingsSection": {
+        "mode": "empty-manageable-rooms",
+        "auth": {
+          "sessionStatus": 200,
+          "enabled": false,
+          "authenticated": true,
+          "accountRole": null
+        },
+        "manageableRooms": {
+          "status": 200,
+          "count": 0,
+          "requestFailed": false
+        },
+        "default": {
+          "desktop": {
+            "width": 1440,
+            "height": 900,
+            "documentWidth": 1440,
+            "bodyWidth": 1440,
+            "root": {
+              "left": 372,
+              "right": 1256,
+              "top": 104,
+              "bottom": 778.140625,
+              "width": 884,
+              "height": 674.140625,
+              "fontSize": 14,
+              "gridColumn": "auto",
+              "paddingLeft": 0,
+              "tag": "DIV",
+              "className": "dsh-chatroom-settings"
+            },
+            "card": {
+              "left": 372,
+              "right": 1256,
+              "top": 172,
+              "bottom": 349.140625,
+              "width": 884,
+              "height": 177.140625,
+              "fontSize": 14,
+              "gridColumn": "1 / -1",
+              "paddingLeft": 16,
+              "tag": "SECTION",
+              "className": "dsh-chatroom-card dsh-chatroom-agent-settings-card"
+            },
+            "input": null,
+            "inputLabel": null,
+            "controls": [
+              {
+                "left": 389,
+                "right": 583,
+                "top": 480.140625,
+                "bottom": 518.140625,
+                "width": 194,
+                "height": 38,
+                "fontSize": 14,
+                "gridColumn": "auto",
+                "paddingLeft": 10,
+                "tag": "SELECT",
+                "className": ""
+              },
+              {
+                "left": 593,
+                "right": 787,
+                "top": 480.140625,
+                "bottom": 518.140625,
+                "width": 194,
+                "height": 38,
+                "fontSize": 14,
+                "gridColumn": "auto",
+                "paddingLeft": 10,
+                "tag": "SELECT",
+                "className": ""
+              },
+              {
+                "left": 854,
+                "right": 1226,
+                "top": 519.140625,
+                "bottom": 635.140625,
+                "width": 372,
+                "height": 116,
+                "fontSize": 14,
+                "gridColumn": "auto",
+                "paddingLeft": 11,
+                "tag": "TEXTAREA",
+                "className": ""
+              },
+              {
+                "left": 854,
+                "right": 1226,
+                "top": 700.140625,
+                "bottom": 816.140625,
+                "width": 372,
+                "height": 116,
+                "fontSize": 14,
+                "gridColumn": "auto",
+                "paddingLeft": 11,
+                "tag": "TEXTAREA",
+                "className": ""
+              }
+            ],
+            "controlLabels": [
+              {
+                "left": 389,
+                "right": 583,
+                "top": 453.140625,
+                "bottom": 518.140625,
+                "width": 194,
+                "height": 65,
+                "fontSize": 14,
+                "gridColumn": "auto",
+                "paddingLeft": 0,
+                "tag": "LABEL",
+                "className": ""
+              },
+              {
+                "left": 593,
+                "right": 787,
+                "top": 453.140625,
+                "bottom": 518.140625,
+                "width": 194,
+                "height": 65,
+                "fontSize": 14,
+                "gridColumn": "auto",
+                "paddingLeft": 0,
+                "tag": "LABEL",
+                "className": ""
+              },
+              {
+                "left": 854,
+                "right": 1226,
+                "top": 492.140625,
+                "bottom": 659.140625,
+                "width": 372,
+                "height": 167,
+                "fontSize": 14,
+                "gridColumn": "auto",
+                "paddingLeft": 0,
+                "tag": "LABEL",
+                "className": ""
+              },
+              {
+                "left": 854,
+                "right": 1226,
+                "top": 673.140625,
+                "bottom": 858.140625,
+                "width": 372,
+                "height": 185,
+                "fontSize": 14,
+                "gridColumn": "auto",
+                "paddingLeft": 0,
+                "tag": "LABEL",
+                "className": ""
+              }
+            ],
+            "switchLabel": null,
+            "track": null,
+            "trackHit": false,
+            "switchLabelHit": false,
+            "hitElement": null
+          },
+          "narrow": {
+            "width": 390,
+            "height": 844,
+            "documentWidth": 390,
+            "bodyWidth": 390,
+            "root": {
+              "left": 20,
+              "right": 370,
+              "top": 156,
+              "bottom": 1170.140625,
+              "width": 350,
+              "height": 1014.140625,
+              "fontSize": 14,
+              "gridColumn": "auto",
+              "paddingLeft": 0,
+              "tag": "DIV",
+              "className": "dsh-chatroom-settings"
+            },
+            "card": {
+              "left": 20,
+              "right": 370,
+              "top": 220,
+              "bottom": 415.140625,
+              "width": 350,
+              "height": 195.140625,
+              "fontSize": 14,
+              "gridColumn": "1 / -1",
+              "paddingLeft": 16,
+              "tag": "SECTION",
+              "className": "dsh-chatroom-card dsh-chatroom-agent-settings-card"
+            },
+            "input": null,
+            "inputLabel": null,
+            "controls": [
+              {
+                "left": 37,
+                "right": 353,
+                "top": 560.140625,
+                "bottom": 604.140625,
+                "width": 316,
+                "height": 44,
+                "fontSize": 16,
+                "gridColumn": "auto",
+                "paddingLeft": 10,
+                "tag": "SELECT",
+                "className": ""
+              },
+              {
+                "left": 37,
+                "right": 353,
+                "top": 641.140625,
+                "bottom": 685.140625,
+                "width": 316,
+                "height": 44,
+                "fontSize": 16,
+                "gridColumn": "auto",
+                "paddingLeft": 10,
+                "tag": "SELECT",
+                "className": ""
+              },
+              {
+                "left": 48,
+                "right": 342,
+                "top": 1000.140625,
+                "bottom": 1116.140625,
+                "width": 294,
+                "height": 116,
+                "fontSize": 16,
+                "gridColumn": "auto",
+                "paddingLeft": 11,
+                "tag": "TEXTAREA",
+                "className": ""
+              },
+              {
+                "left": 48,
+                "right": 342,
+                "top": 1199.140625,
+                "bottom": 1315.140625,
+                "width": 294,
+                "height": 116,
+                "fontSize": 16,
+                "gridColumn": "auto",
+                "paddingLeft": 11,
+                "tag": "TEXTAREA",
+                "className": ""
+              }
+            ],
+            "controlLabels": [
+              {
+                "left": 37,
+                "right": 353,
+                "top": 533.140625,
+                "bottom": 604.140625,
+                "width": 316,
+                "height": 71,
+                "fontSize": 14,
+                "gridColumn": "auto",
+                "paddingLeft": 0,
+                "tag": "LABEL",
+                "className": ""
+              },
+              {
+                "left": 37,
+                "right": 353,
+                "top": 614.140625,
+                "bottom": 685.140625,
+                "width": 316,
+                "height": 71,
+                "fontSize": 14,
+                "gridColumn": "auto",
+                "paddingLeft": 0,
+                "tag": "LABEL",
+                "className": ""
+              },
+              {
+                "left": 48,
+                "right": 342,
+                "top": 973.140625,
+                "bottom": 1158.140625,
+                "width": 294,
+                "height": 185,
+                "fontSize": 14,
+                "gridColumn": "auto",
+                "paddingLeft": 0,
+                "tag": "LABEL",
+                "className": ""
+              },
+              {
+                "left": 48,
+                "right": 342,
+                "top": 1172.140625,
+                "bottom": 1357.140625,
+                "width": 294,
+                "height": 185,
+                "fontSize": 14,
+                "gridColumn": "auto",
+                "paddingLeft": 0,
+                "tag": "LABEL",
+                "className": ""
+              }
+            ],
+            "switchLabel": null,
+            "track": null,
+            "trackHit": false,
+            "switchLabelHit": false,
+            "hitElement": null
+          }
+        },
+        "qq2007": {
+          "desktop": {
+            "width": 1440,
+            "height": 900,
+            "documentWidth": 1440,
+            "bodyWidth": 1440,
+            "root": {
+              "left": 372,
+              "right": 1256,
+              "top": 104,
+              "bottom": 778.140625,
+              "width": 884,
+              "height": 674.140625,
+              "fontSize": 14,
+              "gridColumn": "auto",
+              "paddingLeft": 0,
+              "tag": "DIV",
+              "className": "dsh-chatroom-settings"
+            },
+            "card": {
+              "left": 372,
+              "right": 1256,
+              "top": 172,
+              "bottom": 349.140625,
+              "width": 884,
+              "height": 177.140625,
+              "fontSize": 14,
+              "gridColumn": "1 / -1",
+              "paddingLeft": 16,
+              "tag": "SECTION",
+              "className": "dsh-chatroom-card dsh-chatroom-agent-settings-card"
+            },
+            "input": null,
+            "inputLabel": null,
+            "controls": [
+              {
+                "left": 389,
+                "right": 583,
+                "top": 480.140625,
+                "bottom": 518.140625,
+                "width": 194,
+                "height": 38,
+                "fontSize": 14,
+                "gridColumn": "auto",
+                "paddingLeft": 10,
+                "tag": "SELECT",
+                "className": ""
+              },
+              {
+                "left": 593,
+                "right": 787,
+                "top": 480.140625,
+                "bottom": 518.140625,
+                "width": 194,
+                "height": 38,
+                "fontSize": 14,
+                "gridColumn": "auto",
+                "paddingLeft": 10,
+                "tag": "SELECT",
+                "className": ""
+              },
+              {
+                "left": 854,
+                "right": 1226,
+                "top": 519.140625,
+                "bottom": 635.140625,
+                "width": 372,
+                "height": 116,
+                "fontSize": 14,
+                "gridColumn": "auto",
+                "paddingLeft": 11,
+                "tag": "TEXTAREA",
+                "className": ""
+              },
+              {
+                "left": 854,
+                "right": 1226,
+                "top": 700.140625,
+                "bottom": 816.140625,
+                "width": 372,
+                "height": 116,
+                "fontSize": 14,
+                "gridColumn": "auto",
+                "paddingLeft": 11,
+                "tag": "TEXTAREA",
+                "className": ""
+              }
+            ],
+            "controlLabels": [
+              {
+                "left": 389,
+                "right": 583,
+                "top": 453.140625,
+                "bottom": 518.140625,
+                "width": 194,
+                "height": 65,
+                "fontSize": 14,
+                "gridColumn": "auto",
+                "paddingLeft": 0,
+                "tag": "LABEL",
+                "className": ""
+              },
+              {
+                "left": 593,
+                "right": 787,
+                "top": 453.140625,
+                "bottom": 518.140625,
+                "width": 194,
+                "height": 65,
+                "fontSize": 14,
+                "gridColumn": "auto",
+                "paddingLeft": 0,
+                "tag": "LABEL",
+                "className": ""
+              },
+              {
+                "left": 854,
+                "right": 1226,
+                "top": 492.140625,
+                "bottom": 659.140625,
+                "width": 372,
+                "height": 167,
+                "fontSize": 14,
+                "gridColumn": "auto",
+                "paddingLeft": 0,
+                "tag": "LABEL",
+                "className": ""
+              },
+              {
+                "left": 854,
+                "right": 1226,
+                "top": 673.140625,
+                "bottom": 858.140625,
+                "width": 372,
+                "height": 185,
+                "fontSize": 14,
+                "gridColumn": "auto",
+                "paddingLeft": 0,
+                "tag": "LABEL",
+                "className": ""
+              }
+            ],
+            "switchLabel": null,
+            "track": null,
+            "trackHit": false,
+            "switchLabelHit": false,
+            "hitElement": null
+          },
+          "narrow": {
+            "width": 390,
+            "height": 844,
+            "documentWidth": 390,
+            "bodyWidth": 390,
+            "root": {
+              "left": 21,
+              "right": 369,
+              "top": 157,
+              "bottom": 1171.140625,
+              "width": 348,
+              "height": 1014.140625,
+              "fontSize": 14,
+              "gridColumn": "auto",
+              "paddingLeft": 0,
+              "tag": "DIV",
+              "className": "dsh-chatroom-settings"
+            },
+            "card": {
+              "left": 21,
+              "right": 369,
+              "top": 221,
+              "bottom": 416.140625,
+              "width": 348,
+              "height": 195.140625,
+              "fontSize": 14,
+              "gridColumn": "1 / -1",
+              "paddingLeft": 16,
+              "tag": "SECTION",
+              "className": "dsh-chatroom-card dsh-chatroom-agent-settings-card"
+            },
+            "input": null,
+            "inputLabel": null,
+            "controls": [
+              {
+                "left": 38,
+                "right": 352,
+                "top": 561.140625,
+                "bottom": 605.140625,
+                "width": 314,
+                "height": 44,
+                "fontSize": 16,
+                "gridColumn": "auto",
+                "paddingLeft": 10,
+                "tag": "SELECT",
+                "className": ""
+              },
+              {
+                "left": 38,
+                "right": 352,
+                "top": 642.140625,
+                "bottom": 686.140625,
+                "width": 314,
+                "height": 44,
+                "fontSize": 16,
+                "gridColumn": "auto",
+                "paddingLeft": 10,
+                "tag": "SELECT",
+                "className": ""
+              },
+              {
+                "left": 49,
+                "right": 341,
+                "top": 1001.140625,
+                "bottom": 1117.140625,
+                "width": 292,
+                "height": 116,
+                "fontSize": 16,
+                "gridColumn": "auto",
+                "paddingLeft": 11,
+                "tag": "TEXTAREA",
+                "className": ""
+              },
+              {
+                "left": 49,
+                "right": 341,
+                "top": 1200.140625,
+                "bottom": 1316.140625,
+                "width": 292,
+                "height": 116,
+                "fontSize": 16,
+                "gridColumn": "auto",
+                "paddingLeft": 11,
+                "tag": "TEXTAREA",
+                "className": ""
+              }
+            ],
+            "controlLabels": [
+              {
+                "left": 38,
+                "right": 352,
+                "top": 534.140625,
+                "bottom": 605.140625,
+                "width": 314,
+                "height": 71,
+                "fontSize": 14,
+                "gridColumn": "auto",
+                "paddingLeft": 0,
+                "tag": "LABEL",
+                "className": ""
+              },
+              {
+                "left": 38,
+                "right": 352,
+                "top": 615.140625,
+                "bottom": 686.140625,
+                "width": 314,
+                "height": 71,
+                "fontSize": 14,
+                "gridColumn": "auto",
+                "paddingLeft": 0,
+                "tag": "LABEL",
+                "className": ""
+              },
+              {
+                "left": 49,
+                "right": 341,
+                "top": 974.140625,
+                "bottom": 1159.140625,
+                "width": 292,
+                "height": 185,
+                "fontSize": 14,
+                "gridColumn": "auto",
+                "paddingLeft": 0,
+                "tag": "LABEL",
+                "className": ""
+              },
+              {
+                "left": 49,
+                "right": 341,
+                "top": 1173.140625,
+                "bottom": 1358.140625,
+                "width": 292,
+                "height": 185,
+                "fontSize": 14,
+                "gridColumn": "auto",
+                "paddingLeft": 0,
+                "tag": "LABEL",
+                "className": ""
+              }
+            ],
+            "switchLabel": null,
+            "track": null,
+            "trackHit": false,
+            "switchLabelHit": false,
+            "hitElement": null
+          }
+        }
+      }
+    }
+  ],
+  "screenshots": [
+    "RC151-isolated-settings-r2.png"
+  ],
+  "passed": true,
+  "browserEngine": "bundled Chromium headless shell",
+  "browserCleanup": {
+    "startedAt": "2026-09-13T17:34:22.562Z",
+    "connected": true,
+    "contextsRemaining": 0,
+    "completedAt": "2026-09-13T17:34:22.974Z"
+  }
+}

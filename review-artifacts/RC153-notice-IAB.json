@@ -1,0 +1,48 @@
+{
+  "version": "1.5.0-codex.rc1.53",
+  "date": "2026-09-14",
+  "scope": "Only permanent suppression of non-binding DSH startup preview notice",
+  "browser": "Codex In-app Browser",
+  "browserId": "1",
+  "evidenceSource": "Actual mcp__cua_repl AX/DOM readbacks, not a standalone Chromium substitute",
+  "startupNoticeAcceptancePassed": true,
+  "before": {
+    "tabId": "1",
+    "url": "https://talk.opcvip.net/",
+    "action": "Reload existing empty composer page before deployment",
+    "notice": "dialog 内测声明, heading 内测声明, button 继续"
+  },
+  "isolated": {
+    "tabId": "2",
+    "url": "http://127.0.0.1:3186/",
+    "coldStartedCandidate": true,
+    "noticePresent": false,
+    "settingsOpened": true,
+    "modelsOpened": true,
+    "nativeProvidersVisible": ["DeepSeek", "minimax-cn", "OC GPT-6 low"],
+    "existingDraftPreserved": true,
+    "noMessagesOrModelRequestsSent": true
+  },
+  "afterReload": {
+    "tabId": "1",
+    "url": "https://talk.opcvip.net/",
+    "noticePresent": false,
+    "composerPresent": true,
+    "connectionStatus": "服务器已连接",
+    "skin": "QQ2007"
+  },
+  "freshPage": {
+    "tabId": "3",
+    "url": "https://talk.opcvip.net/",
+    "noticePresent": false,
+    "settingsButtonPresent": true,
+    "composerPresent": true,
+    "connectionStatus": "目录同步超时 · 请重连",
+    "boundary": "New-page notice suppression passed; catalogue readiness did not pass. Earlier connectivity work is not resumed by this notification-only request."
+  },
+  "retainedControlErrors": [
+    "Old AX state read timed out at 30s and reset bindings; rediscovery and state read succeeded with 60s bound.",
+    "New-tab creation timed out at 60s; inventory confirmed it had been created. Readback of that same tab succeeded; no duplicate was opened."
+  ],
+  "limits": "This receipt does not certify IAB control latency, WAN stability, or a production OS/service restart. The persisted plugin registration is evaluated on each page startup."
+}

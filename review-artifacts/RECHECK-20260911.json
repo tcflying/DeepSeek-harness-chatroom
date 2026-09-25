@@ -1,0 +1,35 @@
+{
+  "at": "2026-09-11T07:37:33.347Z",
+  "results": [
+    {
+      "model": "GPT",
+      "id": "8ebaa47b-8dda-400b-9283-22283cb82566",
+      "width": 1536,
+      "height": 1024,
+      "bytes": 3243587,
+      "sha256": "27db2eac94f11bf773d0dd95adef832ccf07b42d18d5a920a17db0b868138841",
+      "authenticated": 200,
+      "publicAnonymous": 401
+    },
+    {
+      "model": "M3",
+      "id": "200c5997-832d-407f-9ce0-c4356c3b5852",
+      "width": 1536,
+      "height": 1024,
+      "bytes": 2636898,
+      "sha256": "d1b69ef1737ed9ebb76b50f4ba52af38d4c2154eb3fc13c1e1563f392887ff0f",
+      "authenticated": 200,
+      "publicAnonymous": 401
+    },
+    {
+      "model": "M3-repeat",
+      "id": "94902804-6df9-4c8b-a751-b6a0a3823e7e",
+      "width": 1536,
+      "height": 1024,
+      "bytes": 3045027,
+      "sha256": "5a6c1d04d120d7463ac32cac936fb7d9ac897953aa062c3b6bf1d566fdb06088",
+      "authenticated": 200,
+      "publicAnonymous": 401
+    }
+  ]
+}

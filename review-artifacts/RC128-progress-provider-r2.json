@@ -1,0 +1,11 @@
+{
+  "version": "1.5.0-codex.rc1.28",
+  "at": "2026-09-11T15:51:27.820Z",
+  "kind": "real-provider-public-browser-progress",
+  "runs": [],
+  "passed": false,
+  "sidebar": [],
+  "error": "TimeoutError: locator.click: Timeout 25000ms exceeded.\nCall log:\n\u001b[2m  - waiting for getByRole('treeitem').filter({ hasText: 'GPT 与 M3 生图验收' }).first()\u001b[22m\n",
+  "pageText": "新会话\n任务看板\n工作区\n⌄\n群聊\n0\n⌄\nSolo\n0\n⌄\n私聊\n20\nSherlockTay\n2天\n下次见\n2天\ndato-233\n3天\nZCode 验收员\n3天\n本机管理员\n4天\n111\n@zbd268\n233\n@233\n666888\n@datoo-test\n黄大头\n@HUANG\n马币\n@18659128888\n王哈哈\n@WANG\ndatoo-2\n@datoo-2\nfyp\n@fyp\nJerry嘉\n@13043040340\nMan\n@goodmancmy\nNYS\n@NYS\nNYXL\n@nyxl\nTalk233\n@talk233\nTalkAccept\n@talk-accept\nxoo\n@xoo\n服务器已连接\n↻\n重连\n♙\n我的账号\n探索未至之境\n预览版\n选择工作区\nPTC 模式\n选择一个工作区开始\n◈\n风格\nQQ2007\n原生",
+  "testProfilesRemoved": true
+}

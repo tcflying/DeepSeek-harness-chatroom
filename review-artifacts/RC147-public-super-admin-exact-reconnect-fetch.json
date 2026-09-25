@@ -1,0 +1,87 @@
+{
+  "version": "1.5.0-codex.rc1.47",
+  "at": "2026-09-12T11:47:10.640Z",
+  "mode": "public-super-admin-exact-reconnect",
+  "scope": [
+    "fresh headless context",
+    "one existing super-admin login",
+    "one authorized-room deep-link",
+    "open native Files only if the host entry is actually available",
+    "AI/group top-layer checks when Files opened",
+    "one UI reconnect after ready",
+    "no login retry, refresh, message, input, upload, AI request, role change, or server setting mutation"
+  ],
+  "passed": false,
+  "readbacks": {
+    "role": "super-admin-exact-reconnect",
+    "errors": [],
+    "files": {
+      "attempted": false,
+      "opened": false
+    },
+    "deepLink": {
+      "requested": true,
+      "requestSent": false,
+      "active": false,
+      "failure": "TimeoutError: page.waitForFunction: Timeout 30000ms exceeded.",
+      "surface": {
+        "documentTitlePresent": true,
+        "urlHasDeepLink": true,
+        "chatroomInstalled": true,
+        "chatroomActive": false,
+        "documentDshAttributes": [
+          {
+            "name": "data-dsh-skin",
+            "value": "blue-fantasy"
+          },
+          {
+            "name": "data-dsh-chatroom-installed",
+            "value": ""
+          },
+          {
+            "name": "data-dsh-chatroom-style",
+            "value": "qq2007"
+          },
+          {
+            "name": "data-dsh-backdrop-active",
+            "value": "true"
+          }
+        ],
+        "loginFormVisible": false,
+        "identityFormVisible": false,
+        "roomDirectoryVisible": false,
+        "alertVisible": false,
+        "serverStatus": {
+          "present": true,
+          "native": "connected",
+          "room": "offline",
+          "notifications": "online"
+        },
+        "nativeTree": {
+          "present": true,
+          "visible": true,
+          "selectedCount": 0,
+          "selectedTarget": false,
+          "selectedTitleMatchesTarget": false,
+          "selectedSessionAttributeMatchesTarget": false,
+          "selectedAttributeNames": []
+        }
+      },
+      "timeline": [
+        {
+          "atMs": 6924,
+          "atUtc": "2026-09-12T11:47:26.216Z",
+          "event": "request",
+          "path": "/api/session/list",
+          "method": "POST"
+        }
+      ],
+      "selectResponses": [],
+      "runtimeErrors": {
+        "console": [],
+        "page": []
+      }
+    }
+  },
+  "error": "TimeoutError: page.waitForFunction: Timeout 30000ms exceeded."
+}

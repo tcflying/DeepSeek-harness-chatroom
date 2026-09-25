@@ -1,0 +1,48 @@
+{
+  "version": "1.5.0-codex.rc1.32",
+  "at": "2026-09-11T17:44:32.957Z",
+  "roles": [
+    {
+      "role": "member",
+      "api": [
+        {
+          "method": "settings/describe",
+          "status": 403
+        },
+        {
+          "method": "credentials/list",
+          "status": 403
+        },
+        {
+          "method": "session/selectModel",
+          "status": 403
+        },
+        {
+          "method": "agentPresets/select",
+          "status": 403
+        },
+        {
+          "method": "commands/execute",
+          "status": 403
+        }
+      ],
+      "errors": [],
+      "roomOpened": true,
+      "realHistoryLoaded": true,
+      "controlsRestricted": true,
+      "mobile": {
+        "width": 366,
+        "right": 378,
+        "scroll": 364,
+        "text": "我的账号×账号资料验收成员 · @room-test平台成员 · 无全局配置权限只有平台超级管理员可以管理设置、群成员与 AI 配置。其他角色仅保留已授权聊天与自己的账号操作。退出登录只退出当前浏览器的聊天室账号，不影响其他成员或服务器上的 AI。当前密码新密码确认新密码修改密码"
+      }
+    },
+    {
+      "role": "super-admin",
+      "api": [],
+      "errors": []
+    }
+  ],
+  "passed": false,
+  "error": "TimeoutError: locator.click: Timeout 45000ms exceeded.\nCall log:\n\u001b[2m  - waiting for getByRole('treeitem').filter({ hasText: '权限与进展验收 20260912' })\u001b[22m\n"
+}

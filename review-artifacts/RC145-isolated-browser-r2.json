@@ -1,0 +1,10 @@
+{
+  "version": "1.5.0-codex.rc1.45",
+  "at": "2026-09-12T07:48:59.239Z",
+  "mode": "isolated-guest",
+  "base": "http://127.0.0.1:3186",
+  "roles": [],
+  "screenshots": [],
+  "passed": false,
+  "error": "TimeoutError: apiRequestContext.get: Timeout 10000ms exceeded.\nCall log:\n\u001b[2m  - → GET http://127.0.0.1:3186/?token=[redacted]\n\u001b[2m    - user-agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/151.0.7922.34 Safari/537.36\u001b[22m\n\u001b[2m    - accept: */*\u001b[22m\n\u001b[2m    - accept-encoding: gzip,deflate,br\u001b[22m\n\u001b[2m  - ← 303 See Other\u001b[22m\n\u001b[2m    - cache-control: no-store\u001b[22m\n\u001b[2m    - location: /\u001b[22m\n\u001b[2m    - referrer-policy: no-referrer\u001b[22m\n\u001b[2m    - set-cookie: [redacted]\n\u001b[2m    - date: Sat, 12 Sep 2026 07:48:59 GMT\u001b[22m\n\u001b[2m    - connection: keep-alive\u001b[22m\n\u001b[2m    - keep-alive: timeout=5\u001b[22m\n\u001b[2m    - transfer-encoding: chunked\u001b[22m\n"
+}

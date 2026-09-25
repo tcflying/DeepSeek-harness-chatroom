@@ -1,0 +1,136 @@
+{
+  "schemaVersion": 1,
+  "generatedAtUtc": "2026-09-11T21:39:15.652Z",
+  "window": {
+    "durationHours": 6,
+    "startUtc": "2026-09-11T15:39:15.652Z",
+    "endUtc": "2026-09-11T21:39:15.652Z",
+    "timeParsing": "Date.parse(raw RFC3339 at string); a trailing Z remains UTC."
+  },
+  "sources": {
+    "diagnostics": {
+      "directory": "C:/Users/datoo/.dsh/chatroom-server/chatroom/diagnostics",
+      "selectedFiles": [
+        "events.jsonl"
+      ],
+      "rotationsIncluded": false,
+      "parsedLines": 2809,
+      "malformedLines": 0,
+      "undatedLines": 0,
+      "inWindowEvents": 920
+    },
+    "originBridge": {
+      "directory": "C:/ProgramData/Servy/managed-logs",
+      "selectedFiles": [
+        "dsh-chatroom-origin.out.log"
+      ],
+      "rotationsIncluded": false,
+      "parsedLines": 1412,
+      "malformedLines": 0,
+      "undatedLines": 0,
+      "inWindowEvents": 318
+    }
+  },
+  "diagnostics": {
+    "events": {
+      "provider.probe": 384,
+      "sse.close": 180,
+      "native.auth.failure": 11,
+      "native.close": 37,
+      "runtime.stop": 5,
+      "runtime.start": 5,
+      "sse.open": 180,
+      "client.connection": 67,
+      "native.open": 36,
+      "native.failure": 6,
+      "media.preview": 9
+    },
+    "sseCloseReasons": {
+      "plugin-stop": 12,
+      "peer-end": 168
+    },
+    "nativeCloseReasons": {
+      "plugin-stop": 10,
+      "peer-end": 21,
+      "socket-error": 4,
+      "transport-close": 2
+    },
+    "nativeFailures": {
+      "401": 1,
+      "503": 1,
+      "ECONNRESET": 4
+    },
+    "nativeAuthFailures": {
+      "503": 11
+    },
+    "clientConnectionStates": {
+      "explicitHidden": 0,
+      "explicitOffline": 0,
+      "nativeDisconnectedWhileVisibleAndOnline": 12
+    },
+    "runtimeStopStart": [
+      {
+        "stoppedAtUtc": "2026-09-11T15:45:04.800Z",
+        "restartObserved": true,
+        "startedAtUtc": "2026-09-11T15:45:34.113Z",
+        "elapsedMs": 29313
+      },
+      {
+        "stoppedAtUtc": "2026-09-11T16:32:00.287Z",
+        "restartObserved": true,
+        "startedAtUtc": "2026-09-11T16:32:33.989Z",
+        "elapsedMs": 33702
+      },
+      {
+        "stoppedAtUtc": "2026-09-11T17:05:44.539Z",
+        "restartObserved": true,
+        "startedAtUtc": "2026-09-11T17:09:01.624Z",
+        "elapsedMs": 197085
+      },
+      {
+        "stoppedAtUtc": "2026-09-11T17:34:59.487Z",
+        "restartObserved": true,
+        "startedAtUtc": "2026-09-11T17:35:32.177Z",
+        "elapsedMs": 32690
+      },
+      {
+        "stoppedAtUtc": "2026-09-11T17:42:48.024Z",
+        "restartObserved": true,
+        "startedAtUtc": "2026-09-11T17:43:23.212Z",
+        "elapsedMs": 35188
+      }
+    ],
+    "serverSideSameStreamNextOpenDelay": {
+      "samples": 179,
+      "minimumMs": 20,
+      "medianMs": 66426,
+      "meanMs": 304836,
+      "maximumMs": 3649027,
+      "limitation": "This only observes the next server-side open for the same stream label. There is no browser/tab/client identifier, so it is not a same-browser recovery duration and must not be attributed to a user, tab visibility, or network cause."
+    }
+  },
+  "originBridge": {
+    "events": {
+      "bridge.http.failure": 9,
+      "bridge.ws.close": 155,
+      "bridge.ws.open": 154
+    },
+    "webSocketCloseReasons": {
+      "upstream-close": 88,
+      "client-close": 67
+    },
+    "httpFailures": {
+      "ECONNRESET": 3,
+      "ETIMEDOUT": 6
+    }
+  },
+  "causeAssessment": {
+    "pageHidden": "No client.connection event in this window explicitly reported visible:false. Absence is not proof that no page was hidden.",
+    "networkOffline": "No client.connection event in this window explicitly reported online:false. ECONNRESET and ETIMEDOUT are transport/request failures, not a browser-offline diagnosis.",
+    "processLifecycle": "runtime.stop/start pairs are observed above; they establish process lifecycle timing only, not why the runtime stopped.",
+    "userAction": "No event carries a user-action or browser-tab identity. bridge client-close cannot be classified as a user action from these logs alone.",
+    "providerHealth": "provider.probe is excluded from causal attribution; it is not evidence that a connection failure was provider-caused.",
+    "historical1334": "The historical 13:34 trigger remains unknown. This audit does not retroactively classify it as hidden-page, network, process exit, or resolved.",
+    "newFault": "The window contains real closes, runtime restarts, and bridge transport failures. Without a prior comparable baseline or correlated browser identifiers, this audit cannot label them a new incident or a resolved historical fault."
+  }
+}

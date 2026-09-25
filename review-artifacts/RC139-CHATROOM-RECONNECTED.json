@@ -1,0 +1,31 @@
+{
+  "version": "1.5.0-codex.rc1.39",
+  "passed": true,
+  "scope": {
+    "actor": "super-admin",
+    "action": "one UI reconnect click after an already-open room is ready",
+    "excluded": [
+      "message submission",
+      "composer input",
+      "upload",
+      "AI/provider request",
+      "server setting mutation",
+      "page reload"
+    ]
+  },
+  "readbacks": {
+    "sessionListRequests": 1,
+    "roomStillSelected": true,
+    "before": {
+      "native": "connected",
+      "room": "online",
+      "notifications": "online"
+    },
+    "after": {
+      "native": "connected",
+      "room": "online",
+      "notifications": "online"
+    }
+  },
+  "error": "Error: super-admin/qqNarrow320: AssertionError [ERR_ASSERTION]: QQ narrow Host assistant-tools exceeds conversation rail\nsuper-admin/gallery: AssertionError [ERR_ASSERTION]: gallery reads must settle after close\n\n3 !== 0\n\nsuper-admin/files-AI 成员: TimeoutError: locator.waitFor: Timeout 20000ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('[data-slot=\"details\"]').first().getByText('Files', { exact: true }).first() to be visible\u001b[22m\n\nsuper-admin/files-群管理: TimeoutError: locator.waitFor: Timeout 20000ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('[data-slot=\"details\"]').first().getByText('Files', { exact: true }).first() to be visible\u001b[22m\n"
+}

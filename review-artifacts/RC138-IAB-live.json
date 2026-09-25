@@ -1,0 +1,37 @@
+{
+  "version": "1.5.0-codex.rc1.38",
+  "passed": false,
+  "browser": "original Codex In-app Browser, original tab 1",
+  "observed": {
+    "reloadAt": "2026-09-12T02:30Z",
+    "urlRoomPreserved": true,
+    "firstReloadWelcomeWithoutRoom": true,
+    "manualRoomSelectionPerformed": true,
+    "manualRoomSelectionOnlyAfterFailureCapture": true,
+    "manualSelectionRestoredRoom": true,
+    "nativeTestNoticeDismissed": true,
+    "nativeConnected": true,
+    "nativeCatalogueReady": true,
+    "notificationsConnected": true,
+    "roomState": "not-selected",
+    "accountDialogRole": "platform-super-admin",
+    "viewport": { "width": 924, "height": 1030 },
+    "existingConversationDraftRetainedAfterManualSelection": true,
+    "filesSidebarActuallyOpen": true,
+    "filesNarrowedConversationWidth": 320,
+    "assistantToolsWidth": 263.825,
+    "sidebarCategoryScrollWidth": 270,
+    "sidebarCategoryClientWidth": 262,
+    "composerModelAndSendOverlapObserved": true,
+    "aiDialog": { "modal": true, "width": 720, "height": 676.6, "clientWidth": 718, "scrollWidth": 718, "closeButtonSize": 44 },
+    "groupDialog": { "modal": true, "width": 720, "height": 887.8, "clientWidth": 718, "scrollWidth": 718 },
+    "managementDialogsClosedAfterChecks": true
+  },
+  "failures": [
+    "Reload preserved the room URL, but the page stayed on Welcome after successful native catalogue responses. Failure was retained before a later manual selection restored the room for separate layout inspection.",
+    "Console at 02:30:39.948Z through 02:30:40.313Z repeatedly reports [client-store] subscriber failed: RangeError: Maximum call stack size exceeded. Stack includes Cs.closeEvents -> Cs.activateSession -> x (plugin syncSession) -> client store set -> ClientSessions.projectList.",
+    "Console at 02:30:41.072Z and 02:30:41.110Z also reports RangeError in AgentPresetSeatController.currentSession/apply. The root reentry edge still requires source analysis."
+  ],
+  "screenshots": ["RC138-IAB-files.png", "RC138-IAB-group-files.png"],
+  "limits": "No message, upload, generation, account/role mutation, logout, or server setting save. Existing conversation draft was inspected after manual room restoration and retained unchanged. Public and IAB failures remain separate proof layers; manual selection is not deep-link success."
+}

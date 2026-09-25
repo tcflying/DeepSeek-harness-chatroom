@@ -5,11 +5,15 @@ import type { ChatroomAgentTarget } from './store.js'
 import type { ChatroomView } from './store.js'
 import type {
   ChatroomForwardItem,
+  ChatroomFileReference,
   ChatroomReplyReference,
   ChatroomThreadRoot,
 } from '../types.js'
 import type { ChatroomReactionEmoji } from '../reactions.js'
-import { projectExternalCardText } from '../message.js'
+import { projectExternalCardText, projectFileText } from '../message.js'
+import { projectImageLinks } from './image-links.js'
+import { FileCard } from './ChatroomMessageNodeView.js'
+import { RecoverableImage } from './RecoverableImage.js'
 import { ChatroomExternalCardView } from './ChatroomExternalCard.js'
 import { ChatroomAssistantReplyAction } from './ChatroomAssistantReplyAction.js'
 import { ChatroomPendingMessageView } from './ChatroomPendingMessage.js'
@@ -90,15 +94,21 @@ export function ChatroomAssistantNodeView(props: ChatroomAssistantNodeViewProps)
     ? projectExternalCardText(block.text).cards
     : [])
   const projectedBlocks: Array<(typeof props.node.data.blocks)[number]> = []
+  const files: ChatroomFileReference[] = []
+  const images: { url: string; alt: string }[] = []
   for (const block of props.node.data.blocks) {
     if (block.kind !== 'text') {
       projectedBlocks.push(block)
       continue
     }
     const projection = projectExternalCardText(block.text)
-    if (projection.text.trim() !== '') projectedBlocks.push({ ...block, text: projection.text })
+    const fileProjection = shared ? projectFileText(projection.text) : { text: projection.text, files: [] }
+    const imageProjection = shared ? projectImageLinks(fileProjection.text, fileProjection.files) : { text: fileProjection.text, images: [] }
+    files.push(...fileProjection.files)
+    images.push(...imageProjection.images)
+    if (imageProjection.text.trim() !== '') projectedBlocks.push({ ...block, text: imageProjection.text })
   }
-  const projectedNode: typeof props.node = cards.length === 0 ? props.node : {
+  const projectedNode: typeof props.node = cards.length + files.length + images.length === 0 ? props.node : {
     ...props.node,
     data: {
       ...props.node.data,
@@ -140,14 +150,18 @@ export function ChatroomAssistantNodeView(props: ChatroomAssistantNodeViewProps)
         <button
           type="button"
           className="dsh-chatroom-process-toggle"
+          aria-label={`${expanded ? '收起执行过程' : '执行过程'} · ${processItemCount} 项`}
           aria-expanded={expanded}
           onClick={() => { setExpanded(value => !value) }}
         >
           <span aria-hidden className="dsh-chatroom-process-chevron">⌄</span>
           <span>{expanded ? '收起执行过程' : '执行过程'} · {processItemCount} 项</span>
+          {!expanded && <span className="dsh-chatroom-progress-line">{props.node.data.blocks.filter(block => block.kind === 'reasoning').flatMap(block => block.text.split('\n')).findLast(line => line.trim() !== '')?.trim().slice(-160)}</span>}
         </button>
       )}
       <NativeMessageView {...props} node={projectedNode} />
+      {files.map((file, index) => <FileCard key={`${file.id}:${index}`} file={file} roomId={target?.room.id} sessionId={String(props.sessionId)} />)}
+      {images.map((image, index) => <RecoverableImage key={`${image.url}:${index}`} {...image} roomId={target?.room.id} sessionId={String(props.sessionId)} />)}
       {cards.map((card, index) => <ChatroomExternalCardView card={card} key={`${card.kind}:${card.title}:${index}`} />)}
       {standaloneMeetingSummary && <ChatroomAssistantReplyAction
         {...props}

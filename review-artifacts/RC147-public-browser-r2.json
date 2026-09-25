@@ -1,0 +1,27 @@
+{
+  "version": "1.5.0-codex.rc1.47",
+  "at": "2026-09-12T11:41:52.414Z",
+  "mode": "public-authenticated",
+  "base": "https://talk.opcvip.net",
+  "roles": [
+    {
+      "role": "member",
+      "rpc": [],
+      "errors": [],
+      "roomSelected": false,
+      "geometry": {},
+      "failure": "TimeoutError: apiRequestContext.post: Timeout 20000ms exceeded.\nCall log:\n\u001b[2m  - → POST https://talk.opcvip.net/plugins/deepseek-harness-chatroom/api/auth/login\u001b[22m\n\u001b[2m    - user-agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/151.0.7922.34 Safari/537.36\u001b[22m\n\u001b[2m    - accept: */*\u001b[22m\n\u001b[2m    - accept-encoding: gzip,deflate,br\u001b[22m\n\u001b[2m    - Origin: https://talk.opcvip.net\u001b[22m\n\u001b[2m    - content-type: application/json\u001b[22m\n\u001b[2m    - content-length: 81\u001b[22m\n\u001b[2m  - ← 200 OK\u001b[22m\n\u001b[2m    - date: Sat, 12 Sep 2026 11:44:24 GMT\u001b[22m\n\u001b[2m    - content-type: application/json; charset=utf-8\u001b[22m\n\u001b[2m    - transfer-encoding: chunked\u001b[22m\n\u001b[2m    - connection: close\u001b[22m\n\u001b[2m    - cache-control: no-store\u001b[22m\n\u001b[2m    - content-encoding: gzip\u001b[22m\n\u001b[2m    - set-cookie: [redacted]\n\u001b[2m    - vary: Accept-Encoding\u001b[22m\n\u001b[2m    - cf-cache-status: DYNAMIC\u001b[22m\n\u001b[2m    - nel: {\"report_to\":\"cf-nel\",\"success_fraction\":0.0,\"max_age\":604800}\u001b[22m\n\u001b[2m    - report-to: {\"group\":\"cf-nel\",\"max_age\":604800,\"endpoints\":[{\"url\":\"https://a.nel.cloudflare.com/report/v4?s=nIk0%2FGl2jN5R%2B%2FznS8f%2Btd6G43Awx7jlRicfpGxOfValuNZWu7GwASA30gW4EtM3SsCbgzZsY2eQ8GgjVUcWf8q2sOIIEsTZvRPCo2qb1JzzggQeqjdEvYUUTwnB204Wivs%3D\"}]}\u001b[22m\n\u001b[2m    - server: cloudflare\u001b[22m\n\u001b[2m    - cf-ray: a39ea8f6ec9715e3-SJC\u001b[22m\n\u001b[2m    - alt-svc: h3=\":443\"; ma=86400\u001b[22m\n"
+    },
+    {
+      "role": "super-admin",
+      "rpc": [],
+      "errors": [],
+      "roomSelected": false,
+      "geometry": {},
+      "failure": "TimeoutError: apiRequestContext.post: Timeout 20000ms exceeded."
+    }
+  ],
+  "screenshots": [],
+  "passed": false,
+  "error": "Error: member: TimeoutError: apiRequestContext.post: Timeout 20000ms exceeded.\nCall log:\n\u001b[2m  - → POST https://talk.opcvip.net/plugins/deepseek-harness-chatroom/api/auth/login\u001b[22m\n\u001b[2m    - user-agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/151.0.7922.34 Safari/537.36\u001b[22m\n\u001b[2m    - accept: */*\u001b[22m\n\u001b[2m    - accept-encoding: gzip,deflate,br\u001b[22m\n\u001b[2m    - Origin: https://talk.opcvip.net\u001b[22m\n\u001b[2m    - content-type: application/json\u001b[22m\n\u001b[2m    - content-length: 81\u001b[22m\n\u001b[2m  - ← 200 OK\u001b[22m\n\u001b[2m    - date: Sat, 12 Sep 2026 11:44:24 GMT\u001b[22m\n\u001b[2m    - content-type: application/json; charset=utf-8\u001b[22m\n\u001b[2m    - transfer-encoding: chunked\u001b[22m\n\u001b[2m    - connection: close\u001b[22m\n\u001b[2m    - cache-control: no-store\u001b[22m\n\u001b[2m    - content-encoding: gzip\u001b[22m\n\u001b[2m    - set-cookie: [redacted]\n\u001b[2m    - vary: Accept-Encoding\u001b[22m\n\u001b[2m    - cf-cache-status: DYNAMIC\u001b[22m\n\u001b[2m    - nel: {\"report_to\":\"cf-nel\",\"success_fraction\":0.0,\"max_age\":604800}\u001b[22m\n\u001b[2m    - report-to: {\"group\":\"cf-nel\",\"max_age\":604800,\"endpoints\":[{\"url\":\"https://a.nel.cloudflare.com/report/v4?s=nIk0%2FGl2jN5R%2B%2FznS8f%2Btd6G43Awx7jlRicfpGxOfValuNZWu7GwASA30gW4EtM3SsCbgzZsY2eQ8GgjVUcWf8q2sOIIEsTZvRPCo2qb1JzzggQeqjdEvYUUTwnB204Wivs%3D\"}]}\u001b[22m\n\u001b[2m    - server: cloudflare\u001b[22m\n\u001b[2m    - cf-ray: a39ea8f6ec9715e3-SJC\u001b[22m\n\u001b[2m    - alt-svc: h3=\":443\"; ma=86400\u001b[22m\n\nsuper-admin: TimeoutError: apiRequestContext.post: Timeout 20000ms exceeded."
+}

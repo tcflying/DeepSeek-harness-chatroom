@@ -1,0 +1,41 @@
+{
+  "at": "2026-09-13T18:23:40.840Z",
+  "version": "1.5.0-codex.rc1.52",
+  "verifiedClaims": [
+    "current full CI/source hashes",
+    "unchanged immutable production bundles",
+    "isolated Host",
+    "public member and admin acceptance",
+    "IAB collapsed reconnect geometry and click",
+    "updated one-shot observer invocation"
+  ],
+  "bundles": {
+    "dist/client.js": "64285b808c118b72c3ff1dd353b3dc6b253357492e2ad95c3ca3596eba5ba9a6",
+    "dist/client.js.map": "31d3c22f20dc2a601d60b53754028532991e08d2ce702fb10c62a21cb9186661",
+    "dist/index.js": "7df5c74027da1441e304ee3f8a6c63dd19e1a582026e503b8baa069748c4653c",
+    "dist/index.js.map": "9f612b9063ed88d5c76dae75591f1ac3b3c14f95abd6a8226cceea42fe461f79"
+  },
+  "evidence": [
+    "RC152-check-ci-r2.exit.json",
+    "RC152-PUBLICATION.json",
+    "RC152-isolated-browser-r1.json",
+    "RC152-public-browser-r3.json",
+    "RC152-public-browser-r5.json",
+    "RC152-IAB-after.json",
+    "RC152-observer-live.json"
+  ],
+  "retainedFailures": [
+    "RC151-public-browser-r1.json",
+    "RC152-public-super-admin-320-narrow-geometry-probe-r2.json",
+    "RC152-public-browser-r4.json",
+    "RC152-observer-red.json"
+  ],
+  "rootCauseClosed": false,
+  "unresolved": [
+    "Historical 13:34 initiating process-exit trigger lacks contemporaneous evidence",
+    "Intermittent public deep-link timeouts did not recur in the latest role acceptance; failed response-to-selection transitions remain unattributed"
+  ],
+  "recurringReminder": "PAUSED; not changed",
+  "paidModelCallsThisContinuation": 0,
+  "passed": true
+}

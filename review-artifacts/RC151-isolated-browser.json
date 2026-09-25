@@ -1,0 +1,86 @@
+{
+  "version": "1.5.0-codex.rc1.51",
+  "at": "2026-09-13T17:30:14.815Z",
+  "mode": "isolated-guest",
+  "base": "http://127.0.0.1:3186",
+  "roles": [
+    {
+      "role": "guest",
+      "rpc": [],
+      "errors": [],
+      "geometry": {
+        "native": {
+          "width": 1440,
+          "height": 900,
+          "documentWidth": 1440,
+          "bodyWidth": 1440,
+          "styleControl": {
+            "left": 1338,
+            "right": 1416,
+            "top": 16,
+            "bottom": 46,
+            "width": 78,
+            "height": 30,
+            "viewportWidth": 1440,
+            "viewportHeight": 900,
+            "hit": true
+          }
+        },
+        "qq2007": {
+          "width": 1440,
+          "height": 900,
+          "documentWidth": 1440,
+          "bodyWidth": 1440,
+          "styleControl": {
+            "left": 1338,
+            "right": 1416,
+            "top": 16,
+            "bottom": 46,
+            "width": 78,
+            "height": 30,
+            "viewportWidth": 1440,
+            "viewportHeight": 900,
+            "hit": true
+          }
+        }
+      },
+      "servedClient": {
+        "manifest": true,
+        "status": 200,
+        "servedSha256": "d6b3eedecb24a15329f86869961db05a184c347c4d9926e8f7ea362525b98524",
+        "candidateSha256": "528d9da157b436cef723ba44302f8e5d9b44d4f12cd91d305f8be330e472d92b",
+        "servedBytes": 1158781,
+        "candidateBytes": 1158717,
+        "exactCandidate": true,
+        "normalizedPayload": true,
+        "normalization": "terminal-semicolon-and-source-map-footer-v1",
+        "servedNormalizedSha256": "2da5f10d1a8d8e8b743f0480dd1a5deb074da18da28a0a4ed7a07655887b6c02",
+        "candidateNormalizedSha256": "2da5f10d1a8d8e8b743f0480dd1a5deb074da18da28a0a4ed7a07655887b6c02",
+        "servedSourceMapFooter": true,
+        "candidateSourceMapFooter": true,
+        "difference": {
+          "firstDifference": 1158683,
+          "commonSuffixBytes": 0,
+          "lengthDelta": 64,
+          "servedFooterKind": "line-source-map",
+          "candidateFooterKind": "line-source-map"
+        },
+        "structure": "host-terminal-source-map-wrapper-normalized",
+        "marker": "rc135-assistant-actions-and-auth-aware-auto-reply"
+      }
+    }
+  ],
+  "screenshots": [
+    "RC151-isolated-isolated-768-failure.png",
+    "RC151-isolated-isolated-768-viewport.png"
+  ],
+  "passed": false,
+  "browserEngine": "bundled Chromium headless shell",
+  "error": "Error: AssertionError [ERR_ASSERTION]: isolated/768/style: control is covered\nIsolated navigation diagnostic: {\"viewport\":{\"width\":768,\"height\":900},\"nav\":[{\"tag\":\"DIV\",\"ariaLabel\":null,\"dataSlot\":\"sidebar.settings\",\"className\":\"\",\"visible\":false,\"rect\":{\"left\":0,\"right\":0,\"top\":0,\"bottom\":0,\"width\":0,\"height\":0},\"display\":\"contents\",\"position\":\"static\"},{\"tag\":\"DIV\",\"ariaLabel\":null,\"dataSlot\":\"settings.trigger\",\"className\":\"\",\"visible\":false,\"rect\":{\"left\":0,\"right\":0,\"top\":0,\"bottom\":0,\"width\":0,\"height\":0},\"display\":\"contents\",\"position\":\"static\"},{\"tag\":\"DIV\",\"ariaLabel\":null,\"dataSlot\":\"settings.onboarding\",\"className\":\"\",\"visible\":false,\"rect\":{\"left\":0,\"right\":0,\"top\":0,\"bottom\":0,\"width\":0,\"height\":0},\"display\":\"contents\",\"position\":\"static\"}],\"settingsButtonCount\":1,\"sidebarControls\":[{\"tag\":\"BUTTON\",\"ariaLabel\":\"收起侧边栏\",\"dataSlot\":null,\"className\":\"hHd-Xa_iconButton hHd-Xa_toggle\",\"visible\":true,\"rect\":{\"left\":240,\"right\":268,\"top\":22,\"bottom\":50,\"width\":28,\"height\":28},\"display\":\"flex\",\"position\":\"static\"}]}",
+  "browserCleanup": {
+    "startedAt": "2026-09-13T17:30:19.237Z",
+    "connected": true,
+    "contextsRemaining": 0,
+    "completedAt": "2026-09-13T17:30:22.688Z"
+  }
+}

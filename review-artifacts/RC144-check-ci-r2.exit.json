@@ -1,0 +1,27 @@
+{
+  "log": "RC144-check-ci-r2.log",
+  "exitCode": 0,
+  "closedAt": "2026-09-12T06:36:24.651Z",
+  "packageSha256": "5941f7cbef8095512a1127b7ae14d3f38e7e5843012624221167d7b54f8593e4",
+  "sourceSha256": {
+    "src/client/ChatroomAccountPanels.tsx": "66ac0a3344e4c6283bcdf599a2d454a3d2f5a5da31e9639f5fc3470ef0f60969",
+    "src/client/responsive-styles.ts": "b3a2aa72bf47205fa4ef2138deecf17256b454dc82e2d4924e3bd225d7b41fa8",
+    "src/client/styles.ts": "cabfb83b0529576b5c0b46765791dfc94d1a38290dc38bcaf496a2c2762dc37c",
+    "src/client/runtime-diagnostics.ts": "96d69c68bab672b7b2eb2f09b1f573f22cb732bdb81cc0b71224db21a93b6cb7",
+    "src/diagnostics.ts": "72c2e6c87ce6899ab1b160b34bca7e926a0f290e7bea3b8496f7d7f6ab862f81",
+    "src/http.ts": "4ae95225a5bec54e3f2534d8f893df8ee8e6f63b3c01c8077a53ccd07c71aba1",
+    "src/runtime-failure-evidence.ts": "21617af396b1773d23ee46973fdd89d69f887d887c333827d1ea82bc4695bd9b"
+  },
+  "completedPackageSha256": "5941f7cbef8095512a1127b7ae14d3f38e7e5843012624221167d7b54f8593e4",
+  "completedSourceSha256": {
+    "src/client/ChatroomAccountPanels.tsx": "66ac0a3344e4c6283bcdf599a2d454a3d2f5a5da31e9639f5fc3470ef0f60969",
+    "src/client/responsive-styles.ts": "b3a2aa72bf47205fa4ef2138deecf17256b454dc82e2d4924e3bd225d7b41fa8",
+    "src/client/styles.ts": "cabfb83b0529576b5c0b46765791dfc94d1a38290dc38bcaf496a2c2762dc37c",
+    "src/client/runtime-diagnostics.ts": "96d69c68bab672b7b2eb2f09b1f573f22cb732bdb81cc0b71224db21a93b6cb7",
+    "src/diagnostics.ts": "72c2e6c87ce6899ab1b160b34bca7e926a0f290e7bea3b8496f7d7f6ab862f81",
+    "src/http.ts": "4ae95225a5bec54e3f2534d8f893df8ee8e6f63b3c01c8077a53ccd07c71aba1",
+    "src/runtime-failure-evidence.ts": "21617af396b1773d23ee46973fdd89d69f887d887c333827d1ea82bc4695bd9b"
+  },
+  "samePackage": true,
+  "sameSource": true
+}

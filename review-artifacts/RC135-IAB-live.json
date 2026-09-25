@@ -1,0 +1,21 @@
+{
+  "version": "1.5.0-codex.rc1.35",
+  "at": "2026-09-12T00:44:00Z",
+  "passed": false,
+  "browser": "original Codex In-app Browser, original tab 1",
+  "observed": {
+    "loadedAfterPluginSwitch": true,
+    "firstReloadWelcomeWithoutRoom": true,
+    "manualReconnectClicked": true,
+    "manualNativeSelectionRecovered": true,
+    "existingUnsentDraftRetained": true,
+    "independentThumbnailVisible": true,
+    "temporaryViewportOverrideReset": true
+  },
+  "screenshots": ["RC135-IAB-post-reload.png", "RC135-IAB-restored.png"],
+  "failures": [
+    "Initial reload remained on the welcome page; after reconnect and manual native selection, the existing room and draft recovered. Trigger/root cause not established.",
+    "Required Files-narrowed 320px and 768px/390px toggle-state checks could not be completed in the original browser after repeated Runtime.evaluate and kernel/bootstrap timeouts."
+  ],
+  "limits": "Recovery is not root-cause closure. No provider call, message, new upload or setting mutation. This receipt does not substitute fresh headless/public checks for the original IAB."
+}

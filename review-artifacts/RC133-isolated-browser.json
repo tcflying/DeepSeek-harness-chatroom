@@ -1,0 +1,59 @@
+{
+  "version": "1.5.0-codex.rc1.33",
+  "at": "2026-09-11T22:08:40.185Z",
+  "mode": "isolated-guest",
+  "base": "http://127.0.0.1:3186",
+  "roles": [
+    {
+      "role": "guest",
+      "rpc": [],
+      "errors": [],
+      "geometry": {
+        "320": {
+          "width": 320,
+          "height": 720,
+          "documentWidth": 320,
+          "bodyWidth": 320,
+          "actionable": 31
+        },
+        "390": {
+          "width": 390,
+          "height": 844,
+          "documentWidth": 390,
+          "bodyWidth": 390,
+          "actionable": 32
+        },
+        "768": {
+          "width": 768,
+          "height": 900,
+          "documentWidth": 768,
+          "bodyWidth": 768,
+          "actionable": 32
+        },
+        "native": {
+          "width": 1440,
+          "height": 900,
+          "documentWidth": 1440,
+          "bodyWidth": 1440,
+          "actionable": 31
+        },
+        "qq2007": {
+          "width": 1440,
+          "height": 900,
+          "documentWidth": 1440,
+          "bodyWidth": 1440,
+          "actionable": 31
+        }
+      },
+      "servedClient": {
+        "manifest": true,
+        "status": 200,
+        "marker": "roomNavigationRevision"
+      }
+    }
+  ],
+  "screenshots": [
+    "RC133-isolated-settings.png"
+  ],
+  "passed": true
+}

@@ -1,0 +1,42 @@
+{
+  "version": "1.5.0-codex.rc1.33",
+  "at": "2026-09-11T22:34:34.413Z",
+  "mode": "public-authenticated",
+  "base": "https://talk.opcvip.net",
+  "roles": [
+    {
+      "role": "member",
+      "rpc": [],
+      "errors": [],
+      "roomSelected": false,
+      "geometry": {},
+      "failure": "AssertionError [ERR_ASSERTION]: member: required existing media room 全国可飞 is unavailable"
+    },
+    {
+      "role": "super-admin",
+      "rpc": [],
+      "errors": [],
+      "roomSelected": true,
+      "geometry": {},
+      "mediaRoom": {
+        "title": "全国可飞",
+        "preflightItems": 3
+      },
+      "deepLink": {
+        "requested": true,
+        "selects": [
+          {
+            "method": "POST",
+            "postData": "{\"roomId\":\"session-VscIjpcd1qOZFn1d3g82imEg\"}"
+          }
+        ],
+        "active": true,
+        "selectedRoomButton": false
+      },
+      "failure": "AssertionError [ERR_ASSERTION]: deep-link did not activate the requested room"
+    }
+  ],
+  "screenshots": [],
+  "passed": false,
+  "error": "Error: member: AssertionError [ERR_ASSERTION]: member: required existing media room 全国可飞 is unavailable\nsuper-admin: AssertionError [ERR_ASSERTION]: deep-link did not activate the requested room"
+}

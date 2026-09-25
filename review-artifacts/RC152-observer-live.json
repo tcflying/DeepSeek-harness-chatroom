@@ -1,0 +1,58 @@
+{
+  "at": "2026-09-13T18:22:02.451Z",
+  "previousAt": "2026-09-13T18:16:43.109Z",
+  "gapSeconds": 319,
+  "services": [
+    {
+      "name": "chatroom-local",
+      "healthy": true,
+      "status": 200,
+      "elapsedMs": 20,
+      "journalHealthy": true
+    },
+    {
+      "name": "chatroom-public",
+      "healthy": true,
+      "status": 200,
+      "elapsedMs": 841,
+      "journalHealthy": true
+    },
+    {
+      "name": "opencodex",
+      "healthy": true,
+      "status": 200,
+      "elapsedMs": 15,
+      "pid": 8576,
+      "uptime": 5365
+    },
+    {
+      "name": "origin-bridge",
+      "healthy": true,
+      "status": 200,
+      "elapsedMs": 16,
+      "pid": 9188,
+      "upstreamActive": 4,
+      "upstreamErrors": 0,
+      "websocketOpened": 43,
+      "websocketClosed": 42
+    }
+  ],
+  "transport": {
+    "windowSeconds": 300,
+    "closes": 2,
+    "shortCloses": 1,
+    "flapping": false
+  },
+  "origin": {
+    "possibleLeak": false,
+    "newUpstreamErrors": 0
+  },
+  "newFailures": [],
+  "newFailureCount": 0,
+  "evidenceHealthy": true,
+  "latestJournalAt": "2026-09-13T18:22:01.559Z",
+  "latestProviderAt": "2026-09-13T18:22:01.559Z",
+  "changed": true,
+  "statusKey": "[[[\"chatroom-local\",true,true,null],[\"chatroom-public\",true,true,null],[\"opencodex\",true,null,8576],[\"origin-bridge\",true,null,9188]],true,false,false]",
+  "limitations": "Health is not paid provider/image success; outages between snapshots can be missed. Plugin journal captures actual invocation failures. Native heartbeat requires the host app and machine to run."
+}

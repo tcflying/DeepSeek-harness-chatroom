@@ -1,0 +1,27 @@
+{
+  "version": "1.5.0-codex.rc1.33",
+  "at": "2026-09-11T22:38:59.811Z",
+  "mode": "public-authenticated",
+  "base": "https://talk.opcvip.net",
+  "roles": [
+    {
+      "role": "member",
+      "rpc": [],
+      "errors": [],
+      "roomSelected": true,
+      "geometry": {},
+      "failure": "AssertionError [ERR_ASSERTION]: authorized media gallery read\n\n422 !== 200\n"
+    },
+    {
+      "role": "super-admin",
+      "rpc": [],
+      "errors": [],
+      "roomSelected": true,
+      "geometry": {},
+      "failure": "AssertionError [ERR_ASSERTION]: authorized media gallery read\n\n422 !== 200\n"
+    }
+  ],
+  "screenshots": [],
+  "passed": false,
+  "error": "Error: member: AssertionError [ERR_ASSERTION]: authorized media gallery read\n\n422 !== 200\n\nsuper-admin: AssertionError [ERR_ASSERTION]: authorized media gallery read\n\n422 !== 200\n"
+}

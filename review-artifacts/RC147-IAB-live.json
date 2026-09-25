@@ -1,0 +1,16 @@
+{
+  "version": "1.5.0-codex.rc1.47",
+  "productionVersionObserved": "1.5.0-codex.rc1.42",
+  "recordedAt": "2026-09-12T08:52:28Z",
+  "surface": "original Codex In-app Browser",
+  "passed": false,
+  "observations": {
+    "discovery": "Existing IAB binding lists the original DeepSeek Harness tab at talk.opcvip.net; no duplicate was created.",
+    "visibility": "Supported browser visibility.get() returned false.",
+    "read": "A viewport-only screenshot read on the original tab exceeded 20 seconds; the tool reset its JavaScript kernel.",
+    "priorEvidence": "RC146-IAB-live.json retains the separate AX timeout and mixed backend discovery evidence. Metadata discovery does not prove page readability."
+  },
+  "safety": "No refresh, navigation, draft edit, message, upload, provider generation, credential or browser profile change was performed.",
+  "limits": "This is an observation of the existing production page, not acceptance of the undeployed candidate. The screenshot failure does not identify the initiating cause or prove that the plugin re-entry fix resolves the IAB control failure.",
+  "next": "An asynchronous request asks the user to expand this task's original browser tab without refreshing. Continue independent candidate regression and isolated Host validation."
+}

@@ -1,0 +1,18 @@
+{
+  "code": 0,
+  "message": "ok",
+  "task_id": "440584292126997",
+  "model": "MiniMax-H3",
+  "status": "succeeded",
+  "video_url": {
+    "hostname": "algeng-video-infer.oss-cn-shanghai.aliyuncs.com",
+    "hasQuery": true
+  },
+  "resolution": "768P",
+  "duration": 15,
+  "ratio": "adaptive",
+  "created_at": 1789117567,
+  "updated_at": 1789117980,
+  "total_seconds": 15,
+  "output_seconds": 15
+}

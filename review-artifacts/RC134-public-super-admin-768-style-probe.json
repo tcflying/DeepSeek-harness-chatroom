@@ -1,0 +1,76 @@
+{
+  "version": "1.5.0-codex.rc1.34",
+  "at": "2026-09-11T23:34:43.710Z",
+  "mode": "public-super-admin-768-style-probe",
+  "scope": [
+    "fresh headless context",
+    "existing super-admin account",
+    "existing 全国可飞 room",
+    "read-only gallery navigation",
+    "browser-local style only",
+    "no message, input, upload, AI request, role change, or setting mutation"
+  ],
+  "passed": false,
+  "readbacks": {
+    "deepLink": {
+      "requested": true,
+      "requestSent": true,
+      "active": true,
+      "nativeSelected": true,
+      "selectedNativeTitle": true,
+      "galleryRequestMatchedTarget": true
+    },
+    "gallery": {
+      "thumbnails": 3,
+      "original": {
+        "naturalWidth": 1024,
+        "naturalHeight": 1536
+      },
+      "previousNext": true,
+      "closed": true,
+      "inflightAfterClose": 0,
+      "startedAfterClose": 0
+    },
+    "viewport": {
+      "width": 768,
+      "height": 900
+    },
+    "style": {
+      "target": {
+        "tag": "SELECT",
+        "role": null,
+        "ariaLabel": "界面风格",
+        "className": "",
+        "dataSlot": null
+      },
+      "hit": {
+        "tag": "rect",
+        "role": null,
+        "ariaLabel": null,
+        "className": null,
+        "dataSlot": null
+      },
+      "center": {
+        "x": 713,
+        "y": 30
+      },
+      "rect": {
+        "left": 674,
+        "right": 752,
+        "top": 15,
+        "bottom": 45,
+        "width": 78,
+        "height": 30
+      },
+      "hitIsTarget": false
+    },
+    "details": {
+      "visible": false,
+      "filesTextPresent": false,
+      "open": null
+    },
+    "errors": []
+  },
+  "screenshot": "RC134-public-super-admin-768-style-probe.png",
+  "error": "AssertionError [ERR_ASSERTION]: SA 768 style control center is covered"
+}

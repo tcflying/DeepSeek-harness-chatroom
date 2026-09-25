@@ -1,0 +1,43 @@
+{
+  "version": "1.5.0-codex.rc1.35",
+  "at": "2026-09-12T00:29:53.899Z",
+  "mode": "public-super-admin-manual-reconnect-probe",
+  "scope": [
+    "fresh headless context",
+    "existing super-admin account and 全国可飞 room",
+    "one UI reconnect after deep-link selection",
+    "network read observation",
+    "no message, input, upload, AI request, role change, server setting mutation, or page reload"
+  ],
+  "passed": false,
+  "readbacks": {
+    "deepLink": {
+      "requested": true,
+      "requestSent": true,
+      "active": true,
+      "failure": "TimeoutError: page.waitForFunction: Timeout 30000ms exceeded.",
+      "surface": {
+        "documentTitlePresent": true,
+        "urlHasDeepLink": true,
+        "chatroomInstalled": true,
+        "chatroomActive": true,
+        "loginFormVisible": false,
+        "identityFormVisible": false,
+        "roomDirectoryVisible": false,
+        "alertVisible": false,
+        "serverStatus": {
+          "present": true,
+          "native": "connected",
+          "room": "online",
+          "notifications": "online"
+        },
+        "nativeTree": {
+          "present": true,
+          "visible": true,
+          "selectedCount": 1
+        }
+      }
+    }
+  },
+  "error": "TimeoutError: page.waitForFunction: Timeout 30000ms exceeded."
+}

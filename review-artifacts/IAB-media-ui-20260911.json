@@ -1,0 +1,16 @@
+{
+  "add": {
+    "background": "rgba(0, 0, 0, 0)",
+    "font": "16px",
+    "height": 46,
+    "label": "＋ 添加 AI 成员",
+    "width": 349.6000061035156
+  },
+  "at": "2026-09-11T09:25:14.381Z",
+  "picker": true,
+  "status": "服务器已连接",
+  "viewport": [
+    390,
+    844
+  ]
+}

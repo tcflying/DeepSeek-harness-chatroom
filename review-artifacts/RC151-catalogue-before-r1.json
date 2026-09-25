@@ -1,0 +1,51 @@
+{
+  "at": "2026-09-13T17:31:15.353Z",
+  "label": "before-r1",
+  "boundary": "Existing admin login; two read-only catalogues and health requests; no UI, model call, session mutation or network configuration change.",
+  "checks": [
+    {
+      "transport": "local",
+      "at": "2026-09-13T17:31:16.205Z",
+      "health": {
+        "status": 200,
+        "elapsedMs": 3,
+        "ready": true,
+        "diagnostics": {
+          "enabled": true,
+          "healthy": true,
+          "dropped": 0
+        }
+      },
+      "catalogue": {
+        "status": 200,
+        "headersMs": 754,
+        "totalMs": 756,
+        "rpcOk": true,
+        "items": 75
+      }
+    },
+    {
+      "transport": "public",
+      "at": "2026-09-13T17:31:16.961Z",
+      "health": {
+        "status": 200,
+        "elapsedMs": 432,
+        "ready": true,
+        "diagnostics": {
+          "enabled": true,
+          "healthy": true,
+          "dropped": 0
+        }
+      },
+      "catalogue": {
+        "error": {
+          "kind": "TypeError",
+          "code": "UND_ERR_CONNECT_TIMEOUT"
+        },
+        "totalMs": 10677
+      }
+    }
+  ],
+  "passed": false,
+  "completedAt": "2026-09-13T17:31:27.638Z"
+}

@@ -1,0 +1,141 @@
+{
+  "ai": {
+    "addTop": 609.2999877929688,
+    "at": "2026-09-11T13:26:12.446Z",
+    "controls": [
+      {
+        "fontSize": "16px",
+        "height": 42
+      },
+      {
+        "fontSize": "16px",
+        "height": 42
+      },
+      {
+        "fontSize": "16px",
+        "height": 42
+      },
+      {
+        "fontSize": "16px",
+        "height": 42
+      }
+    ],
+    "files": true,
+    "hit": true,
+    "labelBottom": 534.2000122070312,
+    "loadedMembers": true,
+    "overflow": false,
+    "rect": {
+      "bottom": 814.3000335693359,
+      "height": 676.6000366210938,
+      "left": 103.20000457763672,
+      "right": 823.2000045776367,
+      "top": 137.6999969482422,
+      "width": 720,
+      "x": 103.20000457763672,
+      "y": 137.6999969482422
+    },
+    "title": "AI 成员",
+    "topLayer": true
+  },
+  "group": {
+    "at": "2026-09-11T13:35:43.265Z",
+    "files": true,
+    "hit": true,
+    "loaded": true,
+    "overflow": false,
+    "rect": {
+      "bottom": 919.8999900817872,
+      "height": 887.7999877929688,
+      "left": 103.20000457763672,
+      "right": 823.2000045776367,
+      "top": 32.10000228881836,
+      "width": 720,
+      "x": 103.20000457763672,
+      "y": 32.10000228881836
+    },
+    "title": "群管理",
+    "topLayer": true
+  },
+  "nativeGroup": {
+    "at": "2026-09-11T13:04:06.946Z",
+    "files": true,
+    "hit": true,
+    "overflow": false,
+    "rect": {
+      "bottom": 928.3000373840332,
+      "height": 904.6000366210938,
+      "left": 103.20000457763672,
+      "right": 823.2000045776367,
+      "top": 23.700000762939453,
+      "width": 720,
+      "x": 103.20000457763672,
+      "y": 23.700000762939453
+    },
+    "skin": null,
+    "topLayer": true
+  },
+  "freshLoad": {
+    "at": "2026-09-11T13:44:33.198Z",
+    "drafts": [
+      ""
+    ],
+    "historyLoading": false,
+    "imageCount": 1,
+    "state": {
+      "native": "connected",
+      "notifications": "online",
+      "room": "online",
+      "state": "connected",
+      "wide": "false"
+    },
+    "startedAt": "2026-09-11T13:42:18.618Z",
+    "forcedConnectionWarnings": []
+  },
+  "reconnect": {
+    "before": {
+      "at": "2026-09-11T13:48:23.968Z",
+      "drafts": [
+        "重连验收草稿（未发送）"
+      ],
+      "state": {
+        "native": "connected",
+        "notifications": "online",
+        "room": "online",
+        "state": "connected",
+        "wide": "false"
+      }
+    },
+    "after": {
+      "at": "2026-09-11T13:49:48.024Z",
+      "drafts": [
+        "重连验收草稿（未发送）"
+      ],
+      "historyLoading": false,
+      "images": [
+        {
+          "complete": true,
+          "width": 267
+        }
+      ],
+      "state": {
+        "native": "connected",
+        "notifications": "online",
+        "room": "online",
+        "state": "connected",
+        "wide": "false"
+      }
+    },
+    "warnings": [
+      {
+        "message": "[connection] connection lost, retry #1",
+        "timestamp": "2026-09-11T13:48:24.102Z"
+      },
+      {
+        "message": "[connection] generation is still not ready after 3000ms",
+        "timestamp": "2026-09-11T13:48:27.107Z"
+      }
+    ]
+  },
+  "scope": "Original in-app browser tab 1. Files remained open. No messages or member/model changes submitted. Test draft restored to empty. Modal geometry unchanged from rc125; rc126 adds identity-scoped native reset."
+}

@@ -1,0 +1,25 @@
+{
+  "version": "1.5.0-codex.rc1.42",
+  "passed": false,
+  "browser": "original Codex In-app Browser, original tab 1",
+  "observed": {
+    "reloadAt": "2026-09-12T04:41:27.251Z",
+    "originalTabAndRoomUrlPresent": true,
+    "javascriptDialogPresent": false,
+    "ordinaryIndependentIabPageReadable": true,
+    "sameSiteIndependentIabPageReadable": false,
+    "runtimeReboundAfterKernelReset": true,
+    "originalDraftVerifiedAfterReload": false
+  },
+  "failures": [
+    "Original tab console/DOM reads timed out at Emulation.setFocusEmulationEnabled after reload; screenshot also timed out and reset the control kernel.",
+    "Reacquiring the original tab and restoring the control runtime did not recover the read.",
+    "An independent Example Domain tab was readable; navigating that diagnostic tab to the same room then timed out at Runtime.evaluate. Its navigation away succeeded. This narrows the failure to the site/page state but does not prove its cause."
+  ],
+  "evidence": {
+    "desktopLogLines": [8021, 8035, 8038, 8120, 8270],
+    "desktopLog": "codex-desktop-9aecbec2-67a1-4ca8-b910-47055a557918-50004-t0-i1-000000-0.log",
+    "independentProbeTab": "7"
+  },
+  "limits": "No message, upload, generation, logout, role/setting mutation, storage read/reset, or browser profile replacement. Public headless and service health results do not substitute for original-IAB acceptance. The prior unsent draft is preserved in the untouched original tab, but post-reload rendering could not be verified."
+}

@@ -84,6 +84,7 @@ export interface AutomationSettingsRecord {
 }
 /** Durable room participant AI identity. Kept separate from native Harness subagents. */
 export interface RoomAgentProfileRecord {
+    readonly avatarId?: ChatroomAvatarId;
     readonly id: string;
     readonly roomId: string;
     readonly name: string;

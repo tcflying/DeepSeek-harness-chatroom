@@ -1,0 +1,141 @@
+{
+  "version": "1.5.0-codex.rc1.47",
+  "at": "2026-09-12T17:07:49.754Z",
+  "mode": "public-super-admin-exact-reconnect",
+  "scope": [
+    "fresh headless context",
+    "one existing super-admin login",
+    "one authorized-room deep-link",
+    "open native Files only if the host entry is actually available",
+    "AI/group top-layer checks when Files opened",
+    "one UI reconnect after ready",
+    "no login retry, refresh, message, input, upload, AI request, role change, or server setting mutation"
+  ],
+  "passed": true,
+  "readbacks": {
+    "role": "super-admin-exact-reconnect",
+    "errors": [],
+    "files": {
+      "attempted": true,
+      "opened": true,
+      "nativeSlot": "workbench-right-pane",
+      "openedExistingFilesEntry": true,
+      "controlRole": "div",
+      "controlAriaSelected": null,
+      "panelContract": "true",
+      "panelVisible": true,
+      "error": "AssertionError [ERR_ASSERTION]: super-admin-exact-reconnect/composer: send control missing or too small"
+    },
+    "deepLink": {
+      "readinessDeadlineMs": 30000,
+      "requested": true,
+      "requestSent": true,
+      "selectResponseSucceeded": true,
+      "active": true,
+      "nativeSelected": true,
+      "selectedNativeTitle": true,
+      "timeline": [
+        {
+          "atMs": 5609,
+          "atUtc": "2026-09-12T17:08:01.266Z",
+          "event": "request",
+          "path": "/api/session/list",
+          "method": "POST"
+        },
+        {
+          "atMs": 6914,
+          "atUtc": "2026-09-12T17:08:02.571Z",
+          "event": "response",
+          "path": "/api/session/list",
+          "status": 200
+        },
+        {
+          "atMs": 6915,
+          "atUtc": "2026-09-12T17:08:02.572Z",
+          "event": "requestfinished",
+          "path": "/api/session/list",
+          "status": 200,
+          "timing": {
+            "queueOrBlockedMs": 0,
+            "dnsMs": null,
+            "connectMs": null,
+            "requestMs": 1317,
+            "downloadMs": 1,
+            "responseEndMs": 1318
+          }
+        },
+        {
+          "atMs": 6977,
+          "atUtc": "2026-09-12T17:08:02.634Z",
+          "event": "request",
+          "path": "/rooms/select",
+          "method": "POST"
+        },
+        {
+          "atMs": 7407,
+          "atUtc": "2026-09-12T17:08:03.064Z",
+          "event": "response",
+          "path": "/rooms/select",
+          "status": 200
+        },
+        {
+          "atMs": 7407,
+          "atUtc": "2026-09-12T17:08:03.064Z",
+          "event": "requestfinished",
+          "path": "/rooms/select",
+          "status": 200,
+          "timing": {
+            "queueOrBlockedMs": 0,
+            "dnsMs": null,
+            "connectMs": null,
+            "requestMs": 486,
+            "downloadMs": 1,
+            "responseEndMs": 487
+          }
+        },
+        {
+          "atMs": 9754,
+          "atUtc": "2026-09-12T17:08:05.411Z",
+          "event": "request",
+          "path": "/api/session/list",
+          "method": "POST"
+        }
+      ]
+    },
+    "AI 成员": {
+      "modal": true,
+      "pointOwnedByDialog": true,
+      "rect": {
+        "left": 360,
+        "right": 1080,
+        "top": 384,
+        "bottom": 516
+      }
+    },
+    "群管理": {
+      "modal": true,
+      "pointOwnedByDialog": true,
+      "rect": {
+        "left": 360,
+        "right": 1080,
+        "top": 109.5,
+        "bottom": 790.5
+      }
+    },
+    "reconnect": {
+      "oneClick": true,
+      "sessionListRequests": 1,
+      "roomStillSelected": true,
+      "before": {
+        "native": "connected",
+        "room": "online",
+        "notifications": "online"
+      },
+      "after": {
+        "native": "connected",
+        "room": "online",
+        "notifications": "online"
+      }
+    }
+  }
+}

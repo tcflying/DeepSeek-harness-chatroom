@@ -1,0 +1,17 @@
+{
+  "version": "1.5.0-codex.rc1.46",
+  "productionVersionObserved": "1.5.0-codex.rc1.42",
+  "at": "2026-09-12T08:24:00Z",
+  "surface": "original Codex In-app Browser",
+  "passed": false,
+  "observations": {
+    "discovery": "Supported browser runtime discovered the original talk.opcvip.net tab; no replacement page was created.",
+    "read": "Original tab AX read exceeded 20 seconds and reset its JavaScript kernel.",
+    "openPanel": "Native open_in_codex returned queued for the current task.",
+    "visibility": "Supported IAB visibility.set(true) completed, but immediate visibility.get() remained false.",
+    "hostLog": "08:18:56.974Z to 08:18:57.008Z discovery fan-out included multiple no-browser-route failures and one getInfo completion. This mixed backend discovery cannot alone identify the original page's timeout mechanism."
+  },
+  "safety": "No refresh, navigation, draft edit, message, upload, provider generation, credential or profile change was performed. Computer Use was not used to automate the ChatGPT host UI.",
+  "limits": "Candidate is not deployed; this retains a production-surface failure, not RC146 UI acceptance. Host routing/visibility and plugin re-entry are separate hypotheses pending independent evidence.",
+  "next": "User was asked asynchronously to return to the original task and expand its existing browser without refreshing. Continue independent source repair and isolated Host acceptance. Retry the original page only after a relevant visibility/routing or deployed-state change."
+}

@@ -1,0 +1,78 @@
+{
+  "at": "2026-09-12T17:05:20.736Z",
+  "probes": [
+    {
+      "name": "local",
+      "status": 200,
+      "headersMs": 4192,
+      "elapsedMs": 4201,
+      "rpcOk": true,
+      "items": 56
+    },
+    {
+      "name": "bridge",
+      "status": 200,
+      "headersMs": 3684,
+      "elapsedMs": 3685,
+      "rpcOk": true,
+      "items": 56
+    },
+    {
+      "name": "public",
+      "status": 200,
+      "headersMs": 2748,
+      "elapsedMs": 2944,
+      "rpcOk": true,
+      "items": 56
+    }
+  ],
+  "journal": [
+    {
+      "at": "2026-09-12T17:05:26.606Z",
+      "pid": 45580,
+      "event": "native.session-list.complete",
+      "sessionList": {
+        "upstreamElapsedMs": 3037,
+        "jsonElapsedMs": 3042,
+        "filterElapsedMs": 4171,
+        "itemsCount": 136,
+        "totalElapsedMs": 4171,
+        "status": 200
+      }
+    },
+    {
+      "at": "2026-09-12T17:05:30.302Z",
+      "pid": 45580,
+      "event": "native.session-list.complete",
+      "sessionList": {
+        "upstreamElapsedMs": 2147,
+        "jsonElapsedMs": 2154,
+        "filterElapsedMs": 3675,
+        "itemsCount": 136,
+        "totalElapsedMs": 3675,
+        "status": 200
+      }
+    },
+    {
+      "at": "2026-09-12T17:05:32.832Z",
+      "pid": 45580,
+      "event": "native.session-list.complete",
+      "sessionList": {
+        "upstreamElapsedMs": 1133,
+        "jsonElapsedMs": 1136,
+        "filterElapsedMs": 2020,
+        "itemsCount": 136,
+        "totalElapsedMs": 2020,
+        "status": 200
+      }
+    }
+  ],
+  "boundary": "Existing admin login; catalogue reads only; no credentials, cookies, session ids, titles or content retained. Local and bridge calls target the same service, not another origin. No IAB, TUN, configuration or service changes.",
+  "login": {
+    "status": 200,
+    "elapsedMs": 1684,
+    "role": "super-admin"
+  },
+  "completedAt": "2026-09-12T17:05:33.258Z",
+  "passed": true
+}

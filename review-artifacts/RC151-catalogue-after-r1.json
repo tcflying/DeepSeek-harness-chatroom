@@ -1,0 +1,51 @@
+{
+  "at": "2026-09-13T17:36:56.459Z",
+  "label": "after-r1",
+  "boundary": "Existing admin login; two read-only catalogues and health requests; no UI, model call, session mutation or network configuration change.",
+  "checks": [
+    {
+      "transport": "local",
+      "at": "2026-09-13T17:36:57.537Z",
+      "health": {
+        "status": 200,
+        "elapsedMs": 4,
+        "ready": true,
+        "diagnostics": {
+          "enabled": true,
+          "healthy": true,
+          "dropped": 0
+        }
+      },
+      "catalogue": {
+        "status": 200,
+        "headersMs": 530,
+        "totalMs": 531,
+        "rpcOk": true,
+        "items": 75
+      }
+    },
+    {
+      "transport": "public",
+      "at": "2026-09-13T17:36:58.069Z",
+      "health": {
+        "status": 200,
+        "elapsedMs": 536,
+        "ready": true,
+        "diagnostics": {
+          "enabled": true,
+          "healthy": true,
+          "dropped": 0
+        }
+      },
+      "catalogue": {
+        "status": 200,
+        "headersMs": 2038,
+        "totalMs": 2043,
+        "rpcOk": true,
+        "items": 75
+      }
+    }
+  ],
+  "passed": true,
+  "completedAt": "2026-09-13T17:37:00.112Z"
+}

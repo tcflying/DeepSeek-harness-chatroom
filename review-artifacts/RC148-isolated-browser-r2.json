@@ -1,0 +1,16 @@
+{
+  "version": "1.5.0-codex.rc1.48",
+  "at": "2026-09-12T17:35:29.306Z",
+  "mode": "isolated-guest",
+  "base": "http://127.0.0.1:3186",
+  "roles": [],
+  "screenshots": [],
+  "passed": false,
+  "error": "AssertionError [ERR_ASSERTION]: native test login must establish the local session",
+  "browserCleanup": {
+    "startedAt": "2026-09-12T17:35:29.470Z",
+    "connected": true,
+    "contextsRemaining": 0,
+    "completedAt": "2026-09-12T17:35:29.988Z"
+  }
+}

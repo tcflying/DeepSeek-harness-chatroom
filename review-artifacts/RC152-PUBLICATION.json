@@ -1,0 +1,68 @@
+{
+  "version": "1.5.0-codex.rc1.52",
+  "at": "2026-09-13T17:53:41.226Z",
+  "deployed": true,
+  "fullCiPassed": true,
+  "service": "Service status for 'dsh-chatroom': Running",
+  "listeners": [
+    {
+      "LocalPort": 3185,
+      "OwningProcess": 9188
+    },
+    {
+      "LocalPort": 3181,
+      "OwningProcess": 8584
+    }
+  ],
+  "hostAndBridgeNotRestarted": true,
+  "overlay": {
+    "rollback": "C:/Users/datoo/.dsh/chatroom-server/profiles/web/cordis.patch.rc152-prepublish.bak",
+    "onlyReleasePathChanged": true,
+    "beforeSha256": "5546c429226776b3341cf62b5debea2976b699966bafaac7ce86eac4ab8dce26",
+    "afterSha256": "9eccd23241d8a091fee87cf6ddecac9f66cf69b06b0c478120459d8dc837ad32"
+  },
+  "surfaces": [
+    {
+      "base": "http://127.0.0.1:3181",
+      "health": {
+        "ready": true,
+        "diagnostics": {
+          "enabled": true,
+          "healthy": true,
+          "dropped": 0
+        }
+      },
+      "exactClientPayload": true,
+      "servedSha256": "429c28765a98db6f5334d7ff84870e4ec55be092e6830c416c0e6130c6be711d"
+    },
+    {
+      "base": "https://talk.opcvip.net",
+      "health": {
+        "ready": true,
+        "diagnostics": {
+          "enabled": true,
+          "healthy": true,
+          "dropped": 0
+        }
+      },
+      "exactClientPayload": true,
+      "servedSha256": "429c28765a98db6f5334d7ff84870e4ec55be092e6830c416c0e6130c6be711d"
+    }
+  ],
+  "phases": [
+    {
+      "version": 1,
+      "at": "2026-09-13T17:52:54.416Z",
+      "pid": 8584,
+      "event": "runtime.stop"
+    },
+    {
+      "version": 1,
+      "at": "2026-09-13T17:52:56.764Z",
+      "pid": 8584,
+      "event": "runtime.start"
+    }
+  ],
+  "catalogueStages": [],
+  "boundary": "Publication and current transport evidence only. Individual failed public/IAB assertions and historical outage attribution remain unresolved."
+}

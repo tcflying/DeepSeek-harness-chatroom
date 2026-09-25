@@ -1,0 +1,24 @@
+{
+  "version": "1.5.0-codex.rc1.34",
+  "at": "2026-09-11T23:36:15Z",
+  "passed": false,
+  "browser": "original Codex In-app Browser, original tab 1",
+  "observed": {
+    "loadedAfterPluginSwitch": true,
+    "nativeRoomSelection": true,
+    "aiDialogAboveFiles": true,
+    "groupDialogAboveFiles": true,
+    "manualReconnectClicked": true,
+    "nativeRoomNotificationConnectedAfterReconnect": true,
+    "selectedRoomRetained": true,
+    "existingUnsentDraftRetained": true,
+    "independentThumbnailVisible": true
+  },
+  "viewport": { "width": 924, "height": 1030, "conversationWidth": 320 },
+  "screenshots": ["RC134-IAB-ai-files.png", "RC134-IAB-group-files.png"],
+  "failures": [
+    "Assistant action labels wrap character-by-character when Files narrows the conversation to 320px; fix pending in next version.",
+    "After hot-switch and reload, the retained deep-link URL initially showed welcome; attribution pending. Native room selection succeeded."
+  ],
+  "limits": "This receipt does not prove network request counts after reconnect, all public roles, paid provider operations, or indefinite connection stability. Browser control also encountered a kernel timeout; current package return-value bootstrap restored the same browser without changing profile or login."
+}

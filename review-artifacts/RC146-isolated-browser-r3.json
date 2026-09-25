@@ -1,0 +1,798 @@
+{
+  "version": "1.5.0-codex.rc1.46",
+  "at": "2026-09-12T08:28:25.170Z",
+  "mode": "isolated-guest",
+  "base": "http://127.0.0.1:3186",
+  "roles": [
+    {
+      "role": "guest",
+      "rpc": [],
+      "errors": [],
+      "geometry": {
+        "320": {
+          "width": 320,
+          "height": 720,
+          "documentWidth": 320,
+          "bodyWidth": 320,
+          "control": "设置",
+          "nativeSidebar": {
+            "viewportWidth": 320,
+            "settingsTextVisible": true,
+            "leftStaticChrome": [
+              {
+                "ariaLabel": "新建会话",
+                "text": "",
+                "left": 16,
+                "top": 24,
+                "width": 200,
+                "height": 24
+              },
+              {
+                "ariaLabel": "新建会话",
+                "text": "新会话",
+                "left": 14,
+                "top": 74,
+                "width": 236,
+                "height": 38
+              },
+              {
+                "ariaLabel": null,
+                "text": "设置",
+                "left": 10,
+                "top": 668,
+                "width": 244,
+                "height": 42
+              }
+            ]
+          },
+          "account": {
+            "left": 10,
+            "right": 254,
+            "top": 668,
+            "bottom": 710,
+            "width": 244,
+            "height": 42,
+            "viewportWidth": 320,
+            "viewportHeight": 720,
+            "hit": true
+          },
+          "style": {
+            "left": 218,
+            "right": 296,
+            "top": 16,
+            "bottom": 52,
+            "width": 78,
+            "height": 36,
+            "viewportWidth": 320,
+            "viewportHeight": 720,
+            "hit": true
+          }
+        },
+        "390": {
+          "width": 390,
+          "height": 844,
+          "documentWidth": 390,
+          "bodyWidth": 390,
+          "control": "设置",
+          "nativeSidebar": {
+            "viewportWidth": 390,
+            "settingsTextVisible": true,
+            "leftStaticChrome": [
+              {
+                "ariaLabel": "新建会话",
+                "text": "",
+                "left": 16,
+                "top": 24,
+                "width": 216,
+                "height": 24
+              },
+              {
+                "ariaLabel": "新建会话",
+                "text": "新会话",
+                "left": 14,
+                "top": 74,
+                "width": 252,
+                "height": 38
+              },
+              {
+                "ariaLabel": null,
+                "text": "设置",
+                "left": 10,
+                "top": 792,
+                "width": 260,
+                "height": 42
+              }
+            ]
+          },
+          "account": {
+            "left": 10,
+            "right": 270,
+            "top": 792,
+            "bottom": 834,
+            "width": 260,
+            "height": 42,
+            "viewportWidth": 390,
+            "viewportHeight": 844,
+            "hit": true
+          },
+          "style": {
+            "left": 288,
+            "right": 366,
+            "top": 16,
+            "bottom": 52,
+            "width": 78,
+            "height": 36,
+            "viewportWidth": 390,
+            "viewportHeight": 844,
+            "hit": true
+          }
+        },
+        "768": {
+          "width": 768,
+          "height": 900,
+          "documentWidth": 768,
+          "bodyWidth": 768,
+          "control": "设置",
+          "nativeSidebar": {
+            "viewportWidth": 768,
+            "settingsTextVisible": true,
+            "leftStaticChrome": [
+              {
+                "ariaLabel": "新建会话",
+                "text": "",
+                "left": 16,
+                "top": 24,
+                "width": 216,
+                "height": 24
+              },
+              {
+                "ariaLabel": "新建会话",
+                "text": "新会话",
+                "left": 14,
+                "top": 74,
+                "width": 252,
+                "height": 38
+              },
+              {
+                "ariaLabel": "重新连接服务器",
+                "text": "↻重连",
+                "left": 203,
+                "top": 796,
+                "width": 63,
+                "height": 44
+              },
+              {
+                "ariaLabel": null,
+                "text": "设置",
+                "left": 10,
+                "top": 848,
+                "width": 260,
+                "height": 42
+              }
+            ]
+          },
+          "account": {
+            "left": 10,
+            "right": 270,
+            "top": 848,
+            "bottom": 890,
+            "width": 260,
+            "height": 42,
+            "viewportWidth": 768,
+            "viewportHeight": 900,
+            "hit": true
+          },
+          "style": {
+            "left": 666,
+            "right": 744,
+            "top": 16,
+            "bottom": 46,
+            "width": 78,
+            "height": 30,
+            "viewportWidth": 768,
+            "viewportHeight": 900,
+            "hit": true
+          }
+        },
+        "native": {
+          "width": 1440,
+          "height": 900,
+          "documentWidth": 1440,
+          "bodyWidth": 1440,
+          "styleControl": {
+            "left": 1338,
+            "right": 1416,
+            "top": 16,
+            "bottom": 46,
+            "width": 78,
+            "height": 30,
+            "viewportWidth": 1440,
+            "viewportHeight": 900,
+            "hit": true
+          }
+        },
+        "qq2007": {
+          "width": 1440,
+          "height": 900,
+          "documentWidth": 1440,
+          "bodyWidth": 1440,
+          "styleControl": {
+            "left": 1338,
+            "right": 1416,
+            "top": 16,
+            "bottom": 46,
+            "width": 78,
+            "height": 30,
+            "viewportWidth": 1440,
+            "viewportHeight": 900,
+            "hit": true
+          }
+        }
+      },
+      "servedClient": {
+        "manifest": true,
+        "status": 200,
+        "servedSha256": "6d1d0e9fe3c2f8b0b2d00f280e7343c3184d2a8cec4506c40a132a120323e23a",
+        "candidateSha256": "931220e2499c6a0418149c05c4c83e637521f90258bcb0d1522b591f3a68d851",
+        "servedBytes": 1154788,
+        "candidateBytes": 1154724,
+        "exactCandidate": true,
+        "normalizedPayload": true,
+        "normalization": "terminal-semicolon-and-source-map-footer-v1",
+        "servedNormalizedSha256": "3d5168a7918d8f554e223849605681a209edc07ff499d3694caa9346651f56b9",
+        "candidateNormalizedSha256": "3d5168a7918d8f554e223849605681a209edc07ff499d3694caa9346651f56b9",
+        "servedSourceMapFooter": true,
+        "candidateSourceMapFooter": true,
+        "difference": {
+          "firstDifference": 1154690,
+          "commonSuffixBytes": 0,
+          "lengthDelta": 64,
+          "servedFooterKind": "line-source-map",
+          "candidateFooterKind": "line-source-map"
+        },
+        "structure": "host-terminal-source-map-wrapper-normalized",
+        "marker": "rc135-assistant-actions-and-auth-aware-auto-reply"
+      },
+      "settingsReadback": {
+        "auth": {
+          "sessionStatus": 200,
+          "enabled": false,
+          "authenticated": true,
+          "accountRole": null
+        },
+        "manageableRooms": {
+          "status": 200,
+          "count": 0,
+          "requestFailed": false
+        }
+      },
+      "settingsSection": {
+        "mode": "empty-manageable-rooms",
+        "auth": {
+          "sessionStatus": 200,
+          "enabled": false,
+          "authenticated": true,
+          "accountRole": null
+        },
+        "manageableRooms": {
+          "status": 200,
+          "count": 0,
+          "requestFailed": false
+        },
+        "default": {
+          "desktop": {
+            "width": 1440,
+            "height": 900,
+            "documentWidth": 1440,
+            "bodyWidth": 1440,
+            "root": {
+              "left": 372,
+              "right": 1256,
+              "top": 104,
+              "bottom": 773.140625,
+              "width": 884,
+              "height": 669.140625,
+              "fontSize": 14,
+              "gridColumn": "auto",
+              "paddingLeft": 0
+            },
+            "card": {
+              "left": 372,
+              "right": 1256,
+              "top": 172,
+              "bottom": 349.140625,
+              "width": 884,
+              "height": 177.140625,
+              "fontSize": 14,
+              "gridColumn": "1 / -1",
+              "paddingLeft": 16
+            },
+            "input": null,
+            "inputLabel": null,
+            "controls": [
+              {
+                "left": 389,
+                "right": 471,
+                "top": 475.140625,
+                "bottom": 513.140625,
+                "width": 82,
+                "height": 38,
+                "fontSize": 14,
+                "gridColumn": "auto",
+                "paddingLeft": 10
+              },
+              {
+                "left": 481,
+                "right": 787,
+                "top": 475.140625,
+                "bottom": 513.140625,
+                "width": 306,
+                "height": 38,
+                "fontSize": 14,
+                "gridColumn": "auto",
+                "paddingLeft": 10
+              },
+              {
+                "left": 854,
+                "right": 1226,
+                "top": 514.140625,
+                "bottom": 630.140625,
+                "width": 372,
+                "height": 116,
+                "fontSize": 14,
+                "gridColumn": "auto",
+                "paddingLeft": 11
+              },
+              {
+                "left": 854,
+                "right": 1226,
+                "top": 690.140625,
+                "bottom": 806.140625,
+                "width": 372,
+                "height": 116,
+                "fontSize": 14,
+                "gridColumn": "auto",
+                "paddingLeft": 11
+              }
+            ],
+            "controlLabels": [
+              {
+                "left": 389,
+                "right": 471,
+                "top": 453.140625,
+                "bottom": 513.140625,
+                "width": 82,
+                "height": 60,
+                "fontSize": 12,
+                "gridColumn": "auto",
+                "paddingLeft": 0
+              },
+              {
+                "left": 481,
+                "right": 787,
+                "top": 453.140625,
+                "bottom": 513.140625,
+                "width": 306,
+                "height": 60,
+                "fontSize": 12,
+                "gridColumn": "auto",
+                "paddingLeft": 0
+              },
+              {
+                "left": 854,
+                "right": 1226,
+                "top": 492.140625,
+                "bottom": 654.140625,
+                "width": 372,
+                "height": 162,
+                "fontSize": 12,
+                "gridColumn": "auto",
+                "paddingLeft": 0
+              },
+              {
+                "left": 854,
+                "right": 1226,
+                "top": 668.140625,
+                "bottom": 848.140625,
+                "width": 372,
+                "height": 180,
+                "fontSize": 12,
+                "gridColumn": "auto",
+                "paddingLeft": 0
+              }
+            ],
+            "switchLabel": null,
+            "track": null,
+            "trackHit": false,
+            "switchLabelHit": false
+          },
+          "narrow": {
+            "width": 390,
+            "height": 844,
+            "documentWidth": 390,
+            "bodyWidth": 390,
+            "root": {
+              "left": 20,
+              "right": 370,
+              "top": 156,
+              "bottom": 1160.140625,
+              "width": 350,
+              "height": 1004.140625,
+              "fontSize": 14,
+              "gridColumn": "auto",
+              "paddingLeft": 0
+            },
+            "card": {
+              "left": 20,
+              "right": 370,
+              "top": 220,
+              "bottom": 415.140625,
+              "width": 350,
+              "height": 195.140625,
+              "fontSize": 14,
+              "gridColumn": "1 / -1",
+              "paddingLeft": 16
+            },
+            "input": null,
+            "inputLabel": null,
+            "controls": [
+              {
+                "left": 37,
+                "right": 353,
+                "top": 555.140625,
+                "bottom": 599.140625,
+                "width": 316,
+                "height": 44,
+                "fontSize": 16,
+                "gridColumn": "auto",
+                "paddingLeft": 10
+              },
+              {
+                "left": 37,
+                "right": 353,
+                "top": 631.140625,
+                "bottom": 675.140625,
+                "width": 316,
+                "height": 44,
+                "fontSize": 16,
+                "gridColumn": "auto",
+                "paddingLeft": 10
+              },
+              {
+                "left": 48,
+                "right": 342,
+                "top": 985.140625,
+                "bottom": 1101.140625,
+                "width": 294,
+                "height": 116,
+                "fontSize": 16,
+                "gridColumn": "auto",
+                "paddingLeft": 11
+              },
+              {
+                "left": 48,
+                "right": 342,
+                "top": 1179.140625,
+                "bottom": 1295.140625,
+                "width": 294,
+                "height": 116,
+                "fontSize": 16,
+                "gridColumn": "auto",
+                "paddingLeft": 11
+              }
+            ],
+            "controlLabels": [
+              {
+                "left": 37,
+                "right": 353,
+                "top": 533.140625,
+                "bottom": 599.140625,
+                "width": 316,
+                "height": 66,
+                "fontSize": 12,
+                "gridColumn": "auto",
+                "paddingLeft": 0
+              },
+              {
+                "left": 37,
+                "right": 353,
+                "top": 609.140625,
+                "bottom": 675.140625,
+                "width": 316,
+                "height": 66,
+                "fontSize": 12,
+                "gridColumn": "auto",
+                "paddingLeft": 0
+              },
+              {
+                "left": 48,
+                "right": 342,
+                "top": 963.140625,
+                "bottom": 1143.140625,
+                "width": 294,
+                "height": 180,
+                "fontSize": 12,
+                "gridColumn": "auto",
+                "paddingLeft": 0
+              },
+              {
+                "left": 48,
+                "right": 342,
+                "top": 1157.140625,
+                "bottom": 1337.140625,
+                "width": 294,
+                "height": 180,
+                "fontSize": 12,
+                "gridColumn": "auto",
+                "paddingLeft": 0
+              }
+            ],
+            "switchLabel": null,
+            "track": null,
+            "trackHit": false,
+            "switchLabelHit": false
+          }
+        },
+        "qq2007": {
+          "desktop": {
+            "width": 1440,
+            "height": 900,
+            "documentWidth": 1440,
+            "bodyWidth": 1440,
+            "root": {
+              "left": 372,
+              "right": 1256,
+              "top": 104,
+              "bottom": 773.140625,
+              "width": 884,
+              "height": 669.140625,
+              "fontSize": 14,
+              "gridColumn": "auto",
+              "paddingLeft": 0
+            },
+            "card": {
+              "left": 372,
+              "right": 1256,
+              "top": 172,
+              "bottom": 349.140625,
+              "width": 884,
+              "height": 177.140625,
+              "fontSize": 14,
+              "gridColumn": "1 / -1",
+              "paddingLeft": 16
+            },
+            "input": null,
+            "inputLabel": null,
+            "controls": [
+              {
+                "left": 389,
+                "right": 471,
+                "top": 475.140625,
+                "bottom": 513.140625,
+                "width": 82,
+                "height": 38,
+                "fontSize": 14,
+                "gridColumn": "auto",
+                "paddingLeft": 10
+              },
+              {
+                "left": 481,
+                "right": 787,
+                "top": 475.140625,
+                "bottom": 513.140625,
+                "width": 306,
+                "height": 38,
+                "fontSize": 14,
+                "gridColumn": "auto",
+                "paddingLeft": 10
+              },
+              {
+                "left": 854,
+                "right": 1226,
+                "top": 514.140625,
+                "bottom": 630.140625,
+                "width": 372,
+                "height": 116,
+                "fontSize": 14,
+                "gridColumn": "auto",
+                "paddingLeft": 11
+              },
+              {
+                "left": 854,
+                "right": 1226,
+                "top": 690.140625,
+                "bottom": 806.140625,
+                "width": 372,
+                "height": 116,
+                "fontSize": 14,
+                "gridColumn": "auto",
+                "paddingLeft": 11
+              }
+            ],
+            "controlLabels": [
+              {
+                "left": 389,
+                "right": 471,
+                "top": 453.140625,
+                "bottom": 513.140625,
+                "width": 82,
+                "height": 60,
+                "fontSize": 12,
+                "gridColumn": "auto",
+                "paddingLeft": 0
+              },
+              {
+                "left": 481,
+                "right": 787,
+                "top": 453.140625,
+                "bottom": 513.140625,
+                "width": 306,
+                "height": 60,
+                "fontSize": 12,
+                "gridColumn": "auto",
+                "paddingLeft": 0
+              },
+              {
+                "left": 854,
+                "right": 1226,
+                "top": 492.140625,
+                "bottom": 654.140625,
+                "width": 372,
+                "height": 162,
+                "fontSize": 12,
+                "gridColumn": "auto",
+                "paddingLeft": 0
+              },
+              {
+                "left": 854,
+                "right": 1226,
+                "top": 668.140625,
+                "bottom": 848.140625,
+                "width": 372,
+                "height": 180,
+                "fontSize": 12,
+                "gridColumn": "auto",
+                "paddingLeft": 0
+              }
+            ],
+            "switchLabel": null,
+            "track": null,
+            "trackHit": false,
+            "switchLabelHit": false
+          },
+          "narrow": {
+            "width": 390,
+            "height": 844,
+            "documentWidth": 390,
+            "bodyWidth": 390,
+            "root": {
+              "left": 21,
+              "right": 369,
+              "top": 157,
+              "bottom": 1161.140625,
+              "width": 348,
+              "height": 1004.140625,
+              "fontSize": 14,
+              "gridColumn": "auto",
+              "paddingLeft": 0
+            },
+            "card": {
+              "left": 21,
+              "right": 369,
+              "top": 221,
+              "bottom": 416.140625,
+              "width": 348,
+              "height": 195.140625,
+              "fontSize": 14,
+              "gridColumn": "1 / -1",
+              "paddingLeft": 16
+            },
+            "input": null,
+            "inputLabel": null,
+            "controls": [
+              {
+                "left": 38,
+                "right": 352,
+                "top": 556.140625,
+                "bottom": 600.140625,
+                "width": 314,
+                "height": 44,
+                "fontSize": 16,
+                "gridColumn": "auto",
+                "paddingLeft": 10
+              },
+              {
+                "left": 38,
+                "right": 352,
+                "top": 632.140625,
+                "bottom": 676.140625,
+                "width": 314,
+                "height": 44,
+                "fontSize": 16,
+                "gridColumn": "auto",
+                "paddingLeft": 10
+              },
+              {
+                "left": 49,
+                "right": 341,
+                "top": 986.140625,
+                "bottom": 1102.140625,
+                "width": 292,
+                "height": 116,
+                "fontSize": 16,
+                "gridColumn": "auto",
+                "paddingLeft": 11
+              },
+              {
+                "left": 49,
+                "right": 341,
+                "top": 1180.140625,
+                "bottom": 1296.140625,
+                "width": 292,
+                "height": 116,
+                "fontSize": 16,
+                "gridColumn": "auto",
+                "paddingLeft": 11
+              }
+            ],
+            "controlLabels": [
+              {
+                "left": 38,
+                "right": 352,
+                "top": 534.140625,
+                "bottom": 600.140625,
+                "width": 314,
+                "height": 66,
+                "fontSize": 12,
+                "gridColumn": "auto",
+                "paddingLeft": 0
+              },
+              {
+                "left": 38,
+                "right": 352,
+                "top": 610.140625,
+                "bottom": 676.140625,
+                "width": 314,
+                "height": 66,
+                "fontSize": 12,
+                "gridColumn": "auto",
+                "paddingLeft": 0
+              },
+              {
+                "left": 49,
+                "right": 341,
+                "top": 964.140625,
+                "bottom": 1144.140625,
+                "width": 292,
+                "height": 180,
+                "fontSize": 12,
+                "gridColumn": "auto",
+                "paddingLeft": 0
+              },
+              {
+                "left": 49,
+                "right": 341,
+                "top": 1158.140625,
+                "bottom": 1338.140625,
+                "width": 292,
+                "height": 180,
+                "fontSize": 12,
+                "gridColumn": "auto",
+                "paddingLeft": 0
+              }
+            ],
+            "switchLabel": null,
+            "track": null,
+            "trackHit": false,
+            "switchLabelHit": false
+          }
+        }
+      }
+    }
+  ],
+  "screenshots": [
+    "RC146-isolated-settings-r3.png"
+  ],
+  "passed": true,
+  "error": "Error: Playwright browser close timed out after 15000ms"
+}

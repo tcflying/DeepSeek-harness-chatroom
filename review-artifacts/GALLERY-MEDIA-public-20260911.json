@@ -1,0 +1,42 @@
+{
+  "at": "2026-09-11T10:37:14.456Z",
+  "base": "https://talk.opcvip.net",
+  "rooms": [
+    {
+      "roomId": "29f58452-d88b-4495-9aee-03028b49df15",
+      "sessionId": "chatroom-v1-29f58452-d88b-4495-9aee-03028b49df15",
+      "count": 5,
+      "more": false
+    }
+  ],
+  "images": [
+    {
+      "roomId": "29f58452-d88b-4495-9aee-03028b49df15",
+      "sessionId": "chatroom-v1-29f58452-d88b-4495-9aee-03028b49df15",
+      "imageId": "2f0179c0-ddae-480b-8d7f-b8661f992ee2",
+      "fileId": "2f0179c0-ddae-480b-8d7f-b8661f992ee2",
+      "preview": false,
+      "bytes": 837408,
+      "format": "png",
+      "width": 1254,
+      "height": 1254
+    },
+    {
+      "roomId": "29f58452-d88b-4495-9aee-03028b49df15",
+      "sessionId": "chatroom-v1-29f58452-d88b-4495-9aee-03028b49df15",
+      "imageId": "2f0179c0-ddae-480b-8d7f-b8661f992ee2",
+      "fileId": "2f0179c0-ddae-480b-8d7f-b8661f992ee2",
+      "preview": true,
+      "bytes": 2116,
+      "format": "webp",
+      "width": 320,
+      "height": 320
+    }
+  ],
+  "negatives": {
+    "foreignSession": 422,
+    "anonymousImage": 401,
+    "anonymousGallery": 401,
+    "nonAdminVideo": 403
+  }
+}

@@ -1,0 +1,24 @@
+{
+  "version": "1.5.0-codex.rc1.49",
+  "at": "2026-09-12T18:15:26.970Z",
+  "tarballSha256": "d22e7eeb9ff3c80807085c6f0faf1f9a535883273cd49923af7543d8b70fbc74",
+  "bundles": {
+    "dist/index.js": "16de14365c5d11a23f6a93e0f539351b30f436888b7f1d8b6d8752b00807c24a",
+    "dist/client.js": "4a1963150189006821b0e238fc235997bab5129e345711d2f550d8ae97c45808",
+    "dist/index.js.map": "380e03f6ed09eb2fb8656582ee7349226490522cf397d11f59e8a82e669a0824",
+    "dist/client.js.map": "22f79056d7b9ce8e8fb870e851f08085b6258cd5f73eb5b6c4e9db41e417ffa9"
+  },
+  "immutable": [
+    {
+      "release": "C:/Users/datoo/.dsh/chatroom-next-test/profiles/web/plugin-releases/chatroom-1.5.0-codex.rc1.49",
+      "sameBundles": true
+    },
+    {
+      "release": "C:/Users/datoo/.dsh/chatroom-server/profiles/web/plugin-releases/chatroom-1.5.0-codex.rc1.49",
+      "sameBundles": true
+    }
+  ],
+  "passed": true,
+  "packageFileCount": 180,
+  "packageBoundary": "Only dist, manifest, public patch, readmes and licenses; no review artifacts, runtime config or credentials"
+}

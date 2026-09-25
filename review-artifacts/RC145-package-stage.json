@@ -1,0 +1,22 @@
+{
+  "version": "1.5.0-codex.rc1.45",
+  "at": "2026-09-12T07:28:16.546Z",
+  "tarballSha256": "8b54f8e8bb6efb69f1d49a2161afb0b09866470e3eceb1dea82c5add4d0f5596",
+  "bundles": {
+    "dist/index.js": "16de14365c5d11a23f6a93e0f539351b30f436888b7f1d8b6d8752b00807c24a",
+    "dist/client.js": "ec16be6697ff81b69581d586e48b6f059b7d4adba715673733fac8a3e86deebc",
+    "dist/index.js.map": "380e03f6ed09eb2fb8656582ee7349226490522cf397d11f59e8a82e669a0824",
+    "dist/client.js.map": "cc9acfd3d2bae1cb19be1b163a4ab8f1925423102763581425c6e4f075d743f8"
+  },
+  "immutable": [
+    {
+      "release": "C:/Users/datoo/.dsh/chatroom-next-test/profiles/web/plugin-releases/chatroom-1.5.0-codex.rc1.45",
+      "sameBundles": true
+    },
+    {
+      "release": "C:/Users/datoo/.dsh/chatroom-server/profiles/web/plugin-releases/chatroom-1.5.0-codex.rc1.45",
+      "sameBundles": true
+    }
+  ],
+  "passed": true
+}

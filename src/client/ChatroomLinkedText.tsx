@@ -3,6 +3,7 @@ import type { ChatroomDocumentCard } from '../types.js'
 import { CHATROOM_API_PREFIX } from '../routes.js'
 import { parseWecomDocumentUrl } from '../wecom-document.js'
 import { ChatroomExternalCardView } from './ChatroomExternalCard.js'
+import { usePageVisible } from './media-lifecycle.js'
 
 const HTTP_LINK = /https?:\/\/[^\s<>"']+/giu
 const TRAILING_PUNCTUATION = /[.,!?;:，。！？；：、)\]}】》〉」』]+$/u
@@ -62,7 +63,9 @@ export function ChatroomDocumentLinkCards({ text, existingUrls = [] }: {
 
 function ResolvedDocumentCard({ url }: { readonly url: string }): JSX.Element | null {
   const [card, setCard] = useState<ChatroomDocumentCard>()
+  const visible = usePageVisible()
   useEffect(() => {
+    if (!visible) return
     let active = true
     const controller = new AbortController()
     const timer = globalThis.setTimeout(() => { controller.abort() }, 5_000)
@@ -84,7 +87,7 @@ function ResolvedDocumentCard({ url }: { readonly url: string }): JSX.Element | 
       globalThis.clearTimeout(timer)
       controller.abort()
     }
-  }, [url])
+  }, [url, visible])
   return card === undefined ? null : <ChatroomExternalCardView card={card} />
 }
 

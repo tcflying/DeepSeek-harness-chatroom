@@ -1,0 +1,42 @@
+{
+  "version": "1.5.0-codex.rc1.45",
+  "at": "2026-09-12T07:29:45.221Z",
+  "mode": "isolated-served-asset-and-auth-probe",
+  "scope": [
+    "cold loopback Host",
+    "one test-guest identity bootstrap needed to mount Host plugin chrome",
+    "read-only manifest/client/session/manageable-room reads",
+    "no message, input, upload, AI request, role change, or setting mutation"
+  ],
+  "passed": false,
+  "readbacks": {
+    "nativeLoginStatus": 303,
+    "identityBootstrapStatus": 201,
+    "servedClient": {
+      "manifest": true,
+      "status": 200,
+      "servedSha256": "c6989cb64c7fb1cdb3ad5b18617e7d8e048a7cbf725a190537a5b1d779aabbee",
+      "candidateSha256": "ec16be6697ff81b69581d586e48b6f059b7d4adba715673733fac8a3e86deebc",
+      "servedBytes": 1154110,
+      "candidateBytes": 1154046,
+      "exactCandidate": false,
+      "normalizedPayload": false,
+      "servedNormalizedSha256": "d2ae015bf1036de22a4bcfca2e59bcbbb3429a21343364f08521cdaa890bd5e0",
+      "candidateNormalizedSha256": "18aa3933b830ca5df91594575961f0ac7b02f35d9eb8593230bcb240fcc6c5c6",
+      "servedSourceMapFooter": true,
+      "candidateSourceMapFooter": true,
+      "structure": "not-exact-candidate"
+    },
+    "auth": {
+      "sessionStatus": 200,
+      "enabled": false,
+      "authenticated": true,
+      "accountRole": null
+    },
+    "manageableRooms": {
+      "status": 200,
+      "count": 0
+    }
+  },
+  "error": "AssertionError [ERR_ASSERTION]: served client does not contain the exact immutable candidate asset"
+}

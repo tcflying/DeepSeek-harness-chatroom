@@ -1,0 +1,34 @@
+{
+  "version": "1.5.0-codex.rc1.31",
+  "at": "2026-09-11T17:32:42.632Z",
+  "roles": [
+    {
+      "role": "member",
+      "api": [
+        {
+          "method": "settings/describe",
+          "status": 403
+        },
+        {
+          "method": "credentials/list",
+          "status": 403
+        },
+        {
+          "method": "session/selectModel",
+          "status": 403
+        },
+        {
+          "method": "agentPresets/select",
+          "status": 403
+        },
+        {
+          "method": "commands/execute",
+          "status": 403
+        }
+      ],
+      "errors": []
+    }
+  ],
+  "passed": false,
+  "error": "TimeoutError: locator.click: Timeout 45000ms exceeded.\nCall log:\n\u001b[2m  - waiting for getByRole('treeitem').filter({ hasText: '权限与进展验收 20260912' })\u001b[22m\n\u001b[2m    - locator resolved to <button type=\"button\" role=\"treeitem\" aria-selected=\"false\" class=\"YDXeBa_searchResultRow\" data-dsh-responsive-part=\"sidebar-entry\">…</button>\u001b[22m\n\u001b[2m  - attempting click action\u001b[22m\n\u001b[2m    2 × waiting for element to be visible, enabled and stable\u001b[22m\n\u001b[2m      - element is visible, enabled and stable\u001b[22m\n\u001b[2m      - scrolling into view if needed\u001b[22m\n\u001b[2m      - done scrolling\u001b[22m\n\u001b[2m      - <div class=\"dsh-chatroom-search-layer\" data-testid=\"chatroom-search-dialog\">…</div> from <div data-shell-overlay=\"true\" data-dsh-surface=\"overlay\" class=\"pI_x6G_overlayLayer\">…</div> subtree intercepts pointer events\u001b[22m\n\u001b[2m    - retrying click action\u001b[22m\n\u001b[2m    - waiting 20ms\u001b[22m\n\u001b[2m    2 × waiting for element to be visible, enabled and stable\u001b[22m\n\u001b[2m      - element is visible, enabled and stable\u001b[22m\n\u001b[2m      - scrolling into view if needed\u001b[22m\n\u001b[2m      - done scrolling\u001b[22m\n\u001b[2m      - <div class=\"dsh-chatroom-search-layer\" data-testid=\"chatroom-search-dialog\">…</div> from <div data-shell-overlay=\"true\" data-dsh-surface=\"overlay\" class=\"pI_x6G_overlayLayer\">…</div> subtree intercepts pointer events\u001b[22m\n\u001b[2m    - retrying click action\u001b[22m\n\u001b[2m      - waiting 100ms\u001b[22m\n\u001b[2m    65 × waiting for element to be visible, enabled and stable\u001b[22m\n\u001b[2m       - element is visible, enabled and stable\u001b[22m\n\u001b[2m       - scrolling into view if needed\u001b[22m\n\u001b[2m       - done scrolling\u001b[22m\n\u001b[2m       - <div class=\"dsh-chatroom-search-layer\" data-testid=\"chatroom-search-dialog\">…</div> from <div data-shell-overlay=\"true\" data-dsh-surface=\"overlay\" class=\"pI_x6G_overlayLayer\">…</div> subtree intercepts pointer events\u001b[22m\n\u001b[2m     - retrying click action\u001b[22m\n\u001b[2m       - waiting 500ms\u001b[22m\n"
+}

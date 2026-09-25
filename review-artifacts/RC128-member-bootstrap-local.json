@@ -1,0 +1,198 @@
+{
+  "origin": "http://127.0.0.1:3181",
+  "at": "2026-09-11T16:14:01.671Z",
+  "rpc": [
+    {
+      "argsKeys": [],
+      "status": 200,
+      "keys": []
+    },
+    {
+      "argsKeys": [],
+      "status": 200,
+      "keys": []
+    },
+    {
+      "argsKeys": [],
+      "status": 200,
+      "keys": []
+    },
+    {
+      "method": "dynamicCordisRunner/inventory",
+      "argsKeys": [],
+      "status": 200,
+      "ok": true,
+      "keys": []
+    },
+    {
+      "method": "session/modelCatalog",
+      "argsKeys": [],
+      "status": 200,
+      "ok": true,
+      "keys": [
+        "default",
+        "routableProviders",
+        "groups",
+        "failures"
+      ]
+    },
+    {
+      "method": "settings/describe",
+      "argsKeys": [],
+      "status": 403,
+      "error": "此接口尚未配置账号权限。",
+      "keys": []
+    },
+    {
+      "method": "agentPresets/list",
+      "argsKeys": [],
+      "status": 200,
+      "ok": true,
+      "keys": [
+        "presets",
+        "authorable"
+      ]
+    },
+    {
+      "method": "dynamicCordisRunner/syncInspectManifest",
+      "argsKeys": [
+        "providers"
+      ],
+      "status": 403,
+      "error": "此接口尚未配置账号权限。",
+      "keys": []
+    },
+    {
+      "method": "credentials/describe",
+      "argsKeys": [
+        "refs"
+      ],
+      "status": 403,
+      "error": "此接口尚未配置账号权限。",
+      "keys": []
+    },
+    {
+      "argsKeys": [],
+      "status": 200,
+      "keys": []
+    },
+    {
+      "argsKeys": [],
+      "status": 200,
+      "keys": []
+    },
+    {
+      "argsKeys": [],
+      "status": 200,
+      "keys": []
+    },
+    {
+      "method": "settings/describe",
+      "argsKeys": [],
+      "status": 403,
+      "error": "此接口尚未配置账号权限。",
+      "keys": []
+    },
+    {
+      "argsKeys": [],
+      "status": 200,
+      "keys": []
+    },
+    {
+      "method": "dynamicCordisRunner/inventory",
+      "argsKeys": [],
+      "status": 200,
+      "ok": true,
+      "keys": []
+    },
+    {
+      "method": "session/modelCatalog",
+      "argsKeys": [],
+      "status": 200,
+      "ok": true,
+      "keys": [
+        "default",
+        "routableProviders",
+        "groups",
+        "failures"
+      ]
+    },
+    {
+      "method": "dynamicCordisRunner/syncInspectManifest",
+      "argsKeys": [
+        "providers"
+      ],
+      "status": 403,
+      "error": "此接口尚未配置账号权限。",
+      "keys": []
+    },
+    {
+      "argsKeys": [],
+      "status": 200,
+      "keys": []
+    },
+    {
+      "method": "settings/describe",
+      "argsKeys": [],
+      "status": 403,
+      "error": "此接口尚未配置账号权限。",
+      "keys": []
+    },
+    {
+      "argsKeys": [],
+      "status": 200,
+      "keys": []
+    },
+    {
+      "argsKeys": [],
+      "status": 200,
+      "keys": []
+    },
+    {
+      "argsKeys": [],
+      "status": 200,
+      "keys": []
+    },
+    {
+      "argsKeys": [],
+      "status": 200,
+      "keys": []
+    },
+    {
+      "argsKeys": [],
+      "status": 200,
+      "keys": []
+    },
+    {
+      "method": "agentPresets/list",
+      "argsKeys": [],
+      "status": 200,
+      "ok": true,
+      "keys": [
+        "presets",
+        "authorable"
+      ]
+    }
+  ],
+  "console": [
+    "Failed to load resource: the server responded with a status of 403 (Forbidden)",
+    "Failed to load resource: the server responded with a status of 403 (Forbidden)",
+    "[cordis-client-runner] syncing inspect providers failed: Error: gateway/internal: client api: dynamicCordisRunner/syncInspectManifest failed: transport failure for /api/dynamicCordisRunner/syncInspectManifest: HTTP 403\n    at Object.sync (http://127.0.0.1:3181/plugins/??@deepseek-ai/dsh-typert-registry/client.js,@deepseek-ai/dsh-api-gateway/client.js,@deepseek-ai/dsh-session-log-export/client.js,@deepseek-ai/dsh-api-session-controller/client.js,@deepseek-ai/dsh-api-workspace-controller/client.js",
+    "Failed to load resource: the server responded with a status of 403 (Forbidden)",
+    "Failed to load resource: the server responded with a status of 403 (Forbidden)",
+    "Failed to load resource: the server responded with a status of 403 (Forbidden)",
+    "[git-graph] auto-isolation disabled: the workspaces service shape changed; using the official new-session behavior",
+    "Failed to load resource: the server responded with a status of 403 (Forbidden)",
+    "Failed to load resource: the server responded with a status of 403 (Forbidden)",
+    "[cordis-client-runner] syncing inspect providers failed: Error: gateway/internal: client api: dynamicCordisRunner/syncInspectManifest failed: transport failure for /api/dynamicCordisRunner/syncInspectManifest: HTTP 403\n    at Object.sync (http://127.0.0.1:3181/plugins/??@deepseek-ai/dsh-typert-registry/client.js,@deepseek-ai/dsh-api-gateway/client.js,@deepseek-ai/dsh-session-log-export/client.js,@deepseek-ai/dsh-api-session-controller/client.js,@deepseek-ai/dsh-api-workspace-controller/client.js",
+    "Failed to load resource: the server responded with a status of 403 (Forbidden)"
+  ],
+  "streams": [
+    "{\"type\":\"item\",\"streamId\":\"0deeddea-ac51-45c2-881d-b59f5b4e32ac\",\"value\":{\"type\":\"baseline\",\"value\":{\"queues\":{\"chatroom-v1-29f58452-d88b-4495-9aee-03028b49df15\":[],\"session-48741672-88a0-4df8-900e-98bb586f4ca3\":[],\"session-69c0e521-a98d-46f1-a956-01cfa1360d44\":[]},\"jobs\":{\"chatroom-v1-29f58452-d88b-4495-9aee-03028b49df15\":[],\"session-48741672-88a0-4df8-900e-98bb586f4ca3\":[],\"session-69c0e521-a98d-46f1-a956-01cfa1360d44\":[]},\"projections\":{\"chatroom-v1-29f58452-d88b-4495-9aee-03028b49df15\":{\"asOfSeq\":32,\"values\":{\"title\":\"GPT 与 M3 生图验收 IMAGE-1789082741978\",\"goal\":null,\"tokenUsage\":{\"uncachedInputTokens\":0,\"outputTokens\":0,\"cacheReadTokens\":0,\"cacheWriteTokens\":0},\"contextPressure\":{},\"contextBreakdown\":{\"systemTokens\":0,\"toolsTokens\":0,\"messageTokens\":1539},\"sessionStats\":{\"turns\":0,\"steps\":0,\"llmMs\":0,\"toolMs\":0,\"ttftMs\":0,\"ttftSteps\":0,\"decodeMs\":0,\"decodeTokens\":0},\"turnOutline\":[],\"agentPreset\":\"standard\",\"subagentTiming\":{\"settledMs\":0},\"subagent\":null,\"permissions\":{\"options\":[{\"value\":\"read-only\",\"name\":\"read-only\"},{\"value\":\"workspace-write\",\"name\":\"workspace-write\"},{\"value\":\"danger-full-access\",\"name\":\"danger-full-access\"}],\"currentValue\":\"workspace-write\"},\"modelSelectio",
+    "{\"type\":\"item\",\"streamId\":\"fc3c0157-8b05-42df-9395-30213bc77ac0\",\"value\":{\"type\":\"ready\",\"clientId\":\"d9a10f36-ba41-46c7-bb6e-269612130952\",\"host\":{\"home\":\"C:\\\\Users\\\\datoo\\\\.dsh\\\\chatroom-server\"}}}",
+    "{\"type\":\"item\",\"streamId\":\"5c8336e4-cba2-478b-a54a-60865829c59b\",\"value\":{\"type\":\"baseline\",\"value\":{\"items\":[{\"workspaceId\":\"0413fa04-96c1-47d3-8b67-4718f47d594b\",\"path\":\"C:\\\\Users\\\\datoo\\\\.dsh\\\\chatroom-workspace\",\"title\":\"chatroom-workspace\",\"sessionIds\":[\"session-69c0e521-a98d-46f1-a956-01cfa1360d44\",\"session-48741672-88a0-4df8-900e-98bb586f4ca3\",\"chatroom-v1-29f58452-d88b-4495-9aee-03028b49df15\",\"chatroom-v1-671058e3-1eae-48c1-97f2-bd29a2a62994\",\"chatroom-v1-32f6749e-ae13-4f09-8d1b-5cf325a48f68\",\"session-49267237-4769-4723-8336-d598b3014831\",\"chatroom-v1-f9cb9dc4-23b6-46ad-b7ff-3944cced19ce\",\"session-3a044a9c-875c-451b-8025-894b28499afc\",\"chatroom-v1-ad9fa91f-19c4-48c8-b4c9-be4f3679f2b3\"],\"createdAt\":\"2026-09-06T21:28:03.890Z\",\"updatedAt\":\"2026-09-11T15:46:20.449Z\"}],\"archivedSessionIds\":[\"chatroom-v1-ad9fa91f-19c4-48c8-b4c9-be4f3679f2b3\",\"chatroom-v1-29f58452-d88b-4495-9aee-03028b49df15\"]}}}"
+  ],
+  "pageErrors": [],
+  "sidebar": [],
+  "page": "新会话\n工作区\n⌄\n群聊\n0\n⌄\nSolo\n0\n⌄\n私聊\n20\nSherlockTay\n2天\n下次见\n2天\ndato-233\n3天\nZCode 验收员\n3天\n本机管理员\n4天\n111\n@zbd268\n233\n@233\n666888\n@datoo-test\n黄大头\n@HUANG\n马币\n@18659128888\n王哈哈\n@WANG\ndatoo-2\n@datoo-2\nfyp\n@fyp\nJerry嘉\n@13043040340\nMan\n@goodmancmy\nNYS\n@NYS\nNYXL\n@nyxl\nTalk233\n@talk233\nTalkAccept\n@talk-accept\nxoo\n@xoo\n服务器已连接\n↻\n重连\n♙\n我的账号\n探索未至之境\n预览版\n选择工作区\nPTC 模式\n选择一个工作区开始\n◈\n风格\nQQ2007\n原生"
+}

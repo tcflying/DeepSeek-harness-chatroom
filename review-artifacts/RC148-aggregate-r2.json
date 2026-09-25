@@ -1,0 +1,87 @@
+{
+  "version": "1.5.0-codex.rc1.48",
+  "at": "2026-09-12T17:54:26.433Z",
+  "passed": false,
+  "checks": {
+    "candidateAndImmutable": {
+      "passed": true,
+      "evidence": {
+        "dist/index.js": "16de14365c5d11a23f6a93e0f539351b30f436888b7f1d8b6d8752b00807c24a",
+        "dist/client.js": "f332d44b37555599b15a845d0d016c46c876ae35178f54a499fa8b48713c6915",
+        "dist/index.js.map": "380e03f6ed09eb2fb8656582ee7349226490522cf397d11f59e8a82e669a0824",
+        "dist/client.js.map": "4866e995bc53d0e142c9b873068054a71623b8032cbd2906407b4b7e78f65853"
+      }
+    },
+    "effectiveOverlay": {
+      "passed": true,
+      "evidence": {
+        "version": "1.5.0-codex.rc1.48",
+        "overlaySha256": "df10d7ca8abe40b3655224bc946be06de52e2d8a038c0d678e8c3d425f5d2e4d"
+      }
+    },
+    "sourceMaps": {
+      "passed": true,
+      "evidence": {
+        "dist/client.js.map": 59,
+        "dist/index.js.map": 32
+      }
+    },
+    "servedExactClient": {
+      "passed": true,
+      "evidence": {
+        "candidateSha256": "f332d44b37555599b15a845d0d016c46c876ae35178f54a499fa8b48713c6915",
+        "servedSha256": "011a4168e92d127bf4fbfd9d58f29578c413d90a8d0c72de1827e1d04e52d380",
+        "embeddedAt": -1,
+        "samePayload": true,
+        "payloadSha256": "dcd8b8ef1e5673485af46df5866cc7f802d2a4aac82d24020e87653da769b240",
+        "normalization": "Only terminal Host semicolon/sourceMappingURL wrapper and CRLF; full remaining payload equality"
+      }
+    },
+    "health": {
+      "passed": true,
+      "evidence": {
+        "ready": true,
+        "diagnostics": {
+          "enabled": true,
+          "healthy": true,
+          "dropped": 0
+        }
+      }
+    },
+    "ci": {
+      "passed": true,
+      "evidence": {
+        "log": "RC148-check-ci-r2.log",
+        "closedAt": "2026-09-12T17:32:58.947Z",
+        "summaries": [
+          {
+            "files": 56,
+            "tests": 497
+          },
+          {
+            "files": 16,
+            "tests": 101
+          }
+        ]
+      }
+    },
+    "isolated": {
+      "passed": true,
+      "evidence": {
+        "file": "RC148-isolated-browser-r3.json"
+      }
+    },
+    "public": {
+      "passed": false,
+      "error": "Expected values to be strictly equal:\n\nfalse !== true\n"
+    },
+    "iab": {
+      "passed": false,
+      "error": "ENOENT: no such file or directory, open 'G:\\codex-project\\dsh-chatroom-next\\review-artifacts\\RC148-IAB-live.json'"
+    },
+    "reconnect": {
+      "passed": false,
+      "error": "Expected values to be strictly equal:\n\nfalse !== true\n"
+    }
+  }
+}

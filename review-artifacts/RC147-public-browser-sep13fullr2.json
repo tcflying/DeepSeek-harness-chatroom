@@ -1,0 +1,896 @@
+{
+  "version": "1.5.0-codex.rc1.47",
+  "at": "2026-09-12T17:17:25.829Z",
+  "mode": "public-authenticated",
+  "base": "https://talk.opcvip.net",
+  "roles": [
+    {
+      "role": "member",
+      "rpc": [
+        {
+          "method": "settings/describe",
+          "status": 403
+        },
+        {
+          "method": "credentials/list",
+          "status": 403
+        },
+        {
+          "method": "session/selectModel",
+          "status": 403
+        },
+        {
+          "method": "agentPresets/select",
+          "status": 403
+        },
+        {
+          "method": "commands/execute",
+          "status": 403
+        }
+      ],
+      "errors": [],
+      "roomSelected": true,
+      "geometry": {
+        "320": {
+          "width": 320,
+          "height": 720,
+          "documentWidth": 320,
+          "bodyWidth": 320,
+          "control": "▧ 会话图库",
+          "nativeSidebar": {
+            "viewportWidth": 320,
+            "settingsTextVisible": false,
+            "leftStaticChrome": [
+              {
+                "ariaLabel": "打开侧边栏",
+                "text": "",
+                "left": 10,
+                "top": 14,
+                "width": 44,
+                "height": 44
+              }
+            ]
+          },
+          "account": {
+            "left": 116,
+            "right": 195.75,
+            "top": 136,
+            "bottom": 170,
+            "width": 79.75,
+            "height": 34,
+            "viewportWidth": 320,
+            "viewportHeight": 720,
+            "hit": true
+          },
+          "style": {
+            "left": 186,
+            "right": 264,
+            "top": 12,
+            "bottom": 48,
+            "width": 78,
+            "height": 36,
+            "viewportWidth": 320,
+            "viewportHeight": 720,
+            "hit": true
+          }
+        },
+        "390": {
+          "width": 390,
+          "height": 844,
+          "documentWidth": 390,
+          "bodyWidth": 390,
+          "control": "▧ 会话图库",
+          "nativeSidebar": {
+            "viewportWidth": 390,
+            "settingsTextVisible": false,
+            "leftStaticChrome": [
+              {
+                "ariaLabel": "打开侧边栏",
+                "text": "",
+                "left": 10,
+                "top": 14,
+                "width": 44,
+                "height": 44
+              }
+            ]
+          },
+          "account": {
+            "left": 254.359375,
+            "right": 334.109375,
+            "top": 98,
+            "bottom": 132,
+            "width": 79.75,
+            "height": 34,
+            "viewportWidth": 390,
+            "viewportHeight": 844,
+            "hit": true
+          },
+          "style": {
+            "left": 256,
+            "right": 334,
+            "top": 12,
+            "bottom": 48,
+            "width": 78,
+            "height": 36,
+            "viewportWidth": 390,
+            "viewportHeight": 844,
+            "hit": true
+          }
+        },
+        "768": {
+          "width": 768,
+          "height": 900,
+          "documentWidth": 768,
+          "bodyWidth": 768,
+          "control": "▧ 会话图库",
+          "nativeSidebar": {
+            "viewportWidth": 768,
+            "settingsTextVisible": false,
+            "leftStaticChrome": [
+              {
+                "ariaLabel": "打开侧边栏",
+                "text": "",
+                "left": 224,
+                "top": 14,
+                "width": 44,
+                "height": 44
+              }
+            ]
+          },
+          "account": {
+            "left": 499.78125,
+            "right": 579.53125,
+            "top": 58,
+            "bottom": 88,
+            "width": 79.75,
+            "height": 30,
+            "viewportWidth": 768,
+            "viewportHeight": 900,
+            "hit": true
+          },
+          "style": {
+            "left": 610,
+            "right": 688,
+            "top": 15,
+            "bottom": 45,
+            "width": 78,
+            "height": 30,
+            "viewportWidth": 768,
+            "viewportHeight": 900,
+            "hit": true
+          }
+        },
+        "native": {
+          "width": 1440,
+          "height": 900,
+          "documentWidth": 1440,
+          "bodyWidth": 1440,
+          "styleControl": {
+            "left": 1284,
+            "right": 1362,
+            "top": 13,
+            "bottom": 43,
+            "width": 78,
+            "height": 30,
+            "viewportWidth": 1440,
+            "viewportHeight": 900,
+            "hit": true
+          }
+        },
+        "qq2007": {
+          "width": 1440,
+          "height": 900,
+          "documentWidth": 1440,
+          "bodyWidth": 1440,
+          "styleControl": {
+            "left": 1284,
+            "right": 1362,
+            "top": 11,
+            "bottom": 41,
+            "width": 78,
+            "height": 30,
+            "viewportWidth": 1440,
+            "viewportHeight": 900,
+            "hit": true
+          }
+        }
+      },
+      "mediaRoom": {
+        "kind": "owned-accessible-room",
+        "contentClaim": "not asserted"
+      },
+      "deepLink": {
+        "readinessDeadlineMs": 30000,
+        "requested": true,
+        "requestSent": true,
+        "selectResponseSucceeded": true,
+        "active": true,
+        "nativeSelected": true,
+        "selectedNativeTitle": true,
+        "timeline": [
+          {
+            "atMs": 6696,
+            "atUtc": "2026-09-12T17:17:37.559Z",
+            "event": "request",
+            "path": "/api/session/list",
+            "method": "POST"
+          },
+          {
+            "atMs": 10469,
+            "atUtc": "2026-09-12T17:17:41.332Z",
+            "event": "response",
+            "path": "/api/session/list",
+            "status": 200
+          },
+          {
+            "atMs": 10470,
+            "atUtc": "2026-09-12T17:17:41.333Z",
+            "event": "requestfinished",
+            "path": "/api/session/list",
+            "status": 200,
+            "timing": {
+              "queueOrBlockedMs": 0,
+              "dnsMs": null,
+              "connectMs": null,
+              "requestMs": 3779,
+              "downloadMs": 1,
+              "responseEndMs": 3780
+            }
+          },
+          {
+            "atMs": 10500,
+            "atUtc": "2026-09-12T17:17:41.363Z",
+            "event": "request",
+            "path": "/rooms/select",
+            "method": "POST"
+          },
+          {
+            "atMs": 10500,
+            "atUtc": "2026-09-12T17:17:41.363Z",
+            "event": "request",
+            "path": "/api/session/list",
+            "method": "POST"
+          },
+          {
+            "atMs": 10898,
+            "atUtc": "2026-09-12T17:17:41.761Z",
+            "event": "response",
+            "path": "/rooms/select",
+            "status": 200
+          },
+          {
+            "atMs": 10898,
+            "atUtc": "2026-09-12T17:17:41.761Z",
+            "event": "requestfinished",
+            "path": "/rooms/select",
+            "status": 200,
+            "timing": {
+              "queueOrBlockedMs": 0,
+              "dnsMs": null,
+              "connectMs": null,
+              "requestMs": 424,
+              "downloadMs": 1,
+              "responseEndMs": 424
+            }
+          }
+        ]
+      },
+      "servedClient": {
+        "manifest": true,
+        "status": 200,
+        "servedSha256": "fbcd4d292fddf8fc3c98171bedb4b5e21ad2390fe2dcbceb67ea4c1e9b1bb6ae",
+        "candidateSha256": "34ed7229ac17360ea8a7a483dedba6fb7beff5c5af8bb2535cfebc5e20962ceb",
+        "servedBytes": 1155327,
+        "candidateBytes": 1155263,
+        "exactCandidate": true,
+        "normalizedPayload": true,
+        "normalization": "terminal-semicolon-and-source-map-footer-v1",
+        "servedNormalizedSha256": "e38740337695280820a6f16ef2add44bd2825dbf9d574c9b9b7c002c4d2e95e9",
+        "candidateNormalizedSha256": "e38740337695280820a6f16ef2add44bd2825dbf9d574c9b9b7c002c4d2e95e9",
+        "servedSourceMapFooter": true,
+        "candidateSourceMapFooter": true,
+        "difference": {
+          "firstDifference": 1155229,
+          "commonSuffixBytes": 0,
+          "lengthDelta": 64,
+          "servedFooterKind": "line-source-map",
+          "candidateFooterKind": "line-source-map"
+        },
+        "structure": "host-terminal-source-map-wrapper-normalized",
+        "marker": "rc135-assistant-actions-and-auth-aware-auto-reply"
+      },
+      "gallery": {
+        "kind": "empty-owned-room",
+        "multiImagePass": false,
+        "normalEmptyState": true,
+        "responses": [
+          {
+            "status": 200,
+            "expectedRoom": true,
+            "expectedSession": true
+          }
+        ]
+      },
+      "accountModal": true
+    },
+    {
+      "role": "super-admin",
+      "rpc": [],
+      "errors": [],
+      "roomSelected": true,
+      "geometry": {
+        "320": {
+          "width": 320,
+          "height": 720,
+          "documentWidth": 320,
+          "bodyWidth": 320,
+          "control": "▧ 会话图库",
+          "nativeSidebar": {
+            "viewportWidth": 320,
+            "settingsTextVisible": false,
+            "leftStaticChrome": [
+              {
+                "ariaLabel": "打开侧边栏",
+                "text": "",
+                "left": 10,
+                "top": 14,
+                "width": 44,
+                "height": 44
+              }
+            ]
+          },
+          "account": {
+            "left": 174,
+            "right": 253.75,
+            "top": 136,
+            "bottom": 170,
+            "width": 79.75,
+            "height": 34,
+            "viewportWidth": 320,
+            "viewportHeight": 720,
+            "hit": true
+          },
+          "style": {
+            "left": 186,
+            "right": 264,
+            "top": 12,
+            "bottom": 48,
+            "width": 78,
+            "height": 36,
+            "viewportWidth": 320,
+            "viewportHeight": 720,
+            "hit": true
+          }
+        },
+        "390": {
+          "width": 390,
+          "height": 844,
+          "documentWidth": 390,
+          "bodyWidth": 390,
+          "control": "▧ 会话图库",
+          "nativeSidebar": {
+            "viewportWidth": 390,
+            "settingsTextVisible": false,
+            "leftStaticChrome": [
+              {
+                "ariaLabel": "打开侧边栏",
+                "text": "",
+                "left": 10,
+                "top": 14,
+                "width": 44,
+                "height": 44
+              }
+            ]
+          },
+          "account": {
+            "left": 116,
+            "right": 195.75,
+            "top": 136,
+            "bottom": 170,
+            "width": 79.75,
+            "height": 34,
+            "viewportWidth": 390,
+            "viewportHeight": 844,
+            "hit": true
+          },
+          "style": {
+            "left": 256,
+            "right": 334,
+            "top": 12,
+            "bottom": 48,
+            "width": 78,
+            "height": 36,
+            "viewportWidth": 390,
+            "viewportHeight": 844,
+            "hit": true
+          }
+        },
+        "768": {
+          "width": 768,
+          "height": 900,
+          "documentWidth": 768,
+          "bodyWidth": 768,
+          "control": "▧ 会话图库",
+          "nativeSidebar": {
+            "viewportWidth": 768,
+            "settingsTextVisible": false,
+            "leftStaticChrome": [
+              {
+                "ariaLabel": "打开侧边栏",
+                "text": "",
+                "left": 10,
+                "top": 14,
+                "width": 44,
+                "height": 44
+              }
+            ]
+          },
+          "account": {
+            "left": 532.046875,
+            "right": 611.796875,
+            "top": 58,
+            "bottom": 88,
+            "width": 79.75,
+            "height": 30,
+            "viewportWidth": 768,
+            "viewportHeight": 900,
+            "hit": true
+          },
+          "style": {
+            "left": 610,
+            "right": 688,
+            "top": 15,
+            "bottom": 45,
+            "width": 78,
+            "height": 30,
+            "viewportWidth": 768,
+            "viewportHeight": 900,
+            "hit": true
+          }
+        },
+        "native": {
+          "width": 1440,
+          "height": 900,
+          "documentWidth": 1440,
+          "bodyWidth": 1440,
+          "styleControl": {
+            "left": 1284,
+            "right": 1362,
+            "top": 13,
+            "bottom": 43,
+            "width": 78,
+            "height": 30,
+            "viewportWidth": 1440,
+            "viewportHeight": 900,
+            "hit": true
+          }
+        },
+        "qq2007": {
+          "width": 1440,
+          "height": 900,
+          "documentWidth": 1440,
+          "bodyWidth": 1440,
+          "styleControl": {
+            "left": 1284,
+            "right": 1362,
+            "top": 11,
+            "bottom": 41,
+            "width": 78,
+            "height": 30,
+            "viewportWidth": 1440,
+            "viewportHeight": 900,
+            "hit": true
+          }
+        }
+      },
+      "mediaRoom": {
+        "kind": "national-fly",
+        "preflightItems": 3
+      },
+      "deepLink": {
+        "readinessDeadlineMs": 30000,
+        "requested": true,
+        "requestSent": true,
+        "selectResponseSucceeded": true,
+        "active": true,
+        "nativeSelected": true,
+        "selectedNativeTitle": true,
+        "timeline": [
+          {
+            "atMs": 5985,
+            "atUtc": "2026-09-12T17:17:57.935Z",
+            "event": "request",
+            "path": "/api/session/list",
+            "method": "POST"
+          },
+          {
+            "atMs": 10448,
+            "atUtc": "2026-09-12T17:18:02.398Z",
+            "event": "response",
+            "path": "/api/session/list",
+            "status": 200
+          },
+          {
+            "atMs": 10449,
+            "atUtc": "2026-09-12T17:18:02.399Z",
+            "event": "requestfinished",
+            "path": "/api/session/list",
+            "status": 200,
+            "timing": {
+              "queueOrBlockedMs": 0,
+              "dnsMs": null,
+              "connectMs": null,
+              "requestMs": 4473,
+              "downloadMs": 1,
+              "responseEndMs": 4474
+            }
+          },
+          {
+            "atMs": 10512,
+            "atUtc": "2026-09-12T17:18:02.462Z",
+            "event": "request",
+            "path": "/rooms/select",
+            "method": "POST"
+          },
+          {
+            "atMs": 10512,
+            "atUtc": "2026-09-12T17:18:02.462Z",
+            "event": "request",
+            "path": "/api/session/list",
+            "method": "POST"
+          },
+          {
+            "atMs": 11309,
+            "atUtc": "2026-09-12T17:18:03.259Z",
+            "event": "response",
+            "path": "/rooms/select",
+            "status": 200
+          },
+          {
+            "atMs": 11309,
+            "atUtc": "2026-09-12T17:18:03.259Z",
+            "event": "requestfinished",
+            "path": "/rooms/select",
+            "status": 200,
+            "timing": {
+              "queueOrBlockedMs": 0,
+              "dnsMs": null,
+              "connectMs": null,
+              "requestMs": 853,
+              "downloadMs": 1,
+              "responseEndMs": 854
+            }
+          }
+        ],
+        "galleryRequestMatchedTarget": true
+      },
+      "servedClient": {
+        "manifest": true,
+        "status": 200,
+        "servedSha256": "fbcd4d292fddf8fc3c98171bedb4b5e21ad2390fe2dcbceb67ea4c1e9b1bb6ae",
+        "candidateSha256": "34ed7229ac17360ea8a7a483dedba6fb7beff5c5af8bb2535cfebc5e20962ceb",
+        "servedBytes": 1155327,
+        "candidateBytes": 1155263,
+        "exactCandidate": true,
+        "normalizedPayload": true,
+        "normalization": "terminal-semicolon-and-source-map-footer-v1",
+        "servedNormalizedSha256": "e38740337695280820a6f16ef2add44bd2825dbf9d574c9b9b7c002c4d2e95e9",
+        "candidateNormalizedSha256": "e38740337695280820a6f16ef2add44bd2825dbf9d574c9b9b7c002c4d2e95e9",
+        "servedSourceMapFooter": true,
+        "candidateSourceMapFooter": true,
+        "difference": {
+          "firstDifference": 1155229,
+          "commonSuffixBytes": 0,
+          "lengthDelta": 64,
+          "servedFooterKind": "line-source-map",
+          "candidateFooterKind": "line-source-map"
+        },
+        "structure": "host-terminal-source-map-wrapper-normalized",
+        "marker": "rc135-assistant-actions-and-auth-aware-auto-reply"
+      },
+      "stages": {
+        "qqNarrow320": {
+          "passed": false,
+          "error": "AssertionError [ERR_ASSERTION]: QQ narrow long human bubble cap is too small: 162"
+        },
+        "gallery": {
+          "passed": true
+        },
+        "viewports": {
+          "passed": true
+        },
+        "files-AI 成员": {
+          "passed": true
+        },
+        "files-群管理": {
+          "passed": true
+        },
+        "settings-manageable-rooms": {
+          "passed": false,
+          "error": "AssertionError [ERR_ASSERTION]: public/super-admin/settings/desktop: editable control labels must be at least 14px"
+        },
+        "reconnect": {
+          "passed": true
+        },
+        "pageErrors": {
+          "passed": true
+        }
+      },
+      "hostNarrowGeometry": {
+        "qq": {
+          "conversation": {
+            "left": 56,
+            "right": 320,
+            "width": 264,
+            "height": 720,
+            "scrollWidth": 264,
+            "clientWidth": 264
+          },
+          "tools": {
+            "left": 74,
+            "right": 288,
+            "width": 214,
+            "height": 38,
+            "scrollWidth": 214,
+            "clientWidth": 214
+          },
+          "actions": {
+            "left": 74,
+            "right": 288,
+            "width": 214,
+            "height": 30,
+            "scrollWidth": 214,
+            "clientWidth": 214
+          },
+          "longBubble": {
+            "width": 162,
+            "right": 242,
+            "scrollWidth": 162,
+            "clientWidth": 162
+          }
+        },
+        "failure": "AssertionError [ERR_ASSERTION]: QQ narrow long human bubble cap is too small: 162"
+      },
+      "gallery": {
+        "thumbnails": 3,
+        "original": {
+          "naturalWidth": 1024,
+          "naturalHeight": 1536
+        },
+        "previousNext": true,
+        "closed": true,
+        "metadata": {
+          "targetRoomSession": true,
+          "itemUrls": 3
+        },
+        "selectedOriginalUrls": 2,
+        "nativeTileImages": true,
+        "dialogOwnedInflightAfterClose": 0,
+        "dialogOwnedStartedAfterCloseInitiated": 0,
+        "dialogOwnedStartedAfterHidden": 0,
+        "excluded": {
+          "nativeThumbnails": 2,
+          "otherMedia": 0,
+          "unrelatedMetadata": 0
+        }
+      },
+      "files": {
+        "nativeSlot": "workbench-right-pane",
+        "openedExistingFilesEntry": true,
+        "controlRole": "div",
+        "controlAriaSelected": null,
+        "panelContract": "true",
+        "panelVisible": true,
+        "composerControls": {
+          "trailing": {
+            "left": 465.03125,
+            "right": 904,
+            "top": 818,
+            "bottom": 854,
+            "width": 438.96875,
+            "height": 36,
+            "hit": true
+          },
+          "buttonShapes": [
+            {
+              "label": "■ 停止",
+              "type": "button",
+              "disabled": true,
+              "slot": "conversation.input.right",
+              "rect": {
+                "left": 465.03125,
+                "right": 516.03125,
+                "top": 818,
+                "bottom": 854,
+                "width": 51,
+                "height": 36,
+                "hit": true
+              }
+            },
+            {
+              "label": "＋ 新会话",
+              "type": "button",
+              "disabled": false,
+              "slot": "conversation.input.right",
+              "rect": {
+                "left": 521.03125,
+                "right": 588.78125,
+                "top": 818,
+                "bottom": 854,
+                "width": 67.75,
+                "height": 36,
+                "hit": true
+              }
+            },
+            {
+              "label": "⚡ 快速会议",
+              "type": "button",
+              "disabled": false,
+              "slot": "conversation.input.right",
+              "rect": {
+                "left": 593.78125,
+                "right": 677.78125,
+                "top": 818,
+                "bottom": 854,
+                "width": 84,
+                "height": 36,
+                "hit": true
+              }
+            },
+            {
+              "label": "选择模型，当前 MiniMax-M3，推理等级 High",
+              "type": "button",
+              "disabled": false,
+              "slot": "conversation.input.model",
+              "rect": {
+                "left": 689.78125,
+                "right": 818,
+                "top": 822,
+                "bottom": 850,
+                "width": 128.21875,
+                "height": 28,
+                "hit": true
+              }
+            },
+            {
+              "label": "上下文已用 6%",
+              "type": "button",
+              "disabled": false,
+              "slot": "conversation.composer.bar",
+              "rect": {
+                "left": 830,
+                "right": 858,
+                "top": 822,
+                "bottom": 850,
+                "width": 28,
+                "height": 28,
+                "hit": true
+              }
+            },
+            {
+              "label": "发送消息",
+              "type": "button",
+              "disabled": true,
+              "slot": "conversation.composer.bar",
+              "rect": {
+                "left": 870,
+                "right": 904,
+                "top": 817,
+                "bottom": 851,
+                "width": 34,
+                "height": 34,
+                "hit": true
+              }
+            }
+          ],
+          "controls": {
+            "model": {
+              "left": 689.78125,
+              "right": 818,
+              "top": 822,
+              "bottom": 850,
+              "width": 128.21875,
+              "height": 28,
+              "hit": true
+            },
+            "context": {
+              "left": 830,
+              "right": 858,
+              "top": 822,
+              "bottom": 850,
+              "width": 28,
+              "height": 28,
+              "hit": true
+            },
+            "send": {
+              "left": 870,
+              "right": 904,
+              "top": 817,
+              "bottom": 851,
+              "width": 34,
+              "height": 34,
+              "hit": true
+            }
+          },
+          "primaryActions": [
+            {
+              "left": 870,
+              "right": 904,
+              "top": 817,
+              "bottom": 851,
+              "width": 34,
+              "height": 34,
+              "hit": true
+            }
+          ],
+          "overlaps": {
+            "modelContext": false,
+            "modelSend": false,
+            "contextSend": false
+          }
+        }
+      },
+      "AI 成员": {
+        "modal": true,
+        "pointOwnedByDialog": true,
+        "rect": {
+          "left": 360,
+          "right": 1080,
+          "top": 384,
+          "bottom": 516
+        }
+      },
+      "群管理": {
+        "modal": true,
+        "pointOwnedByDialog": true,
+        "rect": {
+          "left": 360,
+          "right": 1080,
+          "top": 109.5,
+          "bottom": 790.5
+        }
+      },
+      "settingsSection": {
+        "mode": "managed-rooms",
+        "auth": {
+          "sessionStatus": 200,
+          "enabled": true,
+          "authenticated": true,
+          "accountRole": "super-admin"
+        },
+        "manageableRooms": {
+          "status": 200,
+          "count": 24,
+          "requestFailed": false
+        },
+        "default": {}
+      },
+      "reconnect": {
+        "oneClick": true,
+        "sessionListRequests": 1,
+        "roomStillSelected": true,
+        "before": {
+          "native": "connected",
+          "room": "online",
+          "notifications": "online"
+        },
+        "after": {
+          "native": "connected",
+          "room": "online",
+          "notifications": "online"
+        }
+      }
+    }
+  ],
+  "screenshots": [
+    "RC147-public-member-gallery-empty-sep13fullr2.png",
+    "RC147-public-member-account-sep13fullr2.png",
+    "RC147-public-super-admin-qq-narrow-failure-sep13fullr2.png",
+    "RC147-public-super-admin-gallery-sep13fullr2.png",
+    "RC147-public-admin-ai-files-sep13fullr2.png",
+    "RC147-public-admin-group-files-sep13fullr2.png"
+  ],
+  "passed": false,
+  "anonymousGallery": 401,
+  "error": "Error: super-admin/qqNarrow320: AssertionError [ERR_ASSERTION]: QQ narrow long human bubble cap is too small: 162\nsuper-admin/settings-manageable-rooms: AssertionError [ERR_ASSERTION]: public/super-admin/settings/desktop: editable control labels must be at least 14px"
+}

@@ -169,6 +169,22 @@ describe('ChatroomAuth', () => {
     expect(member?.account.role).toBe('member')
   })
 
+  it('never promotes legacy dsh-auth admin headers without an allowlisted stable subject', async () => {
+    const fixture = createAuth({ authDshAuthHeaders: true, authDshAuthSuperAdminSubjects: ['allowlisted-subject'] })
+    await fixture.auth.start()
+
+    const adopted = await fixture.auth.adoptDshAuth({
+      'x-dsh-auth-user-id': 'legacy-edge-admin',
+      'x-dsh-auth-username': 'legacy-edge-admin',
+      'x-dsh-auth-roles': 'admin',
+    } satisfies IncomingHttpHeaders)
+
+    expect(adopted?.account).toMatchObject({ role: 'member' })
+    expect(fixture.auth.state(adopted?.account).canManageSettings).toBe(false)
+    await expect(fixture.auth.updateSettings(adopted!.account, { allowSelfRegistration: false }))
+      .rejects.toThrow('超级管理员')
+  })
+
   it('keeps avatar templates keyed by upstream username when a local name gets a suffix', async () => {
     const fixture = createAuth({
       authDshAuthHeaders: true,
@@ -197,7 +213,7 @@ describe('ChatroomAuth', () => {
     expect(refreshed?.account.avatarUrl).toBe('https://avatars.example.com/alice.png')
   })
 
-  it('preserves legacy dsh-auth super-admin roles during migration', async () => {
+  it('removes legacy dsh-auth super-admin roles during migration unless the stable subject is allowlisted', async () => {
     const fixture = createAuth({ authDshAuthSuperAdminSubjects: ['masonxhuang'] })
     const account: AccountRecord = {
       id: 'legacy-admin', username: 'masonxhuang', usernameKey: 'masonxhuang', displayName: 'Mason',
@@ -209,7 +225,7 @@ describe('ChatroomAuth', () => {
 
     await fixture.auth.start()
 
-    expect(fixture.accounts.get(account.id)).toMatchObject({ role: 'super-admin', externalSubject: 'admin' })
+    expect(fixture.accounts.get(account.id)).toMatchObject({ role: 'member', externalSubject: 'admin' })
   })
 
   it('revalidates dsh-auth-only sessions, refreshes profiles, and revokes stale local sessions', async () => {

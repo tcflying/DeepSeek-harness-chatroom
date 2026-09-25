@@ -1,0 +1,44 @@
+{
+  "version": "1.5.0-codex.rc1.39",
+  "passed": false,
+  "browser": "original Codex In-app Browser, original tab 1",
+  "observed": {
+    "reloadAt": "2026-09-12T03:25Z",
+    "urlRoomPreserved": true,
+    "firstReloadWelcomeWithoutRoom": true,
+    "nativeConnected": true,
+    "nativeCatalogueReady": true,
+    "notificationsConnected": true,
+    "roomState": "not-selected",
+    "nativeTestNoticeDismissed": true,
+    "manualSelectionRestoredRoom": true,
+    "existingUnsentConversationDraftRetained": true,
+    "filesSidebarActuallyOpen": true,
+    "filesNarrowedConversationWidth": 320,
+    "modelButtonWidth": 8,
+    "modelButtonCenterHit": false,
+    "modelContextOverlap": true,
+    "assistantToolsWidth": 263.825,
+    "aiDialog": { "modal": true, "width": 720, "height": 676.6, "clientWidth": 718, "scrollWidth": 718 },
+    "viewport": { "width": 924, "height": 1030 },
+    "selectionResponse": {
+      "operationId": "ad4cd146-4be9-4b58-bc12-5a3182f0afc5",
+      "startedAt": "2026-09-12T03:25:40.032Z",
+      "completedAt": "2026-09-12T03:25:40.041Z",
+      "elapsedMs": 9
+    },
+    "runtimeFailureJournal": {
+      "at": "2026-09-12T03:25:42.852Z",
+      "event": "client.runtime.failure",
+      "source": "unhandled-rejection",
+      "kind": "RangeError"
+    }
+  },
+  "failures": [
+    "First reload stayed on the Welcome screen despite successful server selection and a ready native catalogue. A later manual selection is separate recovery/layout evidence, not URL-bootstrap acceptance.",
+    "Console repeatedly reported Maximum call stack size exceeded at 03:25:40.355Z through 03:25:40.423Z: Cs.closeEvents -> Cs.activateSession -> w (plugin syncSession) -> client store set -> ClientSessions.projectList.",
+    "AgentPresetSeatController.currentSession/apply also reported RangeError at 03:25:42.651Z and 03:25:42.655Z. These frames alone do not establish its causality."
+  ],
+  "screenshots": ["RC139-IAB-files.png"],
+  "limits": "No message, upload, generation, logout, account/role mutation, or server setting save. The native beta notice was dismissed and left navigation expanded only after retaining the first-load failure. The original room and unsent draft were later restored manually, not changed. No claim of permanent connectivity or resolved recursion."
+}

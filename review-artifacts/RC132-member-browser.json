@@ -1,0 +1,7 @@
+{
+  "version": "1.5.0-codex.rc1.32",
+  "at": "2026-09-11T17:43:24.867Z",
+  "roles": [],
+  "passed": false,
+  "error": "AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:\n\n503 !== 200\n"
+}

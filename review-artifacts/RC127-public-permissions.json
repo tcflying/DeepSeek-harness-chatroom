@@ -1,0 +1,8 @@
+{
+  "version": "1.5.0-codex.rc1.27",
+  "at": "2026-09-11T15:24:53.267Z",
+  "surface": "independent-browser-public-host",
+  "roles": [],
+  "passed": false,
+  "error": "Error: apiRequestContext.post: read ECONNRESET\nCall log:\n\u001b[2m  - → POST https://talk.opcvip.net/plugins/deepseek-harness-chatroom/api/auth/login\u001b[22m\n\u001b[2m    - user-agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/151.0.7922.34 Safari/537.36\u001b[22m\n\u001b[2m    - accept: */*\u001b[22m\n\u001b[2m    - accept-encoding: gzip,deflate,br\u001b[22m\n\u001b[2m    - Origin: https://talk.opcvip.net\u001b[22m\n\u001b[2m    - content-type: application/json\u001b[22m\n\u001b[2m    - content-length: 81\u001b[22m\n"
+}

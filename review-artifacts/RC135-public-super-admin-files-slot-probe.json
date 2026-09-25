@@ -1,0 +1,13 @@
+{
+  "version": "1.5.0-codex.rc1.35",
+  "at": "2026-09-12T00:24:59.219Z",
+  "mode": "public-super-admin-files-slot-probe",
+  "scope": [
+    "fresh headless context",
+    "existing super-admin account and 全国可飞 room",
+    "deep-link and non-sensitive native details-slot observation only",
+    "no click, gallery, message, input, upload, AI request, role change, or setting mutation"
+  ],
+  "passed": false,
+  "error": "TimeoutError: page.waitForFunction: Timeout 30000ms exceeded."
+}

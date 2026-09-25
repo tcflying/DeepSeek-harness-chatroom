@@ -1,0 +1,13 @@
+{
+  "version": "1.5.0-codex.rc1.40",
+  "at": "2026-09-12T04:12:46.899Z",
+  "mode": "isolated-390-left-sidebar-hit-probe",
+  "scope": [
+    "fresh headless context",
+    "guest identity only",
+    "read-only DOM geometry and hit-test",
+    "no message, input, upload, AI request, role change, or setting mutation"
+  ],
+  "passed": false,
+  "error": "AssertionError [ERR_ASSERTION]: isolated nav probe identity\n\n409 !== 201\n"
+}

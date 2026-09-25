@@ -1,0 +1,18 @@
+{
+  "version": "1.5.0-codex.rc1.34",
+  "passed": false,
+  "scope": {
+    "actor": "super-admin",
+    "action": "one UI reconnect click after an already-open room is ready",
+    "excluded": [
+      "message submission",
+      "composer input",
+      "upload",
+      "AI/provider request",
+      "server setting mutation",
+      "page reload"
+    ]
+  },
+  "readbacks": {},
+  "error": "Error: member: TimeoutError: locator.waitFor: Timeout 30000ms exceeded.\nCall log:\n\u001b[2m  - waiting for getByRole('button', { name: '我的账号', exact: true }) to be visible\u001b[22m\n\nsuper-admin: AssertionError [ERR_ASSERTION]: super-admin/768/style: control is covered"
+}

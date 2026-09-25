@@ -1,0 +1,151 @@
+{
+  "at": "2026-09-11T06:45:28.309Z",
+  "summaries": [
+    {
+      "profile": "GPT生图验收",
+      "types": {
+        "session": 1,
+        "permission/preset": 1,
+        "sandbox/mode": 1,
+        "approval/policy": 1,
+        "session/title": 3,
+        "agent/inbox/spliced": 10,
+        "turn/start": 3,
+        "step/start": 5,
+        "user/message": 6,
+        "request/header": 3,
+        "request/context": 1,
+        "assistant/chunk": 42,
+        "tool-call-chunks": 16,
+        "assistant/message": 4,
+        "tool/call": 2,
+        "tool/result": 2,
+        "step/end": 5,
+        "text-chunks": 52,
+        "turn/end": 3,
+        "session/end-seed": 2,
+        "llm/retry": 5,
+        "llm/retry-started": 5
+      },
+      "recentTools": [
+        {
+          "seq": 407,
+          "time": 1789108777637,
+          "type": "tool/call",
+          "data": "{\"turn\":3,\"step\":1,\"callId\":\"call_yXALXNDZtQ9crDIGNq1hb5Yw|fc_004c3150f7135194016aa3a2b8dae887d0a97bf4f0bfeb3133\",\"name\":\"chatroom_generate_image\",\"arguments\":\"{\\\"prompt\\\":\\\"中国传统水墨山水图，宣纸质感，远山层叠，云雾缭绕，近景苍松与山石，溪水蜿蜒，一叶小舟点缀，黑白水墨浓淡相宜，笔触自然，构图疏朗，留白富有诗意，宁静悠远，无文字。\\\",\\\"size\\\":\\\"1024x1024\\\",\\\"quality\\\":\\\"low\\\"}\"}"
+        },
+        {
+          "seq": 408,
+          "time": 1789108819025,
+          "type": "tool/result",
+          "data": "{\"turn\":3,\"step\":1,\"message\":{\"source\":{\"kind\":\"tool\",\"callId\":\"call_yXALXNDZtQ9crDIGNq1hb5Yw|fc_004c3150f7135194016aa3a2b8dae887d0a97bf4f0bfeb3133\"},\"content\":[{\"type\":\"tool-result\",\"toolCallId\":\"call_yXALXNDZtQ9crDIGNq1hb5Yw|fc_004c3150f7135194016aa3a2b8dae887d0a97bf4f0bfeb3133\",\"content\":[{\"type\":\"text\",\"text\":\"![生成图片](/plugins/deepseek-harness-chatroom/api/files/8ebaa47b-8dda-400b-9283-22283cb82566)\\n\\n\\n⁣dsh-chatroom-file:%7B%22id%22%3A%228ebaa47b-8dda-400b-9283-22283cb82566%22%2C%22name%22%3A%22generated-4c4cb458-0ab8-4fd0-82cb-026b8c02f57f.png%22%2C%22mediaType%22%3A%22image%2Fpng%22%2C%22bytes%22%3A3243587%7D⁣文件：generated-4c4cb458-0ab8-4fd0-82cb-026b8c02f57f.png\"}],\"isError\":false}],\"role\":\"user\",\"id\":\"dbb3328e-daab-40e0-bb2a-00c55d640585\"}}"
+        }
+      ],
+      "latest": [
+        {
+          "seq": 615,
+          "time": 1789108830015,
+          "type": "assistant/message",
+          "dataKeys": [
+            "turn",
+            "step",
+            "message",
+            "usage"
+          ]
+        },
+        {
+          "seq": 616,
+          "time": 1789108830017,
+          "type": "step/end",
+          "dataKeys": [
+            "turn",
+            "step"
+          ]
+        },
+        {
+          "seq": 617,
+          "time": 1789108830017,
+          "type": "turn/end",
+          "data": {
+            "turn": 3,
+            "reason": {
+              "kind": "completed"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "profile": "M3生图验收",
+      "types": {
+        "session": 1,
+        "permission/preset": 1,
+        "sandbox/mode": 1,
+        "approval/policy": 1,
+        "session/title": 3,
+        "agent/inbox/spliced": 18,
+        "turn/start": 6,
+        "step/start": 10,
+        "user/message": 10,
+        "request/header": 3,
+        "request/context": 1,
+        "assistant/chunk": 101,
+        "assistant/message": 10,
+        "tool/call": 4,
+        "tool/result": 4,
+        "step/end": 10,
+        "turn/end": 6,
+        "session/end-seed": 2,
+        "tool-call-chunks": 2,
+        "text-chunks": 9
+      },
+      "recentTools": [
+        {
+          "seq": 190,
+          "time": 1789108971674,
+          "type": "tool/call",
+          "data": "{\"turn\":6,\"step\":1,\"callId\":\"call_82b7c3c715eb40d19231ad8a\",\"name\":\"chatroom_generate_image\",\"arguments\":\"{\\\"prompt\\\":\\\"水墨山水图\\\",\\\"size\\\":\\\"1024x1024\\\",\\\"quality\\\":\\\"low\\\"}\"}"
+        },
+        {
+          "seq": 191,
+          "time": 1789109012511,
+          "type": "tool/result",
+          "data": "{\"turn\":6,\"step\":1,\"message\":{\"source\":{\"kind\":\"tool\",\"callId\":\"call_82b7c3c715eb40d19231ad8a\"},\"content\":[{\"type\":\"tool-result\",\"toolCallId\":\"call_82b7c3c715eb40d19231ad8a\",\"content\":[{\"type\":\"text\",\"text\":\"![生成图片](/plugins/deepseek-harness-chatroom/api/files/94902804-6df9-4c8b-a751-b6a0a3823e7e)\\n\\n\\n⁣dsh-chatroom-file:%7B%22id%22%3A%2294902804-6df9-4c8b-a751-b6a0a3823e7e%22%2C%22name%22%3A%22generated-e961c4e9-450d-4348-94b5-7dde44d993f9.png%22%2C%22mediaType%22%3A%22image%2Fpng%22%2C%22bytes%22%3A3045027%7D⁣文件：generated-e961c4e9-450d-4348-94b5-7dde44d993f9.png\"}],\"isError\":false}],\"role\":\"user\",\"id\":\"9247325d-c536-4e7c-a9fc-0ed40c7d55a5\"}}"
+        }
+      ],
+      "latest": [
+        {
+          "seq": 223,
+          "time": 1789109016638,
+          "type": "assistant/message",
+          "dataKeys": [
+            "turn",
+            "step",
+            "message",
+            "usage"
+          ]
+        },
+        {
+          "seq": 224,
+          "time": 1789109016641,
+          "type": "step/end",
+          "dataKeys": [
+            "turn",
+            "step"
+          ]
+        },
+        {
+          "seq": 225,
+          "time": 1789109016641,
+          "type": "turn/end",
+          "data": {
+            "turn": 6,
+            "reason": {
+              "kind": "completed"
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

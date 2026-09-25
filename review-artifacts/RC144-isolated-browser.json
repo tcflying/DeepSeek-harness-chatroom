@@ -1,0 +1,234 @@
+{
+  "version": "1.5.0-codex.rc1.44",
+  "at": "2026-09-12T06:42:11.471Z",
+  "mode": "isolated-guest",
+  "base": "http://127.0.0.1:3186",
+  "roles": [
+    {
+      "role": "guest",
+      "rpc": [],
+      "errors": [],
+      "geometry": {
+        "320": {
+          "width": 320,
+          "height": 720,
+          "documentWidth": 320,
+          "bodyWidth": 320,
+          "control": "设置",
+          "nativeSidebar": {
+            "viewportWidth": 320,
+            "settingsTextVisible": true,
+            "leftStaticChrome": [
+              {
+                "ariaLabel": "新建会话",
+                "text": "",
+                "left": 16,
+                "top": 24,
+                "width": 200,
+                "height": 24
+              },
+              {
+                "ariaLabel": "新建会话",
+                "text": "新会话",
+                "left": 14,
+                "top": 74,
+                "width": 236,
+                "height": 38
+              },
+              {
+                "ariaLabel": null,
+                "text": "设置",
+                "left": 10,
+                "top": 668,
+                "width": 244,
+                "height": 42
+              }
+            ]
+          },
+          "account": {
+            "left": 10,
+            "right": 254,
+            "top": 668,
+            "bottom": 710,
+            "width": 244,
+            "height": 42,
+            "viewportWidth": 320,
+            "viewportHeight": 720,
+            "hit": true
+          },
+          "style": {
+            "left": 218,
+            "right": 296,
+            "top": 16,
+            "bottom": 52,
+            "width": 78,
+            "height": 36,
+            "viewportWidth": 320,
+            "viewportHeight": 720,
+            "hit": true
+          }
+        },
+        "390": {
+          "width": 390,
+          "height": 844,
+          "documentWidth": 390,
+          "bodyWidth": 390,
+          "control": "设置",
+          "nativeSidebar": {
+            "viewportWidth": 390,
+            "settingsTextVisible": true,
+            "leftStaticChrome": [
+              {
+                "ariaLabel": "新建会话",
+                "text": "",
+                "left": 16,
+                "top": 24,
+                "width": 216,
+                "height": 24
+              },
+              {
+                "ariaLabel": "新建会话",
+                "text": "新会话",
+                "left": 14,
+                "top": 74,
+                "width": 252,
+                "height": 38
+              },
+              {
+                "ariaLabel": null,
+                "text": "设置",
+                "left": 10,
+                "top": 792,
+                "width": 260,
+                "height": 42
+              }
+            ]
+          },
+          "account": {
+            "left": 10,
+            "right": 270,
+            "top": 792,
+            "bottom": 834,
+            "width": 260,
+            "height": 42,
+            "viewportWidth": 390,
+            "viewportHeight": 844,
+            "hit": true
+          },
+          "style": {
+            "left": 288,
+            "right": 366,
+            "top": 16,
+            "bottom": 52,
+            "width": 78,
+            "height": 36,
+            "viewportWidth": 390,
+            "viewportHeight": 844,
+            "hit": true
+          }
+        },
+        "768": {
+          "width": 768,
+          "height": 900,
+          "documentWidth": 768,
+          "bodyWidth": 768,
+          "control": "设置",
+          "nativeSidebar": {
+            "viewportWidth": 768,
+            "settingsTextVisible": false,
+            "leftStaticChrome": [
+              {
+                "ariaLabel": "打开侧边栏",
+                "text": "",
+                "left": 10,
+                "top": 18,
+                "width": 36,
+                "height": 36
+              },
+              {
+                "ariaLabel": "新建会话",
+                "text": "",
+                "left": 10,
+                "top": 66,
+                "width": 36,
+                "height": 36
+              },
+              {
+                "ariaLabel": "重新连接服务器",
+                "text": "↻重连",
+                "left": 6,
+                "top": 792,
+                "width": 44,
+                "height": 44
+              }
+            ]
+          },
+          "account": {
+            "left": 10,
+            "right": 270,
+            "top": 848,
+            "bottom": 890,
+            "width": 260,
+            "height": 42,
+            "viewportWidth": 768,
+            "viewportHeight": 900,
+            "hit": true
+          },
+          "style": {
+            "left": 666,
+            "right": 744,
+            "top": 16,
+            "bottom": 46,
+            "width": 78,
+            "height": 30,
+            "viewportWidth": 768,
+            "viewportHeight": 900,
+            "hit": true
+          }
+        },
+        "native": {
+          "width": 1440,
+          "height": 900,
+          "documentWidth": 1440,
+          "bodyWidth": 1440,
+          "styleControl": {
+            "left": 1338,
+            "right": 1416,
+            "top": 16,
+            "bottom": 46,
+            "width": 78,
+            "height": 30,
+            "viewportWidth": 1440,
+            "viewportHeight": 900,
+            "hit": true
+          }
+        },
+        "qq2007": {
+          "width": 1440,
+          "height": 900,
+          "documentWidth": 1440,
+          "bodyWidth": 1440,
+          "styleControl": {
+            "left": 1338,
+            "right": 1416,
+            "top": 16,
+            "bottom": 46,
+            "width": 78,
+            "height": 30,
+            "viewportWidth": 1440,
+            "viewportHeight": 900,
+            "hit": true
+          }
+        }
+      },
+      "servedClient": {
+        "manifest": true,
+        "status": 200,
+        "marker": "rc135-assistant-actions-and-auth-aware-auto-reply"
+      }
+    }
+  ],
+  "screenshots": [],
+  "passed": false,
+  "error": "TimeoutError: locator.waitFor: Timeout 20000ms exceeded.\nCall log:\n\u001b[2m  - waiting for getByRole('region', { name: 'AI 成员管理', exact: true }) to be visible\u001b[22m\n"
+}

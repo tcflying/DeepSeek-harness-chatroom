@@ -1,0 +1,84 @@
+{
+  "version": "1.5.0-codex.rc1.48",
+  "at": "2026-09-12T17:38:38.802Z",
+  "deployed": true,
+  "scope": "Continuation of authorized plugin repair/publication; TUN and low-level IAB work declined",
+  "overlay": {
+    "onlyReleasePathChanged": true,
+    "beforeSha256": "310f6f0362207577f4c06fa56d43d29a106e452ab826061b50bca9b0452f664f",
+    "afterSha256": "df10d7ca8abe40b3655224bc946be06de52e2d8a038c0d678e8c3d425f5d2e4d",
+    "rollback": "C:/Users/datoo/.dsh/chatroom-server/profiles/web/cordis.patch.rc148-prepublish.bak"
+  },
+  "phases": [
+    {
+      "version": 1,
+      "at": "2026-09-12T17:36:59.840Z",
+      "pid": 45580,
+      "event": "runtime.stop"
+    },
+    {
+      "version": 1,
+      "at": "2026-09-12T17:37:18.353Z",
+      "pid": 45580,
+      "event": "runtime.start"
+    }
+  ],
+  "service": "Service status for 'dsh-chatroom': Running",
+  "listeners": [
+    {
+      "LocalPort": 3185,
+      "OwningProcess": 42372
+    },
+    {
+      "LocalPort": 3181,
+      "OwningProcess": 45580
+    }
+  ],
+  "health": [
+    {
+      "base": "http://127.0.0.1:3181",
+      "at": "2026-09-12T17:38:37.979Z",
+      "status": 200,
+      "ready": true,
+      "diagnostics": {
+        "enabled": true,
+        "healthy": true,
+        "dropped": 0
+      }
+    },
+    {
+      "base": "https://talk.opcvip.net",
+      "at": "2026-09-12T17:38:38.802Z",
+      "status": 200,
+      "ready": true,
+      "diagnostics": {
+        "enabled": true,
+        "healthy": true,
+        "dropped": 0
+      }
+    }
+  ],
+  "hostAndBridgeNotRestarted": true,
+  "initialReadiness": [
+    {
+      "at": "2026-09-12T17:36:59.835Z",
+      "status": 404,
+      "phase": "old plugin disposed"
+    },
+    {
+      "at": "2026-09-12T17:37:19.000Z",
+      "status": 503,
+      "phase": "initializing"
+    },
+    {
+      "at": "2026-09-12T17:37:38.194Z",
+      "status": 200,
+      "phase": "ready"
+    }
+  ],
+  "boundaries": [
+    "No DSH core, global network, credentials, account policy or other-plugin change",
+    "No new paid generation, Git push or npm registry publish",
+    "Headless public acceptance is separate from user-paused IAB work"
+  ]
+}

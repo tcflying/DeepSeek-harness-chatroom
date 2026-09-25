@@ -1,0 +1,36 @@
+{
+  "version": "1.5.0-codex.rc1.27",
+  "at": "2026-09-11T15:29:17.029Z",
+  "surface": "independent-browser-public-host",
+  "roles": [
+    {
+      "role": "member",
+      "canManageSettings": false,
+      "api": [
+        {
+          "method": "settings/describe",
+          "status": 403
+        },
+        {
+          "method": "credentials/list",
+          "status": 403
+        },
+        {
+          "method": "session/selectModel",
+          "status": 403
+        },
+        {
+          "method": "agentPresets/select",
+          "status": 403
+        },
+        {
+          "method": "commands/execute",
+          "status": 403
+        }
+      ],
+      "errors": []
+    }
+  ],
+  "passed": false,
+  "error": "TimeoutError: locator.waitFor: Timeout 25000ms exceeded.\nCall log:\n\u001b[2m  - waiting for getByRole('button', { name: '我的账号', exact: true }) to be visible\u001b[22m\n"
+}

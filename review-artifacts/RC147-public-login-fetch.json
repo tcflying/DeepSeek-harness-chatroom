@@ -1,0 +1,10 @@
+{
+  "at": "2026-09-12T11:46:02.128Z",
+  "status": 200,
+  "headersMs": 1564,
+  "elapsedMs": 1568,
+  "role": "super-admin",
+  "passed": true,
+  "configuredEnvironmentProxy": true,
+  "boundary": "Existing acceptance account; no credentials, cookie or room content saved; no message or paid generation"
+}

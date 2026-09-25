@@ -1,0 +1,27 @@
+{
+  "version": "1.5.0-codex.rc1.35",
+  "at": "2026-09-12T00:15:27.166Z",
+  "mode": "public-super-admin-deep-link-probe",
+  "scope": [
+    "fresh headless context",
+    "existing super-admin account and authorized room",
+    "deep-link and non-sensitive DOM/network observation only",
+    "no gallery click, message, input, upload, AI request, role change, or setting mutation"
+  ],
+  "passed": true,
+  "readbacks": {
+    "deepLink": {
+      "requested": true,
+      "requestSent": true,
+      "active": true,
+      "nativeSelected": true,
+      "selectedNativeTitle": true
+    },
+    "selectResponses": [
+      {
+        "status": 200
+      }
+    ]
+  },
+  "screenshot": "RC135-public-super-admin-deep-link-probe.png"
+}

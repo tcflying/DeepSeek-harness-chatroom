@@ -1,0 +1,742 @@
+{
+  "version": "1.5.0-codex.rc1.32",
+  "label": "GPT",
+  "at": "2026-09-11T17:47:12.097Z",
+  "roomId": "6e163745-815f-461c-be4a-9662ed9ee52d",
+  "events": [
+    {
+      "sessionId": "chatroom-agent-v1-6e163745-815f-461c-be4a-9662ed9ee52d-67eb8c49-d171-4494-bc8b-da3389c710d6",
+      "roomId": "6e163745-815f-461c-be4a-9662ed9ee52d",
+      "name": "GPT文字进展验收1789148832133",
+      "seq": 5,
+      "status": "waiting",
+      "text": "等待模型响应…",
+      "startedAt": 1789148833147,
+      "updatedAt": 1789148833147
+    },
+    {
+      "sessionId": "chatroom-agent-v1-6e163745-815f-461c-be4a-9662ed9ee52d-67eb8c49-d171-4494-bc8b-da3389c710d6",
+      "roomId": "6e163745-815f-461c-be4a-9662ed9ee52d",
+      "name": "GPT文字进展验收1789148832133",
+      "seq": 7,
+      "status": "waiting",
+      "text": "等待模型下一步响应…",
+      "startedAt": 1789148833147,
+      "updatedAt": 1789148833367
+    },
+    {
+      "sessionId": "chatroom-agent-v1-6e163745-815f-461c-be4a-9662ed9ee52d-67eb8c49-d171-4494-bc8b-da3389c710d6",
+      "roomId": "6e163745-815f-461c-be4a-9662ed9ee52d",
+      "name": "GPT文字进展验收1789148832133",
+      "seq": 13,
+      "status": "writing",
+      "text": "01",
+      "startedAt": 1789148833147,
+      "updatedAt": 1789148837622
+    },
+    {
+      "sessionId": "chatroom-agent-v1-6e163745-815f-461c-be4a-9662ed9ee52d-67eb8c49-d171-4494-bc8b-da3389c710d6",
+      "roomId": "6e163745-815f-461c-be4a-9662ed9ee52d",
+      "name": "GPT文字进展验收1789148832133",
+      "seq": 21,
+      "status": "writing",
+      "text": "01. 验收聊天页面加载后标题",
+      "startedAt": 1789148833147,
+      "updatedAt": 1789148837980
+    },
+    {
+      "sessionId": "chatroom-agent-v1-6e163745-815f-461c-be4a-9662ed9ee52d-67eb8c49-d171-4494-bc8b-da3389c710d6",
+      "roomId": "6e163745-815f-461c-be4a-9662ed9ee52d",
+      "name": "GPT文字进展验收1789148832133",
+      "seq": 27,
+      "status": "writing",
+      "text": "01. 验收聊天页面加载后标题与房间名称正确。",
+      "startedAt": 1789148833147,
+      "updatedAt": 1789148838689
+    },
+    {
+      "sessionId": "chatroom-agent-v1-6e163745-815f-461c-be4a-9662ed9ee52d-67eb8c49-d171-4494-bc8b-da3389c710d6",
+      "roomId": "6e163745-815f-461c-be4a-9662ed9ee52d",
+      "name": "GPT文字进展验收1789148832133",
+      "seq": 57,
+      "status": "writing",
+      "text": "04.",
+      "startedAt": 1789148833147,
+      "updatedAt": 1789148839154
+    },
+    {
+      "sessionId": "chatroom-agent-v1-6e163745-815f-461c-be4a-9662ed9ee52d-67eb8c49-d171-4494-bc8b-da3389c710d6",
+      "roomId": "6e163745-815f-461c-be4a-9662ed9ee52d",
+      "name": "GPT文字进展验收1789148832133",
+      "seq": 72,
+      "status": "writing",
+      "text": "05",
+      "startedAt": 1789148833147,
+      "updatedAt": 1789148839441
+    },
+    {
+      "sessionId": "chatroom-agent-v1-6e163745-815f-461c-be4a-9662ed9ee52d-67eb8c49-d171-4494-bc8b-da3389c710d6",
+      "roomId": "6e163745-815f-461c-be4a-9662ed9ee52d",
+      "name": "GPT文字进展验收1789148832133",
+      "seq": 80,
+      "status": "writing",
+      "text": "05. 验收消息头像与对应发",
+      "startedAt": 1789148833147,
+      "updatedAt": 1789148839694
+    },
+    {
+      "sessionId": "chatroom-agent-v1-6e163745-815f-461c-be4a-9662ed9ee52d-67eb8c49-d171-4494-bc8b-da3389c710d6",
+      "roomId": "6e163745-815f-461c-be4a-9662ed9ee52d",
+      "name": "GPT文字进展验收1789148832133",
+      "seq": 87,
+      "status": "writing",
+      "text": "06.",
+      "startedAt": 1789148833147,
+      "updatedAt": 1789148839950
+    },
+    {
+      "sessionId": "chatroom-agent-v1-6e163745-815f-461c-be4a-9662ed9ee52d-67eb8c49-d171-4494-bc8b-da3389c710d6",
+      "roomId": "6e163745-815f-461c-be4a-9662ed9ee52d",
+      "name": "GPT文字进展验收1789148832133",
+      "seq": 95,
+      "status": "writing",
+      "text": "06. 验收长昵称显示合理且不",
+      "startedAt": 1789148833147,
+      "updatedAt": 1789148840242
+    },
+    {
+      "sessionId": "chatroom-agent-v1-6e163745-815f-461c-be4a-9662ed9ee52d-67eb8c49-d171-4494-bc8b-da3389c710d6",
+      "roomId": "6e163745-815f-461c-be4a-9662ed9ee52d",
+      "name": "GPT文字进展验收1789148832133",
+      "seq": 105,
+      "status": "writing",
+      "text": "07. 验收中文",
+      "startedAt": 1789148833147,
+      "updatedAt": 1789148840526
+    },
+    {
+      "sessionId": "chatroom-agent-v1-6e163745-815f-461c-be4a-9662ed9ee52d-67eb8c49-d171-4494-bc8b-da3389c710d6",
+      "roomId": "6e163745-815f-461c-be4a-9662ed9ee52d",
+      "name": "GPT文字进展验收1789148832133",
+      "seq": 113,
+      "status": "writing",
+      "text": "07. 验收中文输入流畅且候选文字不会",
+      "startedAt": 1789148833147,
+      "updatedAt": 1789148840907
+    },
+    {
+      "sessionId": "chatroom-agent-v1-6e163745-815f-461c-be4a-9662ed9ee52d-67eb8c49-d171-4494-bc8b-da3389c710d6",
+      "roomId": "6e163745-815f-461c-be4a-9662ed9ee52d",
+      "name": "GPT文字进展验收1789148832133",
+      "seq": 124,
+      "status": "writing",
+      "text": "08. 验收英文数字及常",
+      "startedAt": 1789148833147,
+      "updatedAt": 1789148841163
+    },
+    {
+      "sessionId": "chatroom-agent-v1-6e163745-815f-461c-be4a-9662ed9ee52d-67eb8c49-d171-4494-bc8b-da3389c710d6",
+      "roomId": "6e163745-815f-461c-be4a-9662ed9ee52d",
+      "name": "GPT文字进展验收1789148832133",
+      "seq": 133,
+      "status": "writing",
+      "text": "09.",
+      "startedAt": 1789148833147,
+      "updatedAt": 1789148841441
+    },
+    {
+      "sessionId": "chatroom-agent-v1-6e163745-815f-461c-be4a-9662ed9ee52d-67eb8c49-d171-4494-bc8b-da3389c710d6",
+      "roomId": "6e163745-815f-461c-be4a-9662ed9ee52d",
+      "name": "GPT文字进展验收1789148832133",
+      "seq": 140,
+      "status": "writing",
+      "text": "09. 验收多行输入保留",
+      "startedAt": 1789148833147,
+      "updatedAt": 1789148841684
+    },
+    {
+      "sessionId": "chatroom-agent-v1-6e163745-815f-461c-be4a-9662ed9ee52d-67eb8c49-d171-4494-bc8b-da3389c710d6",
+      "roomId": "6e163745-815f-461c-be4a-9662ed9ee52d",
+      "name": "GPT文字进展验收1789148832133",
+      "seq": 143,
+      "status": "writing",
+      "text": "09. 验收多行输入保留换行且",
+      "startedAt": 1789148833147,
+      "updatedAt": 1789148841956
+    },
+    {
+      "sessionId": "chatroom-agent-v1-6e163745-815f-461c-be4a-9662ed9ee52d-67eb8c49-d171-4494-bc8b-da3389c710d6",
+      "roomId": "6e163745-815f-461c-be4a-9662ed9ee52d",
+      "name": "GPT文字进展验收1789148832133",
+      "seq": 158,
+      "status": "writing",
+      "text": "10. 验收发送按钮在空白",
+      "startedAt": 1789148833147,
+      "updatedAt": 1789148842226
+    },
+    {
+      "sessionId": "chatroom-agent-v1-6e163745-815f-461c-be4a-9662ed9ee52d-67eb8c49-d171-4494-bc8b-da3389c710d6",
+      "roomId": "6e163745-815f-461c-be4a-9662ed9ee52d",
+      "name": "GPT文字进展验收1789148832133",
+      "seq": 166,
+      "status": "writing",
+      "text": "11",
+      "startedAt": 1789148833147,
+      "updatedAt": 1789148842485
+    },
+    {
+      "sessionId": "chatroom-agent-v1-6e163745-815f-461c-be4a-9662ed9ee52d-67eb8c49-d171-4494-bc8b-da3389c710d6",
+      "roomId": "6e163745-815f-461c-be4a-9662ed9ee52d",
+      "name": "GPT文字进展验收1789148832133",
+      "seq": 174,
+      "status": "writing",
+      "text": "11. 验收发送中状态清晰",
+      "startedAt": 1789148833147,
+      "updatedAt": 1789148842770
+    },
+    {
+      "sessionId": "chatroom-agent-v1-6e163745-815f-461c-be4a-9662ed9ee52d-67eb8c49-d171-4494-bc8b-da3389c710d6",
+      "roomId": "6e163745-815f-461c-be4a-9662ed9ee52d",
+      "name": "GPT文字进展验收1789148832133",
+      "seq": 183,
+      "status": "writing",
+      "text": "12. 验",
+      "startedAt": 1789148833147,
+      "updatedAt": 1789148843027
+    },
+    {
+      "sessionId": "chatroom-agent-v1-6e163745-815f-461c-be4a-9662ed9ee52d-67eb8c49-d171-4494-bc8b-da3389c710d6",
+      "roomId": "6e163745-815f-461c-be4a-9662ed9ee52d",
+      "name": "GPT文字进展验收1789148832133",
+      "seq": 191,
+      "status": "writing",
+      "text": "12. 验收发送失败提示明确并提供重",
+      "startedAt": 1789148833147,
+      "updatedAt": 1789148843280
+    },
+    {
+      "sessionId": "chatroom-agent-v1-6e163745-815f-461c-be4a-9662ed9ee52d-67eb8c49-d171-4494-bc8b-da3389c710d6",
+      "roomId": "6e163745-815f-461c-be4a-9662ed9ee52d",
+      "name": "GPT文字进展验收1789148832133",
+      "seq": 199,
+      "status": "writing",
+      "text": "13. 验收重",
+      "startedAt": 1789148833147,
+      "updatedAt": 1789148843547
+    },
+    {
+      "sessionId": "chatroom-agent-v1-6e163745-815f-461c-be4a-9662ed9ee52d-67eb8c49-d171-4494-bc8b-da3389c710d6",
+      "roomId": "6e163745-815f-461c-be4a-9662ed9ee52d",
+      "name": "GPT文字进展验收1789148832133",
+      "seq": 208,
+      "status": "writing",
+      "text": "13. 验收重试成功后不会产生重复消息记录。",
+      "startedAt": 1789148833147,
+      "updatedAt": 1789148843813
+    },
+    {
+      "sessionId": "chatroom-agent-v1-6e163745-815f-461c-be4a-9662ed9ee52d-67eb8c49-d171-4494-bc8b-da3389c710d6",
+      "roomId": "6e163745-815f-461c-be4a-9662ed9ee52d",
+      "name": "GPT文字进展验收1789148832133",
+      "seq": 215,
+      "status": "writing",
+      "text": "14. 验收新消息抵",
+      "startedAt": 1789148833147,
+      "updatedAt": 1789148844066
+    },
+    {
+      "sessionId": "chatroom-agent-v1-6e163745-815f-461c-be4a-9662ed9ee52d-67eb8c49-d171-4494-bc8b-da3389c710d6",
+      "roomId": "6e163745-815f-461c-be4a-9662ed9ee52d",
+      "name": "GPT文字进展验收1789148832133",
+      "seq": 224,
+      "status": "writing",
+      "text": "14. 验收新消息抵达时列表滚动行为符合预期",
+      "startedAt": 1789148833147,
+      "updatedAt": 1789148844331
+    },
+    {
+      "sessionId": "chatroom-agent-v1-6e163745-815f-461c-be4a-9662ed9ee52d-67eb8c49-d171-4494-bc8b-da3389c710d6",
+      "roomId": "6e163745-815f-461c-be4a-9662ed9ee52d",
+      "name": "GPT文字进展验收1789148832133",
+      "seq": 232,
+      "status": "writing",
+      "text": "15. 验收查看历史时",
+      "startedAt": 1789148833147,
+      "updatedAt": 1789148844617
+    },
+    {
+      "sessionId": "chatroom-agent-v1-6e163745-815f-461c-be4a-9662ed9ee52d-67eb8c49-d171-4494-bc8b-da3389c710d6",
+      "roomId": "6e163745-815f-461c-be4a-9662ed9ee52d",
+      "name": "GPT文字进展验收1789148832133",
+      "seq": 242,
+      "status": "writing",
+      "text": "15. 验收查看历史时新消息不会强制跳至底部。",
+      "startedAt": 1789148833147,
+      "updatedAt": 1789148844908
+    },
+    {
+      "sessionId": "chatroom-agent-v1-6e163745-815f-461c-be4a-9662ed9ee52d-67eb8c49-d171-4494-bc8b-da3389c710d6",
+      "roomId": "6e163745-815f-461c-be4a-9662ed9ee52d",
+      "name": "GPT文字进展验收1789148832133",
+      "seq": 250,
+      "status": "writing",
+      "text": "16. 验收返回底部按钮",
+      "startedAt": 1789148833147,
+      "updatedAt": 1789148845179
+    },
+    {
+      "sessionId": "chatroom-agent-v1-6e163745-815f-461c-be4a-9662ed9ee52d-67eb8c49-d171-4494-bc8b-da3389c710d6",
+      "roomId": "6e163745-815f-461c-be4a-9662ed9ee52d",
+      "name": "GPT文字进展验收1789148832133",
+      "seq": 258,
+      "status": "writing",
+      "text": "17.",
+      "startedAt": 1789148833147,
+      "updatedAt": 1789148845435
+    },
+    {
+      "sessionId": "chatroom-agent-v1-6e163745-815f-461c-be4a-9662ed9ee52d-67eb8c49-d171-4494-bc8b-da3389c710d6",
+      "roomId": "6e163745-815f-461c-be4a-9662ed9ee52d",
+      "name": "GPT文字进展验收1789148832133",
+      "seq": 266,
+      "status": "writing",
+      "text": "17. 验收历史消息分页加载时阅读",
+      "startedAt": 1789148833147,
+      "updatedAt": 1789148845685
+    },
+    {
+      "sessionId": "chatroom-agent-v1-6e163745-815f-461c-be4a-9662ed9ee52d-67eb8c49-d171-4494-bc8b-da3389c710d6",
+      "roomId": "6e163745-815f-461c-be4a-9662ed9ee52d",
+      "name": "GPT文字进展验收1789148832133",
+      "seq": 274,
+      "status": "writing",
+      "text": "18. 验收消息",
+      "startedAt": 1789148833147,
+      "updatedAt": 1789148845940
+    },
+    {
+      "sessionId": "chatroom-agent-v1-6e163745-815f-461c-be4a-9662ed9ee52d-67eb8c49-d171-4494-bc8b-da3389c710d6",
+      "roomId": "6e163745-815f-461c-be4a-9662ed9ee52d",
+      "name": "GPT文字进展验收1789148832133",
+      "seq": 277,
+      "status": "writing",
+      "text": "18. 验收消息时间格式统一",
+      "startedAt": 1789148833147,
+      "updatedAt": 1789148846223
+    },
+    {
+      "sessionId": "chatroom-agent-v1-6e163745-815f-461c-be4a-9662ed9ee52d-67eb8c49-d171-4494-bc8b-da3389c710d6",
+      "roomId": "6e163745-815f-461c-be4a-9662ed9ee52d",
+      "name": "GPT文字进展验收1789148832133",
+      "seq": 291,
+      "status": "writing",
+      "text": "19. 验收提及成员",
+      "startedAt": 1789148833147,
+      "updatedAt": 1789148846475
+    },
+    {
+      "sessionId": "chatroom-agent-v1-6e163745-815f-461c-be4a-9662ed9ee52d-67eb8c49-d171-4494-bc8b-da3389c710d6",
+      "roomId": "6e163745-815f-461c-be4a-9662ed9ee52d",
+      "name": "GPT文字进展验收1789148832133",
+      "seq": 299,
+      "status": "writing",
+      "text": "19. 验收提及成员时昵称匹配与候选列表",
+      "startedAt": 1789148833147,
+      "updatedAt": 1789148846727
+    },
+    {
+      "sessionId": "chatroom-agent-v1-6e163745-815f-461c-be4a-9662ed9ee52d-67eb8c49-d171-4494-bc8b-da3389c710d6",
+      "roomId": "6e163745-815f-461c-be4a-9662ed9ee52d",
+      "name": "GPT文字进展验收1789148832133",
+      "seq": 306,
+      "status": "writing",
+      "text": "20. 验收被",
+      "startedAt": 1789148833147,
+      "updatedAt": 1789148846994
+    },
+    {
+      "sessionId": "chatroom-agent-v1-6e163745-815f-461c-be4a-9662ed9ee52d-67eb8c49-d171-4494-bc8b-da3389c710d6",
+      "roomId": "6e163745-815f-461c-be4a-9662ed9ee52d",
+      "name": "GPT文字进展验收1789148832133",
+      "seq": 316,
+      "status": "writing",
+      "text": "20. 验收被提及消息具有醒目且适度的",
+      "startedAt": 1789148833147,
+      "updatedAt": 1789148847261
+    },
+    {
+      "sessionId": "chatroom-agent-v1-6e163745-815f-461c-be4a-9662ed9ee52d-67eb8c49-d171-4494-bc8b-da3389c710d6",
+      "roomId": "6e163745-815f-461c-be4a-9662ed9ee52d",
+      "name": "GPT文字进展验收1789148832133",
+      "seq": 320,
+      "status": "writing",
+      "text": "21.",
+      "startedAt": 1789148833147,
+      "updatedAt": 1789148847529
+    },
+    {
+      "sessionId": "chatroom-agent-v1-6e163745-815f-461c-be4a-9662ed9ee52d-67eb8c49-d171-4494-bc8b-da3389c710d6",
+      "roomId": "6e163745-815f-461c-be4a-9662ed9ee52d",
+      "name": "GPT文字进展验收1789148832133",
+      "seq": 328,
+      "status": "writing",
+      "text": "21. 验收引用回复能够准确对应原",
+      "startedAt": 1789148833147,
+      "updatedAt": 1789148847812
+    },
+    {
+      "sessionId": "chatroom-agent-v1-6e163745-815f-461c-be4a-9662ed9ee52d-67eb8c49-d171-4494-bc8b-da3389c710d6",
+      "roomId": "6e163745-815f-461c-be4a-9662ed9ee52d",
+      "name": "GPT文字进展验收1789148832133",
+      "seq": 341,
+      "status": "writing",
+      "text": "22. 验收原消息删除后引用",
+      "startedAt": 1789148833147,
+      "updatedAt": 1789148848077
+    },
+    {
+      "sessionId": "chatroom-agent-v1-6e163745-815f-461c-be4a-9662ed9ee52d-67eb8c49-d171-4494-bc8b-da3389c710d6",
+      "roomId": "6e163745-815f-461c-be4a-9662ed9ee52d",
+      "name": "GPT文字进展验收1789148832133",
+      "seq": 349,
+      "status": "writing",
+      "text": "23.",
+      "startedAt": 1789148833147,
+      "updatedAt": 1789148848392
+    },
+    {
+      "sessionId": "chatroom-agent-v1-6e163745-815f-461c-be4a-9662ed9ee52d-67eb8c49-d171-4494-bc8b-da3389c710d6",
+      "roomId": "6e163745-815f-461c-be4a-9662ed9ee52d",
+      "name": "GPT文字进展验收1789148832133",
+      "seq": 358,
+      "status": "writing",
+      "text": "23. 验收消息复制结果完整且不混",
+      "startedAt": 1789148833147,
+      "updatedAt": 1789148848645
+    },
+    {
+      "sessionId": "chatroom-agent-v1-6e163745-815f-461c-be4a-9662ed9ee52d-67eb8c49-d171-4494-bc8b-da3389c710d6",
+      "roomId": "6e163745-815f-461c-be4a-9662ed9ee52d",
+      "name": "GPT文字进展验收1789148832133",
+      "seq": 367,
+      "status": "writing",
+      "text": "24. 验收",
+      "startedAt": 1789148833147,
+      "updatedAt": 1789148848921
+    },
+    {
+      "sessionId": "chatroom-agent-v1-6e163745-815f-461c-be4a-9662ed9ee52d-67eb8c49-d171-4494-bc8b-da3389c710d6",
+      "roomId": "6e163745-815f-461c-be4a-9662ed9ee52d",
+      "name": "GPT文字进展验收1789148832133",
+      "seq": 376,
+      "status": "writing",
+      "text": "24. 验收撤回入口仅对有权限的消息",
+      "startedAt": 1789148833147,
+      "updatedAt": 1789148849188
+    },
+    {
+      "sessionId": "chatroom-agent-v1-6e163745-815f-461c-be4a-9662ed9ee52d-67eb8c49-d171-4494-bc8b-da3389c710d6",
+      "roomId": "6e163745-815f-461c-be4a-9662ed9ee52d",
+      "name": "GPT文字进展验收1789148832133",
+      "seq": 383,
+      "status": "writing",
+      "text": "25. 验收",
+      "startedAt": 1789148833147,
+      "updatedAt": 1789148849442
+    },
+    {
+      "sessionId": "chatroom-agent-v1-6e163745-815f-461c-be4a-9662ed9ee52d-67eb8c49-d171-4494-bc8b-da3389c710d6",
+      "roomId": "6e163745-815f-461c-be4a-9662ed9ee52d",
+      "name": "GPT文字进展验收1789148832133",
+      "seq": 392,
+      "status": "writing",
+      "text": "25. 验收撤回成功后原内容不再显示",
+      "startedAt": 1789148833147,
+      "updatedAt": 1789148849693
+    },
+    {
+      "sessionId": "chatroom-agent-v1-6e163745-815f-461c-be4a-9662ed9ee52d-67eb8c49-d171-4494-bc8b-da3389c710d6",
+      "roomId": "6e163745-815f-461c-be4a-9662ed9ee52d",
+      "name": "GPT文字进展验收1789148832133",
+      "seq": 399,
+      "status": "writing",
+      "text": "26. 验",
+      "startedAt": 1789148833147,
+      "updatedAt": 1789148849953
+    },
+    {
+      "sessionId": "chatroom-agent-v1-6e163745-815f-461c-be4a-9662ed9ee52d-67eb8c49-d171-4494-bc8b-da3389c710d6",
+      "roomId": "6e163745-815f-461c-be4a-9662ed9ee52d",
+      "name": "GPT文字进展验收1789148832133",
+      "seq": 409,
+      "status": "writing",
+      "text": "26. 验收表情回应数量与参与成员信息一致",
+      "startedAt": 1789148833147,
+      "updatedAt": 1789148850220
+    },
+    {
+      "sessionId": "chatroom-agent-v1-6e163745-815f-461c-be4a-9662ed9ee52d-67eb8c49-d171-4494-bc8b-da3389c710d6",
+      "roomId": "6e163745-815f-461c-be4a-9662ed9ee52d",
+      "name": "GPT文字进展验收1789148832133",
+      "seq": 416,
+      "status": "writing",
+      "text": "27. 验收链接样",
+      "startedAt": 1789148833147,
+      "updatedAt": 1789148850564
+    },
+    {
+      "sessionId": "chatroom-agent-v1-6e163745-815f-461c-be4a-9662ed9ee52d-67eb8c49-d171-4494-bc8b-da3389c710d6",
+      "roomId": "6e163745-815f-461c-be4a-9662ed9ee52d",
+      "name": "GPT文字进展验收1789148832133",
+      "seq": 427,
+      "status": "writing",
+      "text": "28",
+      "startedAt": 1789148833147,
+      "updatedAt": 1789148850831
+    },
+    {
+      "sessionId": "chatroom-agent-v1-6e163745-815f-461c-be4a-9662ed9ee52d-67eb8c49-d171-4494-bc8b-da3389c710d6",
+      "roomId": "6e163745-815f-461c-be4a-9662ed9ee52d",
+      "name": "GPT文字进展验收1789148832133",
+      "seq": 431,
+      "status": "writing",
+      "text": "28. 验收代码",
+      "startedAt": 1789148833147,
+      "updatedAt": 1789148851192
+    },
+    {
+      "sessionId": "chatroom-agent-v1-6e163745-815f-461c-be4a-9662ed9ee52d-67eb8c49-d171-4494-bc8b-da3389c710d6",
+      "roomId": "6e163745-815f-461c-be4a-9662ed9ee52d",
+      "name": "GPT文字进展验收1789148832133",
+      "seq": 433,
+      "status": "writing",
+      "text": "28. 验收代码块保",
+      "startedAt": 1789148833147,
+      "updatedAt": 1789148851539
+    },
+    {
+      "sessionId": "chatroom-agent-v1-6e163745-815f-461c-be4a-9662ed9ee52d-67eb8c49-d171-4494-bc8b-da3389c710d6",
+      "roomId": "6e163745-815f-461c-be4a-9662ed9ee52d",
+      "name": "GPT文字进展验收1789148832133",
+      "seq": 437,
+      "status": "writing",
+      "text": "28. 验收代码块保留缩进并",
+      "startedAt": 1789148833147,
+      "updatedAt": 1789148851817
+    },
+    {
+      "sessionId": "chatroom-agent-v1-6e163745-815f-461c-be4a-9662ed9ee52d-67eb8c49-d171-4494-bc8b-da3389c710d6",
+      "roomId": "6e163745-815f-461c-be4a-9662ed9ee52d",
+      "name": "GPT文字进展验收1789148832133",
+      "seq": 460,
+      "status": "writing",
+      "text": "29. 验收列表与表格排版不会超出消息容器。",
+      "startedAt": 1789148833147,
+      "updatedAt": 1789148852073
+    },
+    {
+      "sessionId": "chatroom-agent-v1-6e163745-815f-461c-be4a-9662ed9ee52d-67eb8c49-d171-4494-bc8b-da3389c710d6",
+      "roomId": "6e163745-815f-461c-be4a-9662ed9ee52d",
+      "name": "GPT文字进展验收1789148832133",
+      "seq": 474,
+      "status": "writing",
+      "text": "30. 验收图片加载前后不会造成明显页面跳动",
+      "startedAt": 1789148833147,
+      "updatedAt": 1789148852384
+    },
+    {
+      "sessionId": "chatroom-agent-v1-6e163745-815f-461c-be4a-9662ed9ee52d-67eb8c49-d171-4494-bc8b-da3389c710d6",
+      "roomId": "6e163745-815f-461c-be4a-9662ed9ee52d",
+      "name": "GPT文字进展验收1789148832133",
+      "seq": 484,
+      "status": "writing",
+      "text": "31. 验收附件名称与大小显示",
+      "startedAt": 1789148833147,
+      "updatedAt": 1789148852649
+    },
+    {
+      "sessionId": "chatroom-agent-v1-6e163745-815f-461c-be4a-9662ed9ee52d-67eb8c49-d171-4494-bc8b-da3389c710d6",
+      "roomId": "6e163745-815f-461c-be4a-9662ed9ee52d",
+      "name": "GPT文字进展验收1789148832133",
+      "seq": 492,
+      "status": "writing",
+      "text": "32.",
+      "startedAt": 1789148833147,
+      "updatedAt": 1789148852934
+    },
+    {
+      "sessionId": "chatroom-agent-v1-6e163745-815f-461c-be4a-9662ed9ee52d-67eb8c49-d171-4494-bc8b-da3389c710d6",
+      "roomId": "6e163745-815f-461c-be4a-9662ed9ee52d",
+      "name": "GPT文字进展验收1789148832133",
+      "seq": 502,
+      "status": "writing",
+      "text": "32. 验收实时生成文字连续追加且无重复",
+      "startedAt": 1789148833147,
+      "updatedAt": 1789148853228
+    },
+    {
+      "sessionId": "chatroom-agent-v1-6e163745-815f-461c-be4a-9662ed9ee52d-67eb8c49-d171-4494-bc8b-da3389c710d6",
+      "roomId": "6e163745-815f-461c-be4a-9662ed9ee52d",
+      "name": "GPT文字进展验收1789148832133",
+      "seq": 504,
+      "status": "writing",
+      "text": "32. 验收实时生成文字连续追加且无重复闪烁",
+      "startedAt": 1789148833147,
+      "updatedAt": 1789148854059
+    },
+    {
+      "sessionId": "chatroom-agent-v1-6e163745-815f-461c-be4a-9662ed9ee52d-67eb8c49-d171-4494-bc8b-da3389c710d6",
+      "roomId": "6e163745-815f-461c-be4a-9662ed9ee52d",
+      "name": "GPT文字进展验收1789148832133",
+      "seq": 520,
+      "status": "writing",
+      "text": "34",
+      "startedAt": 1789148833147,
+      "updatedAt": 1789148854288
+    },
+    {
+      "sessionId": "chatroom-agent-v1-6e163745-815f-461c-be4a-9662ed9ee52d-67eb8c49-d171-4494-bc8b-da3389c710d6",
+      "roomId": "6e163745-815f-461c-be4a-9662ed9ee52d",
+      "name": "GPT文字进展验收1789148832133",
+      "seq": 543,
+      "status": "writing",
+      "text": "35. 验收网络断开时有",
+      "startedAt": 1789148833147,
+      "updatedAt": 1789148854609
+    },
+    {
+      "sessionId": "chatroom-agent-v1-6e163745-815f-461c-be4a-9662ed9ee52d-67eb8c49-d171-4494-bc8b-da3389c710d6",
+      "roomId": "6e163745-815f-461c-be4a-9662ed9ee52d",
+      "name": "GPT文字进展验收1789148832133",
+      "seq": 548,
+      "status": "writing",
+      "text": "35. 验收网络断开时有明确且不遮挡",
+      "startedAt": 1789148833147,
+      "updatedAt": 1789148854900
+    },
+    {
+      "sessionId": "chatroom-agent-v1-6e163745-815f-461c-be4a-9662ed9ee52d-67eb8c49-d171-4494-bc8b-da3389c710d6",
+      "roomId": "6e163745-815f-461c-be4a-9662ed9ee52d",
+      "name": "GPT文字进展验收1789148832133",
+      "seq": 562,
+      "status": "writing",
+      "text": "36. 验收网络恢复后消息同步完整",
+      "startedAt": 1789148833147,
+      "updatedAt": 1789148855183
+    },
+    {
+      "sessionId": "chatroom-agent-v1-6e163745-815f-461c-be4a-9662ed9ee52d-67eb8c49-d171-4494-bc8b-da3389c710d6",
+      "roomId": "6e163745-815f-461c-be4a-9662ed9ee52d",
+      "name": "GPT文字进展验收1789148832133",
+      "seq": 570,
+      "status": "writing",
+      "text": "37. 验",
+      "startedAt": 1789148833147,
+      "updatedAt": 1789148855458
+    },
+    {
+      "sessionId": "chatroom-agent-v1-6e163745-815f-461c-be4a-9662ed9ee52d-67eb8c49-d171-4494-bc8b-da3389c710d6",
+      "roomId": "6e163745-815f-461c-be4a-9662ed9ee52d",
+      "name": "GPT文字进展验收1789148832133",
+      "seq": 578,
+      "status": "writing",
+      "text": "37. 验收刷新页面后历史消息及房",
+      "startedAt": 1789148833147,
+      "updatedAt": 1789148855715
+    },
+    {
+      "sessionId": "chatroom-agent-v1-6e163745-815f-461c-be4a-9662ed9ee52d-67eb8c49-d171-4494-bc8b-da3389c710d6",
+      "roomId": "6e163745-815f-461c-be4a-9662ed9ee52d",
+      "name": "GPT文字进展验收1789148832133",
+      "seq": 586,
+      "status": "writing",
+      "text": "38. 验收",
+      "startedAt": 1789148833147,
+      "updatedAt": 1789148855973
+    },
+    {
+      "sessionId": "chatroom-agent-v1-6e163745-815f-461c-be4a-9662ed9ee52d-67eb8c49-d171-4494-bc8b-da3389c710d6",
+      "roomId": "6e163745-815f-461c-be4a-9662ed9ee52d",
+      "name": "GPT文字进展验收1789148832133",
+      "seq": 595,
+      "status": "writing",
+      "text": "38. 验收窄屏布局下输入区与操作按钮",
+      "startedAt": 1789148833147,
+      "updatedAt": 1789148856240
+    },
+    {
+      "sessionId": "chatroom-agent-v1-6e163745-815f-461c-be4a-9662ed9ee52d-67eb8c49-d171-4494-bc8b-da3389c710d6",
+      "roomId": "6e163745-815f-461c-be4a-9662ed9ee52d",
+      "name": "GPT文字进展验收1789148832133",
+      "seq": 602,
+      "status": "writing",
+      "text": "39. 验",
+      "startedAt": 1789148833147,
+      "updatedAt": 1789148856497
+    },
+    {
+      "sessionId": "chatroom-agent-v1-6e163745-815f-461c-be4a-9662ed9ee52d-67eb8c49-d171-4494-bc8b-da3389c710d6",
+      "roomId": "6e163745-815f-461c-be4a-9662ed9ee52d",
+      "name": "GPT文字进展验收1789148832133",
+      "seq": 612,
+      "status": "writing",
+      "text": "39. 验收键盘导航焦点清晰且发送",
+      "startedAt": 1789148833147,
+      "updatedAt": 1789148856780
+    },
+    {
+      "sessionId": "chatroom-agent-v1-6e163745-815f-461c-be4a-9662ed9ee52d-67eb8c49-d171-4494-bc8b-da3389c710d6",
+      "roomId": "6e163745-815f-461c-be4a-9662ed9ee52d",
+      "name": "GPT文字进展验收1789148832133",
+      "seq": 619,
+      "status": "writing",
+      "text": "40. 验",
+      "startedAt": 1789148833147,
+      "updatedAt": 1789148857050
+    },
+    {
+      "sessionId": "chatroom-agent-v1-6e163745-815f-461c-be4a-9662ed9ee52d-67eb8c49-d171-4494-bc8b-da3389c710d6",
+      "roomId": "6e163745-815f-461c-be4a-9662ed9ee52d",
+      "name": "GPT文字进展验收1789148832133",
+      "seq": 629,
+      "status": "writing",
+      "text": "40. 验收无权限操作受到限制并显示清晰",
+      "startedAt": 1789148833147,
+      "updatedAt": 1789148857310
+    },
+    {
+      "sessionId": "chatroom-agent-v1-6e163745-815f-461c-be4a-9662ed9ee52d-67eb8c49-d171-4494-bc8b-da3389c710d6",
+      "roomId": "6e163745-815f-461c-be4a-9662ed9ee52d",
+      "name": "GPT文字进展验收1789148832133",
+      "seq": 635,
+      "status": "writing",
+      "text": "GPT-PROGRESS",
+      "startedAt": 1789148833147,
+      "updatedAt": 1789148857691
+    },
+    {
+      "sessionId": "chatroom-agent-v1-6e163745-815f-461c-be4a-9662ed9ee52d-67eb8c49-d171-4494-bc8b-da3389c710d6",
+      "roomId": "6e163745-815f-461c-be4a-9662ed9ee52d",
+      "name": "GPT文字进展验收1789148832133",
+      "seq": 641,
+      "status": "writing",
+      "text": "GPT-PROGRESS-1789148832181",
+      "startedAt": 1789148833147,
+      "updatedAt": 1789148857962
+    },
+    {
+      "sessionId": "chatroom-agent-v1-6e163745-815f-461c-be4a-9662ed9ee52d-67eb8c49-d171-4494-bc8b-da3389c710d6",
+      "roomId": "6e163745-815f-461c-be4a-9662ed9ee52d",
+      "name": "GPT文字进展验收1789148832133",
+      "seq": 647,
+      "status": "completed",
+      "text": "GPT-PROGRESS-1789148832181",
+      "startedAt": 1789148833147,
+      "updatedAt": 1789148858066
+    }
+  ],
+  "passed": true,
+  "profileId": "67eb8c49-d171-4494-bc8b-da3389c710d6",
+  "name": "GPT文字进展验收1789148832133",
+  "cleaned": true
+}

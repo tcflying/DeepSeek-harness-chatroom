@@ -14,7 +14,6 @@ import type {} from '@deepseek-ai/dsh-client-ui-settings/client'
 import type {} from '@deepseek-ai/dsh-client-ui-session/client'
 import type {} from '@deepseek-ai/dsh-client-ui-renderer/client'
 import type {} from '@deepseek-ai/dsh-client-ui-workspace/client'
-import { chatroomAvatar } from '../avatars.js'
 import { ChatroomEntry } from './ChatroomEntry.js'
 import { ChatroomSettingsSection } from './ChatroomAccountPanels.js'
 import { ChatroomAssistantReplyAction } from './ChatroomAssistantReplyAction.js'
@@ -25,15 +24,27 @@ import {
   ChatroomUserMessageNodeView,
 } from './ChatroomMessageNodeView.js'
 import { installNativePromptIdentity } from './native-prompt.js'
+import { createNativeIdentitySync } from './native-identity-sync.js'
+import { watchNativeSessionSync } from './native-session-sync.js'
+import { createSessionReentryDiagnostics } from './session-reentry-diagnostics.js'
+import { createClientRuntimeFailureReporter, installClientRuntimeDiagnostics, type ClientRuntimeFailureReporter } from './runtime-diagnostics.js'
+import { CHATROOM_RECONNECTED } from './RecoverableImage.js'
+import { watchAdminAccess, watchAdminControls } from './admin-access.js'
+import { ModelProgress } from './ModelProgress.js'
+import { PersonalAccountButton } from './PersonalAccountButton.js'
+import { installWelcomeNoticeSuppression } from './welcome-notice.js'
 import { installNativeMentionAvatarImages } from './mention-avatars.js'
 import { createChatroomAgentProfileSource } from './agent-mention-source.js'
 import { installFreshSessionStart } from './fresh-session.js'
 import { NewGroupSetupDock } from './NewGroupSetupDock.js'
 import { RoomIdentityAction } from './RoomIdentityAction.js'
+import { ServerConnectionStatus } from './ServerConnectionStatus.js'
 import { installSidebarRoomRows } from './sidebar-rooms.js'
 import { registerChatroomSettingsNavIcon } from './settings-nav-icon.js'
-import { ChatroomClientStore, newGroupMentionName } from './store.js'
+import { ChatroomClientStore, type ChatroomPhase, newGroupMentionName } from './store.js'
 import { CHATROOM_STYLES } from './styles.js'
+import { ChatroomSidebarBackdrop, ChatroomStyleSwitch, createChatroomStyleStore } from './ChatroomStyleSwitch.js'
+import { QQ2007_STYLES } from './qq2007-styles.js'
 import {
   branchFrameSwitchFromMessage,
   branchFrameFromLocation,
@@ -45,20 +56,135 @@ import {
   stageBranchFrameSession,
 } from './branch-frame.js'
 
-const roomServices = ['connection', 'inputTriggers', 'sessions', 'settingsScope', 'slots', 'workspaces', 'uiWorkspace']
+const roomServices = ['connection', 'inputTriggers', 'sessions', 'settingsScope', 'slots', 'workspaces', 'uiWorkspace', 'layout']
 export const inject: string[] = []
 
 /** Official client factory supplied by the build, not a second transport implementation. */
 declare const nativeConnection: { apply(ctx: ClientContext): void }
 
+interface NativeDirectoryList {
+  getSnapshot(): { readonly phase?: 'pending' | 'ready'; readonly current: string | undefined }
+  subscribe(listener: () => void): () => void
+}
+
+interface DeepLinkStore {
+  getSnapshot(): { readonly phase: ChatroomPhase; readonly identity?: { readonly participantId: string } | undefined }
+  subscribe(listener: () => void): () => void
+}
+
+/**
+ * Resolve a URL navigation only after the host has produced its initial
+ * directory baseline. A changed current while it is still pending is a user
+ * navigation (for example, New Session) and cancels the URL intent. The first
+ * pending -> ready snapshot is the host's persisted-selection restoration.
+ */
+export function waitForNativeDirectoryReady(
+  list: NativeDirectoryList,
+  ready: () => void,
+  cancelled: () => void,
+): () => void {
+  let done = false
+  const baselineCurrent = list.getSnapshot().current
+  let unsubscribe: (() => void) | undefined
+  const finish = (callback: () => void) => {
+    if (done) return
+    done = true
+    unsubscribe?.()
+    unsubscribe = undefined
+    callback()
+  }
+  const check = () => {
+    if (done) return
+    const snapshot = list.getSnapshot()
+    if (snapshot.phase === 'ready') return finish(ready)
+    if (snapshot.current !== baselineCurrent) finish(cancelled)
+  }
+  const off = list.subscribe(check)
+  unsubscribe = off
+  if (done) off()
+  else check()
+  return () => {
+    if (done) return
+    done = true
+    unsubscribe?.()
+    unsubscribe = undefined
+  }
+}
+
+/**
+ * Preserve a URL intent across the unauthenticated gate, but consume it at
+ * most once for each successful authentication epoch. A pending callback
+ * rechecks its epoch so logout/account changes cannot cross into another
+ * identity. Ordinary store changes never retry an attempted URL selection.
+ */
+export function scheduleDeepLinkNavigation(
+  store: DeepLinkStore,
+  list: NativeDirectoryList,
+  roomId: string,
+  select: (roomId: string) => void,
+): () => void {
+  let disposed = false
+  let identityEpoch = 0
+  let eligibleIdentity: string | undefined
+  let scheduled = false
+  let stopDirectoryWait: (() => void) | undefined
+  const cancelDirectoryWait = () => {
+    stopDirectoryWait?.()
+    stopDirectoryWait = undefined
+  }
+  const reconcile = () => {
+    if (disposed) return
+    const snapshot = store.getSnapshot()
+    const identity = snapshot.phase === 'ready' ? snapshot.identity : undefined
+    if (identity === undefined) {
+      cancelDirectoryWait()
+      eligibleIdentity = undefined
+      scheduled = false
+      return
+    }
+    if (eligibleIdentity !== identity.participantId) {
+      cancelDirectoryWait()
+      eligibleIdentity = identity.participantId
+      identityEpoch += 1
+      scheduled = false
+    }
+    if (scheduled) return
+    scheduled = true
+    const epoch = identityEpoch
+    const participantId = identity.participantId
+    stopDirectoryWait = waitForNativeDirectoryReady(
+      list,
+      () => {
+        stopDirectoryWait = undefined
+        const current = store.getSnapshot()
+        if (!disposed && epoch === identityEpoch && current.phase === 'ready'
+          && current.identity?.participantId === participantId) select(roomId)
+      },
+      () => { stopDirectoryWait = undefined },
+    )
+  }
+  const unsubscribe = store.subscribe(reconcile)
+  reconcile()
+  return () => {
+    if (disposed) return
+    disposed = true
+    unsubscribe()
+    cancelDirectoryWait()
+  }
+}
+
 /** Consume the native connection and UI services materialized by the host. */
 export function apply(ctx: ClientContext): void {
+  // No network/identity dependency: this preference applies on every page start.
+  ctx.inject(['slots'], installWelcomeNoticeSuppression)
   ctx.plugin({ name: 'chatroom-native-connection', apply: nativeConnection.apply })
   ctx.inject(roomServices, roomCtx => installChatroom(roomCtx))
 }
 
 /** Add room identity and navigation around the existing Harness conversation UI. */
 function installChatroom(ctx: ClientContext): void {
+  const styles = createChatroomStyleStore()
+  let runtimeFailureReporter: ClientRuntimeFailureReporter | undefined
   const connection = ctx.get('connection') as ConnectionHandle | undefined
   if (connection === undefined) throw new Error('chatroom: client connection service unavailable')
   const sessions = ctx.get('sessions') as ISessions | undefined
@@ -75,7 +201,7 @@ function installChatroom(ctx: ClientContext): void {
     if (list.byId[sessionId] === undefined) return false
     sessions.open(sessionId)
     return true
-  }, branchFrame)
+  }, branchFrame, (source, error) => { runtimeFailureReporter?.(source, error) })
   ctx.effect(() => installFreshSessionStart(ctx.uiWorkspace, async (workspaceId) => {
     const snapshot = store.getSnapshot()
     if (snapshot.phase === 'loading') throw new Error('chatroom identity is still loading')
@@ -96,6 +222,13 @@ function installChatroom(ctx: ClientContext): void {
     }
   }), 'chatroom: distinct native New Session')
   ctx.effect(() => {
+    const reporter = runtimeFailureReporter = createClientRuntimeFailureReporter({
+      canReport: () => {
+        const view = store.getSnapshot()
+        return view.phase === 'ready' && view.identity !== undefined
+      },
+    })
+    const restoreRuntimeDiagnostics = installClientRuntimeDiagnostics(reporter)
     document.documentElement.setAttribute('data-dsh-chatroom-installed', '')
     if (branchFrame !== undefined) document.documentElement.setAttribute('data-dsh-chatroom-branch-frame', '')
     const markBranchShell = () => {
@@ -107,12 +240,16 @@ function installChatroom(ctx: ClientContext): void {
     markBranchShell()
     const style = document.createElement('style')
     style.dataset.dshChatroomStyles = ''
-    style.textContent = CHATROOM_STYLES
+    style.textContent = CHATROOM_STYLES + QQ2007_STYLES
     document.head.append(style)
+    const restoreAdminControls = watchAdminControls(store, document.documentElement)
+    const restoreStyle = styles.install()
     const restoreSettingsMirror = activateRemoteSettingsMirror(ctx.get('settingsScope'))
     const restorePrompt = installNativePromptIdentity(connection, store)
     const restoreSidebarRoomRows = installSidebarRoomRows(store, sessions)
     const restoreMentionAvatars = installNativeMentionAvatarImages(store)
+    let disposed = false
+    let stopDeepLinkNavigation: () => void = () => undefined
     let activeBranchFrame = branchFrame
     let branchStaged = false
     const stageBranch = () => {
@@ -145,7 +282,8 @@ function installChatroom(ctx: ClientContext): void {
       stageBranch()
     }
     globalThis.addEventListener('message', receiveBranchSwitch)
-    const syncSession = () => {
+    const sessionReentryDiagnostics = createSessionReentryDiagnostics()
+    const reconcileSession = () => {
       stageBranch()
       store.resumeOpen()
       const list = sessions.list.getSnapshot()
@@ -176,31 +314,57 @@ function installChatroom(ctx: ClientContext): void {
         store.registerNewSession(String(current))
       }
     }
+    const syncSession = () => {
+      const leave = sessionReentryDiagnostics.enter()
+      try { reconcileSession() } finally { leave() }
+    }
     const unsubscribeSessions = sessions.list.subscribe(syncSession)
+    const unsubscribeNativeSessionSync = watchNativeSessionSync(store, connection, () => sessions.refresh())
+    const retryNativeSessionSync = () => { unsubscribeNativeSessionSync.retry() }
+    window.addEventListener(CHATROOM_RECONNECTED, retryNativeSessionSync)
+    const syncNativeIdentity = createNativeIdentitySync(() => connection.reconnect())
+    syncNativeIdentity(store.getSnapshot())
     let synchronizedPhase = store.getSnapshot().phase
     const unsubscribeSessionGuard = store.subscribe(() => {
-      const phase = store.getSnapshot().phase
+      const snapshot = store.getSnapshot()
+      syncNativeIdentity(snapshot)
+      const phase = snapshot.phase
       if (phase === synchronizedPhase) return
       synchronizedPhase = phase
-      if (phase === 'ready') connection.reconnect()
       syncSession()
     })
     void store.start().then(async () => {
+      if (disposed) return
       syncSession()
       if (typeof location === 'undefined') return
       const invitedRoomId = invitedRoomFromLocation(location, branchFrame)
-      if (invitedRoomId !== undefined) await store.selectRoom(invitedRoomId)
+      if (invitedRoomId === undefined) return
+      stopDeepLinkNavigation = scheduleDeepLinkNavigation(
+        store,
+        sessions.list,
+        invitedRoomId,
+        roomId => { void store.selectRoom(roomId) },
+      )
     })
     return () => {
+      disposed = true
+      restoreRuntimeDiagnostics()
+      if (runtimeFailureReporter === reporter) runtimeFailureReporter = undefined
+      stopDeepLinkNavigation()
       unsubscribeSessions()
+      sessionReentryDiagnostics.dispose()
+      unsubscribeNativeSessionSync()
+      window.removeEventListener(CHATROOM_RECONNECTED, retryNativeSessionSync)
       unsubscribeSessionGuard()
       globalThis.removeEventListener('message', receiveBranchSwitch)
       restorePrompt()
       restoreMentionAvatars()
       restoreSidebarRoomRows()
       restoreSettingsMirror()
+      restoreAdminControls()
       store.stop()
       style.remove()
+      restoreStyle()
       shellObserver?.disconnect()
       document.documentElement.removeAttribute('data-dsh-chatroom-installed')
       if (branchFrame !== undefined) {
@@ -209,6 +373,37 @@ function installChatroom(ctx: ClientContext): void {
       }
     }
   }, 'chatroom: browser state and styles')
+
+  if (branchFrame === undefined) ctx.slots.inject('sidebar.footer.action', () => ctx.slots.register({
+    name: 'sidebar.footer.action', id: 'chatroom-server-connection', order: 0,
+    inject: () => ({ connection, store, nativeCatalogue: sessions.list }),
+  }, ServerConnectionStatus))
+  if (branchFrame === undefined) ctx.slots.inject('sidebar.footer.action', () => ctx.slots.register({
+    name: 'sidebar.footer.action', id: 'chatroom-personal-account', order: 5,
+    inject: () => ({ hooks: { chatroom: store }, openAccount: store.openAccount }),
+  }, PersonalAccountButton))
+  ctx.slots.inject('sidebar.settings', () => watchAdminAccess(store, () => ctx.slots.register({
+    name: 'sidebar.settings', priority: -100,
+  }, () => null)))
+  ctx.slots.inject('conversation.input.model', () => watchAdminAccess(store, () => ctx.slots.register({
+    name: 'conversation.input.model', priority: -100,
+  }, () => null)))
+  ctx.slots.inject('conversation.input.dock', () => ctx.slots.register({
+    name: 'conversation.input.dock', id: 'chatroom-model-progress', order: -50,
+    inject: () => ({ hooks: { chatroom: store } }),
+  }, ModelProgress))
+  ctx.slots.inject('conversation.session.header.utilities', () => ctx.slots.register({
+    name: 'conversation.session.header.utilities', id: 'chatroom-style', order: 10,
+    inject: () => ({ styles }),
+  }, ChatroomStyleSwitch))
+  ctx.slots.inject('shell.overlay', () => ctx.slots.register({
+    name: 'shell.overlay', id: 'chatroom-sidebar-backdrop', order: -10,
+    inject: () => ({ close: () => ctx.layout.toggleSidebar() }),
+  }, ChatroomSidebarBackdrop))
+  ctx.slots.inject('shell.overlay', () => ctx.slots.register({
+    name: 'shell.overlay', id: 'chatroom-style-fallback', order: 20,
+    inject: () => ({ styles, fallback: true }),
+  }, ChatroomStyleSwitch))
 
   const aiSource = createChatroomAiSource(store)
   const agentProfileSource = createChatroomAgentProfileSource(store)
@@ -580,7 +775,7 @@ export function createChatroomAiSource(store: ChatroomClientStore): InputTrigger
       if (room === undefined && !newGroup) return []
       const candidates = [{
         name: aiMentionMenuName(room?.aiDisplayName ?? 'DeepSeek'),
-        hint: '✦',
+        hint: '',
         description: room === undefined ? '创建群聊后立即回复' : '提及后回复',
       }]
       const needle = query.toLocaleLowerCase()
@@ -620,14 +815,14 @@ export function createChatroomMemberSource(store: ChatroomClientStore): InputTri
           .filter(peer => peer.participantId !== snapshot.identity?.participantId)
           .map(peer => ({
             name: newGroupMentionName(peer, snapshot.directPeers),
-            hint: chatroomAvatar(peer.avatarId, peer.participantId).emoji,
+            hint: '',
             description: `创建群聊时自动邀请 · @${peer.username}`,
           }))
         : snapshot.members
           .filter(member => member.participantId !== snapshot.identity?.participantId)
           .map(member => ({
             name: member.displayName,
-            hint: chatroomAvatar(member.avatarId, member.participantId).emoji,
+            hint: '',
             description: member.online ? '在线成员' : '群成员',
           }))
       const needle = query.toLocaleLowerCase()

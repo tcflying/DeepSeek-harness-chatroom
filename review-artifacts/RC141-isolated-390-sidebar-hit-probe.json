@@ -1,0 +1,82 @@
+{
+  "version": "1.5.0-codex.rc1.41",
+  "at": "2026-09-12T04:36:19.577Z",
+  "mode": "isolated-390-left-sidebar-hit-probe",
+  "scope": [
+    "fresh headless context",
+    "guest identity only",
+    "read-only DOM geometry and hit-test",
+    "no message, input, upload, AI request, role change, or setting mutation"
+  ],
+  "passed": false,
+  "readbacks": {
+    "viewport": {
+      "width": 320,
+      "height": 720
+    },
+    "selector": "button[aria-label=\"展开侧边栏\"], button[aria-label=\"打开侧边栏\"]",
+    "candidateIndex": -1,
+    "settledBefore": {
+      "viewportWidth": 320,
+      "settingsTextVisible": false,
+      "leftControls": [
+        {
+          "ariaLabel": "选择工作区",
+          "text": "选择工作区",
+          "left": 76,
+          "top": 312,
+          "width": 117,
+          "height": 28
+        },
+        {
+          "ariaLabel": "指令",
+          "text": "",
+          "left": 80,
+          "top": 427,
+          "width": 28,
+          "height": 28
+        },
+        {
+          "ariaLabel": null,
+          "text": "登录",
+          "left": 31,
+          "top": 111,
+          "width": 126,
+          "height": 37
+        }
+      ]
+    },
+    "controls": {
+      "viewportWidth": 320,
+      "settingsTextVisible": false,
+      "leftControls": [
+        {
+          "ariaLabel": "选择工作区",
+          "text": "选择工作区",
+          "left": 76,
+          "top": 312,
+          "width": 117,
+          "height": 28
+        },
+        {
+          "ariaLabel": "指令",
+          "text": "",
+          "left": 80,
+          "top": 427,
+          "width": 28,
+          "height": 28
+        },
+        {
+          "ariaLabel": null,
+          "text": "登录",
+          "left": 31,
+          "top": 111,
+          "width": 126,
+          "height": 37
+        }
+      ]
+    }
+  },
+  "screenshot": "RC141-isolated-320-sidebar-hit-probe.png",
+  "error": "Error: isolated nav probe left toggle absent after compact sidebar settled"
+}

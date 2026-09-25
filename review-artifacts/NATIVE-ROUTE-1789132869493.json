@@ -1,0 +1,42 @@
+{
+  "at": "2026-09-11T13:18:34.077Z",
+  "duration": 155000,
+  "results": [
+    {
+      "base": "https://talk.opcvip.net",
+      "route": "public-default",
+      "pings": 0,
+      "closedByProbe": false,
+      "error": "ECONNRESET",
+      "code": 1006,
+      "elapsedMs": 520
+    },
+    {
+      "base": "http://127.0.0.1:3181",
+      "route": "local",
+      "pings": 10,
+      "closedByProbe": true,
+      "openMs": 19,
+      "code": 1005,
+      "elapsedMs": 155006
+    },
+    {
+      "base": "http://127.0.0.1:3185",
+      "route": "bridge",
+      "pings": 10,
+      "closedByProbe": true,
+      "openMs": 16,
+      "code": 1005,
+      "elapsedMs": 155003
+    },
+    {
+      "base": "https://talk.opcvip.net",
+      "route": "public-explicit-environment-agent",
+      "pings": 10,
+      "closedByProbe": true,
+      "openMs": 926,
+      "code": 1005,
+      "elapsedMs": 155404
+    }
+  ]
+}

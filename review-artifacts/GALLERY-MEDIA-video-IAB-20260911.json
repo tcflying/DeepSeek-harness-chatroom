@@ -1,0 +1,14 @@
+{
+  "video": [
+    {
+      "currentTime": 15.083333,
+      "duration": 15.083333,
+      "height": 1344,
+      "paused": true,
+      "readyState": 4,
+      "src": "/plugins/deepseek-harness-chatroom/api/files/b1fb85fa-9a9a-4d48-857b-821a695799c1",
+      "width": 768
+    }
+  ],
+  "at": "2026-09-11T10:43:08.117Z"
+}

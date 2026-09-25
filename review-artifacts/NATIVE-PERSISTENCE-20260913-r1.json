@@ -1,0 +1,24 @@
+{
+  "at": "2026-09-12T19:29:30.606Z",
+  "boundary": "Independent Context invokes installed JSONL list API against the existing root. No write handles, no migrations, no live Host context, no source patch, no catalogue data retained. This is not in-Host tracing.",
+  "sourceHash": "7d0640c9fc4be6c703b77605fdee6af519c542fae28a6cd4489353309812f062",
+  "observations": [
+    {
+      "mode": "cold-root-check",
+      "items": 159,
+      "elapsedMs": 145
+    },
+    {
+      "mode": "warm-root-check",
+      "items": 159,
+      "elapsedMs": 100
+    }
+  ],
+  "sourceUnchanged": true,
+  "eventLoop": {
+    "p99Ms": 20,
+    "maxMs": 20
+  },
+  "completedAt": "2026-09-12T19:29:30.856Z",
+  "observationComplete": true
+}

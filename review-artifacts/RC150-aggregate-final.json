@@ -1,0 +1,74 @@
+{
+  "version": "1.5.0-codex.rc1.50",
+  "at": "2026-09-12T19:01:53.329Z",
+  "passed": false,
+  "checks": {
+    "candidateAndImmutable": {
+      "passed": true,
+      "evidence": {
+        "dist/index.js": "16de14365c5d11a23f6a93e0f539351b30f436888b7f1d8b6d8752b00807c24a",
+        "dist/client.js": "528d9da157b436cef723ba44302f8e5d9b44d4f12cd91d305f8be330e472d92b",
+        "dist/index.js.map": "380e03f6ed09eb2fb8656582ee7349226490522cf397d11f59e8a82e669a0824",
+        "dist/client.js.map": "daab4c339f3572d892314f8eee72730fb56bfd7b92475f1642258b5152a05489"
+      }
+    },
+    "effectiveOverlay": {
+      "passed": true,
+      "evidence": {
+        "version": "1.5.0-codex.rc1.50",
+        "overlaySha256": "c4a935003e33aa4b2f54eafc74f0482ddee038ae5c8c422e8f958d39262d2ee0"
+      }
+    },
+    "sourceMaps": {
+      "passed": true,
+      "evidence": {
+        "dist/client.js.map": 59,
+        "dist/index.js.map": 32
+      }
+    },
+    "servedExactClient": {
+      "passed": true,
+      "evidence": {
+        "candidateSha256": "528d9da157b436cef723ba44302f8e5d9b44d4f12cd91d305f8be330e472d92b",
+        "servedSha256": "dede8c346b3495905123fb6879ae9af6d39693ad39dac58a787be307724cc9ef",
+        "embeddedAt": -1,
+        "samePayload": true,
+        "payloadSha256": "2da5f10d1a8d8e8b743f0480dd1a5deb074da18da28a0a4ed7a07655887b6c02",
+        "normalization": "Only terminal Host semicolon/sourceMappingURL wrapper and CRLF; full remaining payload equality"
+      }
+    },
+    "health": {
+      "passed": true,
+      "evidence": {
+        "ready": true,
+        "diagnostics": {
+          "enabled": true,
+          "healthy": true,
+          "dropped": 0
+        }
+      }
+    },
+    "ci": {
+      "passed": false,
+      "error": "Expected values to be strictly equal:\n\n1 !== 0\n"
+    },
+    "isolated": {
+      "passed": false,
+      "error": "ENOENT: no such file or directory, open 'G:\\codex-project\\dsh-chatroom-next\\review-artifacts\\RC150-isolated-browser.json'"
+    },
+    "public": {
+      "passed": false,
+      "error": "Expected values to be strictly equal:\n\nfalse !== true\n"
+    },
+    "iab": {
+      "passed": false,
+      "error": "ENOENT: no such file or directory, open 'G:\\codex-project\\dsh-chatroom-next\\review-artifacts\\RC150-IAB-live.json'"
+    },
+    "reconnect": {
+      "passed": true,
+      "evidence": {
+        "file": "RC150-CHATROOM-RECONNECTED-bounded.json"
+      }
+    }
+  }
+}

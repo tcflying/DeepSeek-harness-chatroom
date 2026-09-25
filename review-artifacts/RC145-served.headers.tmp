@@ -1,0 +1,10 @@
+HTTP/1.1 303 See Other
+cache-control: no-store
+location: /
+referrer-policy: no-referrer
+set-cookie: dsh-auth-ZMazloeJX8x51Fq7e_5yc2QUu-N1VyGC8340VmFD-8o=v1.eyJ2ZXJzaW9uIjoxLCJhdXRob3JpdHkiOiIxMjcuMC4wLjE6MzE4NiIsImlzc3VlZEF0IjoxNzg5MTk5MDc3NzY5LCJleHBpcmVzQXQiOjE3OTE3OTEwNzc3Njl9.e8sFtxlxNvOjsb9WIT_vSRYPy8cqD78O3PBdjZesQfE; Max-Age=2592000; Path=/; Expires=Mon, 12 Oct 2026 07:44:37 GMT; HttpOnly; SameSite=Strict
+Date: Sat, 12 Sep 2026 07:44:37 GMT
+Connection: keep-alive
+Keep-Alive: timeout=5
+Transfer-Encoding: chunked
+

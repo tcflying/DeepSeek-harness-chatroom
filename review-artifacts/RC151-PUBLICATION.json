@@ -1,0 +1,149 @@
+{
+  "version": "1.5.0-codex.rc1.51",
+  "at": "2026-09-13T17:44:17.877Z",
+  "deployed": true,
+  "fullCiPassed": true,
+  "service": "Service status for 'dsh-chatroom': Running",
+  "listeners": [
+    {
+      "LocalPort": 3185,
+      "OwningProcess": 9188
+    },
+    {
+      "LocalPort": 3181,
+      "OwningProcess": 8584
+    }
+  ],
+  "hostAndBridgeNotRestarted": true,
+  "overlay": {
+    "rollback": "C:/Users/datoo/.dsh/chatroom-server/profiles/web/cordis.patch.rc151-prepublish.bak",
+    "onlyReleasePathChanged": true,
+    "beforeSha256": "c4a935003e33aa4b2f54eafc74f0482ddee038ae5c8c422e8f958d39262d2ee0",
+    "afterSha256": "5546c429226776b3341cf62b5debea2976b699966bafaac7ce86eac4ab8dce26"
+  },
+  "surfaces": [
+    {
+      "base": "http://127.0.0.1:3181",
+      "health": {
+        "ready": true,
+        "diagnostics": {
+          "enabled": true,
+          "healthy": true,
+          "dropped": 0
+        }
+      },
+      "exactClientPayload": true,
+      "servedSha256": "04c68400a0b24ba9b4d6fe9fed9bb35cc2c7cfb0712b1f547ccba270849a6128"
+    },
+    {
+      "base": "https://talk.opcvip.net",
+      "health": {
+        "ready": true,
+        "diagnostics": {
+          "enabled": true,
+          "healthy": true,
+          "dropped": 0
+        }
+      },
+      "exactClientPayload": true,
+      "servedSha256": "04c68400a0b24ba9b4d6fe9fed9bb35cc2c7cfb0712b1f547ccba270849a6128"
+    }
+  ],
+  "phases": [
+    {
+      "version": 1,
+      "at": "2026-09-13T17:36:28.309Z",
+      "pid": 8584,
+      "event": "runtime.stop"
+    },
+    {
+      "version": 1,
+      "at": "2026-09-13T17:36:54.591Z",
+      "pid": 8584,
+      "event": "runtime.start"
+    }
+  ],
+  "catalogueStages": [
+    {
+      "at": "2026-09-13T17:36:58.064Z",
+      "upstreamElapsedMs": 518,
+      "jsonElapsedMs": 519,
+      "filterElapsedMs": 522,
+      "itemsCount": 160,
+      "totalElapsedMs": 522,
+      "status": 200,
+      "filterOnlyMs": 3
+    },
+    {
+      "at": "2026-09-13T17:36:59.921Z",
+      "upstreamElapsedMs": 1061,
+      "jsonElapsedMs": 1063,
+      "filterElapsedMs": 1064,
+      "itemsCount": 160,
+      "totalElapsedMs": 1064,
+      "status": 200,
+      "filterOnlyMs": 1
+    },
+    {
+      "at": "2026-09-13T17:37:15.793Z",
+      "upstreamElapsedMs": 2607,
+      "jsonElapsedMs": 2617,
+      "filterElapsedMs": 2619,
+      "itemsCount": 160,
+      "totalElapsedMs": 2619,
+      "status": 200,
+      "filterOnlyMs": 2
+    },
+    {
+      "at": "2026-09-13T17:37:20.620Z",
+      "upstreamElapsedMs": 4357,
+      "jsonElapsedMs": 4359,
+      "filterElapsedMs": 4360,
+      "itemsCount": 161,
+      "totalElapsedMs": 4360,
+      "status": 200,
+      "filterOnlyMs": 1
+    },
+    {
+      "at": "2026-09-13T17:38:19.367Z",
+      "upstreamElapsedMs": 2359,
+      "jsonElapsedMs": 2361,
+      "filterElapsedMs": 2362,
+      "itemsCount": 161,
+      "totalElapsedMs": 2363,
+      "status": 200,
+      "filterOnlyMs": 1
+    },
+    {
+      "at": "2026-09-13T17:38:21.825Z",
+      "upstreamElapsedMs": 1750,
+      "jsonElapsedMs": 1752,
+      "filterElapsedMs": 1753,
+      "itemsCount": 161,
+      "totalElapsedMs": 1753,
+      "status": 200,
+      "filterOnlyMs": 1
+    },
+    {
+      "at": "2026-09-13T17:38:50.673Z",
+      "upstreamElapsedMs": 744,
+      "jsonElapsedMs": 746,
+      "filterElapsedMs": 748,
+      "itemsCount": 161,
+      "totalElapsedMs": 748,
+      "status": 200,
+      "filterOnlyMs": 2
+    },
+    {
+      "at": "2026-09-13T17:38:54.186Z",
+      "upstreamElapsedMs": 2814,
+      "jsonElapsedMs": 2817,
+      "filterElapsedMs": 2818,
+      "itemsCount": 161,
+      "totalElapsedMs": 2818,
+      "status": 200,
+      "filterOnlyMs": 1
+    }
+  ],
+  "boundary": "Publication and current transport evidence only. Individual failed public/IAB assertions and historical outage attribution remain unresolved."
+}

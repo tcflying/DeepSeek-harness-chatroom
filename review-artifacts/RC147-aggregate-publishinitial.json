@@ -1,0 +1,73 @@
+{
+  "version": "1.5.0-codex.rc1.47",
+  "at": "2026-09-12T11:32:24.429Z",
+  "passed": false,
+  "checks": {
+    "candidateAndImmutable": {
+      "passed": true,
+      "evidence": {
+        "dist/index.js": "16de14365c5d11a23f6a93e0f539351b30f436888b7f1d8b6d8752b00807c24a",
+        "dist/client.js": "34ed7229ac17360ea8a7a483dedba6fb7beff5c5af8bb2535cfebc5e20962ceb",
+        "dist/index.js.map": "380e03f6ed09eb2fb8656582ee7349226490522cf397d11f59e8a82e669a0824",
+        "dist/client.js.map": "bf3ae17365b04eb2e099a8e227deed2ac2cede8f454057e83b75cadfcd547dbc"
+      }
+    },
+    "effectiveOverlay": {
+      "passed": true,
+      "evidence": {
+        "version": "1.5.0-codex.rc1.47",
+        "overlaySha256": "310f6f0362207577f4c06fa56d43d29a106e452ab826061b50bca9b0452f664f"
+      }
+    },
+    "sourceMaps": {
+      "passed": true,
+      "evidence": {
+        "dist/client.js.map": 59,
+        "dist/index.js.map": 32
+      }
+    },
+    "servedExactClient": {
+      "passed": false,
+      "error": "Expected values to be strictly equal:\n\n404 !== 200\n"
+    },
+    "health": {
+      "passed": false,
+      "error": "Expected values to be strictly equal:\n\n503 !== 200\n"
+    },
+    "ci": {
+      "passed": true,
+      "evidence": {
+        "log": "RC147-check-ci-r2.log",
+        "closedAt": "2026-09-12T08:56:52.672Z",
+        "summaries": [
+          {
+            "files": 56,
+            "tests": 497
+          },
+          {
+            "files": 16,
+            "tests": 93
+          }
+        ]
+      }
+    },
+    "isolated": {
+      "passed": true,
+      "evidence": {
+        "file": "RC147-isolated-browser.json"
+      }
+    },
+    "public": {
+      "passed": false,
+      "error": "ENOENT: no such file or directory, open 'G:\\codex-project\\dsh-chatroom-next\\review-artifacts\\RC147-public-browser.json'"
+    },
+    "iab": {
+      "passed": false,
+      "error": "Expected values to be strictly equal:\n\nfalse !== true\n"
+    },
+    "reconnect": {
+      "passed": false,
+      "error": "ENOENT: no such file or directory, open 'G:\\codex-project\\dsh-chatroom-next\\review-artifacts\\RC147-CHATROOM-RECONNECTED.json'"
+    }
+  }
+}

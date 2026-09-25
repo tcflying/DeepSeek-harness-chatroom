@@ -1,0 +1,430 @@
+{
+  "version": "1.5.0-codex.rc1.49",
+  "at": "2026-09-12T18:29:31.329Z",
+  "mode": "public-authenticated",
+  "base": "https://talk.opcvip.net",
+  "roles": [
+    {
+      "role": "member",
+      "rpc": [
+        {
+          "method": "settings/describe",
+          "status": 403
+        },
+        {
+          "method": "credentials/list",
+          "status": 403
+        },
+        {
+          "method": "session/selectModel",
+          "status": 403
+        },
+        {
+          "method": "agentPresets/select",
+          "status": 403
+        },
+        {
+          "method": "commands/execute",
+          "status": 403
+        }
+      ],
+      "errors": [],
+      "roomSelected": true,
+      "geometry": {
+        "320": {
+          "width": 320,
+          "height": 720,
+          "documentWidth": 320,
+          "bodyWidth": 320,
+          "control": "▧ 会话图库",
+          "nativeSidebar": {
+            "viewportWidth": 320,
+            "settingsTextVisible": false,
+            "leftStaticChrome": [
+              {
+                "ariaLabel": "打开侧边栏",
+                "text": "",
+                "left": 10,
+                "top": 14,
+                "width": 44,
+                "height": 44
+              },
+              {
+                "ariaLabel": "重新连接服务器",
+                "text": "↻重连",
+                "left": -18,
+                "top": 666,
+                "width": 44,
+                "height": 44
+              }
+            ]
+          },
+          "account": {
+            "left": 116,
+            "right": 195.75,
+            "top": 136,
+            "bottom": 170,
+            "width": 79.75,
+            "height": 34,
+            "viewportWidth": 320,
+            "viewportHeight": 720,
+            "hit": true
+          },
+          "style": {
+            "left": 186,
+            "right": 264,
+            "top": 12,
+            "bottom": 48,
+            "width": 78,
+            "height": 36,
+            "viewportWidth": 320,
+            "viewportHeight": 720,
+            "hit": true
+          }
+        },
+        "390": {
+          "width": 390,
+          "height": 844,
+          "documentWidth": 390,
+          "bodyWidth": 390,
+          "control": "▧ 会话图库",
+          "nativeSidebar": {
+            "viewportWidth": 390,
+            "settingsTextVisible": false,
+            "leftStaticChrome": [
+              {
+                "ariaLabel": "打开侧边栏",
+                "text": "",
+                "left": 10,
+                "top": 14,
+                "width": 44,
+                "height": 44
+              },
+              {
+                "ariaLabel": "重新连接服务器",
+                "text": "↻重连",
+                "left": -18,
+                "top": 790,
+                "width": 44,
+                "height": 44
+              }
+            ]
+          },
+          "account": {
+            "left": 254.359375,
+            "right": 334.109375,
+            "top": 98,
+            "bottom": 132,
+            "width": 79.75,
+            "height": 34,
+            "viewportWidth": 390,
+            "viewportHeight": 844,
+            "hit": true
+          },
+          "style": {
+            "left": 256,
+            "right": 334,
+            "top": 12,
+            "bottom": 48,
+            "width": 78,
+            "height": 36,
+            "viewportWidth": 390,
+            "viewportHeight": 844,
+            "hit": true
+          }
+        },
+        "768": {
+          "width": 768,
+          "height": 900,
+          "documentWidth": 768,
+          "bodyWidth": 768,
+          "control": "▧ 会话图库",
+          "nativeSidebar": {
+            "viewportWidth": 768,
+            "settingsTextVisible": false,
+            "leftStaticChrome": [
+              {
+                "ariaLabel": "打开侧边栏",
+                "text": "",
+                "left": 224,
+                "top": 14,
+                "width": 44,
+                "height": 44
+              },
+              {
+                "ariaLabel": "重新连接服务器",
+                "text": "↻重连",
+                "left": 203,
+                "top": 806,
+                "width": 63,
+                "height": 44
+              }
+            ]
+          },
+          "account": {
+            "left": 457.265625,
+            "right": 537.015625,
+            "top": 58,
+            "bottom": 88,
+            "width": 79.75,
+            "height": 30,
+            "viewportWidth": 768,
+            "viewportHeight": 900,
+            "hit": true
+          },
+          "style": {
+            "left": 610,
+            "right": 688,
+            "top": 15,
+            "bottom": 45,
+            "width": 78,
+            "height": 30,
+            "viewportWidth": 768,
+            "viewportHeight": 900,
+            "hit": true
+          }
+        },
+        "native": {
+          "width": 1440,
+          "height": 900,
+          "documentWidth": 1440,
+          "bodyWidth": 1440,
+          "styleControl": {
+            "left": 1284,
+            "right": 1362,
+            "top": 13,
+            "bottom": 43,
+            "width": 78,
+            "height": 30,
+            "viewportWidth": 1440,
+            "viewportHeight": 900,
+            "hit": true
+          }
+        },
+        "qq2007": {
+          "width": 1440,
+          "height": 900,
+          "documentWidth": 1440,
+          "bodyWidth": 1440,
+          "styleControl": {
+            "left": 1284,
+            "right": 1362,
+            "top": 11,
+            "bottom": 41,
+            "width": 78,
+            "height": 30,
+            "viewportWidth": 1440,
+            "viewportHeight": 900,
+            "hit": true
+          }
+        }
+      },
+      "mediaRoom": {
+        "kind": "owned-accessible-room",
+        "contentClaim": "not asserted"
+      },
+      "deepLink": {
+        "readinessDeadlineMs": 30000,
+        "requested": true,
+        "requestSent": true,
+        "selectResponseSucceeded": true,
+        "active": true,
+        "nativeSelected": true,
+        "selectedNativeTitle": true,
+        "timeline": [
+          {
+            "atMs": 7012,
+            "atUtc": "2026-09-12T18:29:43.469Z",
+            "event": "request",
+            "path": "/api/session/list",
+            "method": "POST"
+          },
+          {
+            "atMs": 27161,
+            "atUtc": "2026-09-12T18:30:03.618Z",
+            "event": "response",
+            "path": "/api/session/list",
+            "status": 200
+          },
+          {
+            "atMs": 27162,
+            "atUtc": "2026-09-12T18:30:03.619Z",
+            "event": "requestfinished",
+            "path": "/api/session/list",
+            "status": 200,
+            "timing": {
+              "queueOrBlockedMs": 0,
+              "dnsMs": null,
+              "connectMs": null,
+              "requestMs": 20157,
+              "downloadMs": 1,
+              "responseEndMs": 20158
+            }
+          },
+          {
+            "atMs": 27190,
+            "atUtc": "2026-09-12T18:30:03.647Z",
+            "event": "request",
+            "path": "/rooms/select",
+            "method": "POST"
+          },
+          {
+            "atMs": 27191,
+            "atUtc": "2026-09-12T18:30:03.648Z",
+            "event": "request",
+            "path": "/api/session/list",
+            "method": "POST"
+          },
+          {
+            "atMs": 27554,
+            "atUtc": "2026-09-12T18:30:04.011Z",
+            "event": "response",
+            "path": "/rooms/select",
+            "status": 200
+          },
+          {
+            "atMs": 27555,
+            "atUtc": "2026-09-12T18:30:04.012Z",
+            "event": "requestfinished",
+            "path": "/rooms/select",
+            "status": 200,
+            "timing": {
+              "queueOrBlockedMs": 0,
+              "dnsMs": null,
+              "connectMs": null,
+              "requestMs": 386,
+              "downloadMs": 1,
+              "responseEndMs": 387
+            }
+          }
+        ]
+      },
+      "servedClient": {
+        "manifest": true,
+        "status": 200,
+        "servedSha256": "d7f0bdeb875d83938c33fe24b2fffd1c1040401cbefdbe564e57085665459be9",
+        "candidateSha256": "4a1963150189006821b0e238fc235997bab5129e345711d2f550d8ae97c45808",
+        "servedBytes": 1158616,
+        "candidateBytes": 1158552,
+        "exactCandidate": true,
+        "normalizedPayload": true,
+        "normalization": "terminal-semicolon-and-source-map-footer-v1",
+        "servedNormalizedSha256": "e645d10e557ab7173f9836a30d23abbadcb4c77b78387b26e84c3b408fd1f0ee",
+        "candidateNormalizedSha256": "e645d10e557ab7173f9836a30d23abbadcb4c77b78387b26e84c3b408fd1f0ee",
+        "servedSourceMapFooter": true,
+        "candidateSourceMapFooter": true,
+        "difference": {
+          "firstDifference": 1158518,
+          "commonSuffixBytes": 0,
+          "lengthDelta": 64,
+          "servedFooterKind": "line-source-map",
+          "candidateFooterKind": "line-source-map"
+        },
+        "structure": "host-terminal-source-map-wrapper-normalized",
+        "marker": "rc135-assistant-actions-and-auth-aware-auto-reply"
+      },
+      "gallery": {
+        "kind": "empty-owned-room",
+        "multiImagePass": false,
+        "normalEmptyState": true,
+        "responses": [
+          {
+            "status": 200,
+            "expectedRoom": true,
+            "expectedSession": true
+          }
+        ]
+      },
+      "accountModal": true
+    },
+    {
+      "role": "super-admin",
+      "rpc": [],
+      "errors": [],
+      "roomSelected": true,
+      "geometry": {},
+      "mediaRoom": {
+        "kind": "national-fly",
+        "preflightItems": 3
+      },
+      "deepLink": {
+        "requested": true,
+        "requestSent": false,
+        "active": false,
+        "failure": "TimeoutError: page.waitForFunction: Timeout 30000ms exceeded.",
+        "surface": {
+          "documentTitlePresent": true,
+          "urlHasDeepLink": true,
+          "chatroomInstalled": true,
+          "chatroomActive": false,
+          "documentDshAttributes": [
+            {
+              "name": "data-dsh-skin",
+              "value": "blue-fantasy"
+            },
+            {
+              "name": "data-dsh-chatroom-installed",
+              "value": ""
+            },
+            {
+              "name": "data-dsh-chatroom-style",
+              "value": "qq2007"
+            },
+            {
+              "name": "data-dsh-backdrop-active",
+              "value": "true"
+            }
+          ],
+          "loginFormVisible": false,
+          "identityFormVisible": false,
+          "roomDirectoryVisible": false,
+          "alertVisible": false,
+          "serverStatus": {
+            "present": true,
+            "native": "connected",
+            "room": "offline",
+            "notifications": "online"
+          },
+          "nativeTree": {
+            "present": true,
+            "visible": true,
+            "selectedCount": 0,
+            "selectedTarget": false,
+            "selectedTitleMatchesTarget": false,
+            "selectedSessionAttributeMatchesTarget": false,
+            "selectedAttributeNames": []
+          }
+        },
+        "timeline": [
+          {
+            "atMs": 6130,
+            "atUtc": "2026-09-12T18:30:25.993Z",
+            "event": "request",
+            "path": "/api/session/list",
+            "method": "POST"
+          }
+        ],
+        "selectResponses": [],
+        "runtimeErrors": {
+          "console": [],
+          "page": []
+        }
+      },
+      "failure": "TimeoutError: page.waitForFunction: Timeout 30000ms exceeded."
+    }
+  ],
+  "screenshots": [
+    "RC149-public-member-gallery-empty-r1.png",
+    "RC149-public-member-account-r1.png",
+    "RC149-public-super-admin-deep-link-failure-r1.png"
+  ],
+  "passed": false,
+  "browserEngine": "explicit executable, fresh temporary profile",
+  "anonymousGallery": 401,
+  "error": "Error: super-admin: TimeoutError: page.waitForFunction: Timeout 30000ms exceeded.",
+  "browserCleanup": {
+    "startedAt": "2026-09-12T18:30:50.839Z",
+    "connected": true,
+    "contextsRemaining": 0
+  }
+}

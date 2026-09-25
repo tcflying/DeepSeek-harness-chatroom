@@ -1,0 +1,12 @@
+{
+  "version": "1.5.0-codex.rc1.44",
+  "at": "2026-09-12T06:56:14.321Z",
+  "mode": "isolated-served-asset-and-auth-probe",
+  "scope": [
+    "cold loopback Host",
+    "read-only manifest/client/session/manageable-room reads",
+    "no identity creation, message, input, upload, AI request, role change, or setting mutation"
+  ],
+  "passed": false,
+  "error": "AssertionError [ERR_ASSERTION]: served page must retain the chatroom client manifest"
+}

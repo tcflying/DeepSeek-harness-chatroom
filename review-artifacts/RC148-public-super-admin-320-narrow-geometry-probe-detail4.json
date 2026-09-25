@@ -1,0 +1,1716 @@
+{
+  "version": "1.5.0-codex.rc1.48",
+  "at": "2026-09-12T18:04:52.073Z",
+  "mode": "public-super-admin-320-narrow-geometry-probe",
+  "scope": [
+    "fresh headless context",
+    "one existing super-admin login",
+    "one authorized-room deep-link",
+    "browser-local QQ style only",
+    "contentless geometry/computed-style observation",
+    "no gallery, message, input, upload, AI request, role change, or setting mutation",
+    "read-only Settings geometry; no configuration writes"
+  ],
+  "passed": false,
+  "readbacks": {
+    "deepLink": {
+      "readinessDeadlineMs": 30000,
+      "requested": true,
+      "requestSent": true,
+      "selectResponseSucceeded": true,
+      "active": true,
+      "nativeSelected": true,
+      "selectedNativeTitle": true,
+      "timeline": [
+        {
+          "atMs": 5903,
+          "atUtc": "2026-09-12T18:04:59.633Z",
+          "event": "request",
+          "path": "/api/session/list",
+          "method": "POST"
+        },
+        {
+          "atMs": 13964,
+          "atUtc": "2026-09-12T18:05:07.694Z",
+          "event": "response",
+          "path": "/api/session/list",
+          "status": 200
+        },
+        {
+          "atMs": 13965,
+          "atUtc": "2026-09-12T18:05:07.695Z",
+          "event": "requestfinished",
+          "path": "/api/session/list",
+          "status": 200,
+          "timing": {
+            "queueOrBlockedMs": 0,
+            "dnsMs": null,
+            "connectMs": null,
+            "requestMs": 8071,
+            "downloadMs": 1,
+            "responseEndMs": 8072
+          }
+        },
+        {
+          "atMs": 14009,
+          "atUtc": "2026-09-12T18:05:07.739Z",
+          "event": "request",
+          "path": "/rooms/select",
+          "method": "POST"
+        },
+        {
+          "atMs": 14009,
+          "atUtc": "2026-09-12T18:05:07.739Z",
+          "event": "request",
+          "path": "/api/session/list",
+          "method": "POST"
+        },
+        {
+          "atMs": 14816,
+          "atUtc": "2026-09-12T18:05:08.546Z",
+          "event": "response",
+          "path": "/rooms/select",
+          "status": 200
+        },
+        {
+          "atMs": 14817,
+          "atUtc": "2026-09-12T18:05:08.547Z",
+          "event": "requestfinished",
+          "path": "/rooms/select",
+          "status": 200,
+          "timing": {
+            "queueOrBlockedMs": 0,
+            "dnsMs": null,
+            "connectMs": null,
+            "requestMs": 846,
+            "downloadMs": 1,
+            "responseEndMs": 847
+          }
+        }
+      ]
+    },
+    "state": {
+      "conversationWidth": 264,
+      "bubble": {
+        "className": "dsh-chatroom-human-bubble",
+        "width": 208,
+        "right": 288,
+        "scrollWidth": 208,
+        "clientWidth": 208,
+        "maxWidth": "100%",
+        "widthProperty": "208px",
+        "hasImageSlot": false,
+        "directChildren": [
+          {
+            "tag": "DIV",
+            "className": "",
+            "dataSlot": null,
+            "rect": {
+              "left": 93,
+              "right": 275,
+              "top": -618.265625,
+              "bottom": -364.75,
+              "width": 182,
+              "height": 253.515625
+            },
+            "width": "182px",
+            "maxWidth": "none",
+            "display": "block",
+            "hasImageSlot": false
+          }
+        ],
+        "ancestors": [
+          {
+            "tag": "DIV",
+            "className": "dsh-chatroom-human-bubble",
+            "role": null,
+            "dataSlot": null,
+            "dataDshAttributeNames": [],
+            "rect": {
+              "left": 80,
+              "right": 288,
+              "top": -643.265625,
+              "bottom": -339.75,
+              "width": 208,
+              "height": 303.515625
+            },
+            "width": "208px",
+            "maxWidth": "100%",
+            "display": "block"
+          },
+          {
+            "tag": "DIV",
+            "className": "dsh-chatroom-message-column",
+            "role": null,
+            "dataSlot": null,
+            "dataDshAttributeNames": [],
+            "rect": {
+              "left": 0,
+              "right": 0,
+              "top": 0,
+              "bottom": 0,
+              "width": 0,
+              "height": 0
+            },
+            "width": "auto",
+            "maxWidth": "100%",
+            "display": "contents"
+          },
+          {
+            "tag": "DIV",
+            "className": "dsh-chatroom-participant-message",
+            "role": null,
+            "dataSlot": null,
+            "dataDshAttributeNames": [
+              "data-dsh-chatroom-message-id",
+              "data-dsh-chatroom-own",
+              "data-dsh-chatroom-group-position"
+            ],
+            "rect": {
+              "left": 80,
+              "right": 288,
+              "top": -683.265625,
+              "bottom": -175.5625,
+              "width": 208,
+              "height": 507.703125
+            },
+            "width": "208px",
+            "maxWidth": "none",
+            "display": "grid"
+          },
+          {
+            "tag": "DIV",
+            "className": "",
+            "role": null,
+            "dataSlot": "conversation.chat.node",
+            "dataDshAttributeNames": [],
+            "rect": {
+              "left": 0,
+              "right": 0,
+              "top": 0,
+              "bottom": 0,
+              "width": 0,
+              "height": 0
+            },
+            "width": "auto",
+            "maxWidth": "none",
+            "display": "contents"
+          },
+          {
+            "tag": "DIV",
+            "className": "EvIC1a_flowItem",
+            "role": null,
+            "dataSlot": null,
+            "dataDshAttributeNames": [
+              "data-dsh-chatroom-group-sender",
+              "data-dsh-chatroom-group-time",
+              "data-dsh-chatroom-group-position",
+              "data-dsh-chatroom-action-group",
+              "data-dsh-chatroom-actions-visible",
+              "data-dsh-part"
+            ],
+            "rect": {
+              "left": 80,
+              "right": 288,
+              "top": -683.265625,
+              "bottom": -175.5625,
+              "width": 208,
+              "height": 507.703125
+            },
+            "width": "208px",
+            "maxWidth": "none",
+            "display": "block"
+          },
+          {
+            "tag": "DIV",
+            "className": "EvIC1a_column",
+            "role": null,
+            "dataSlot": null,
+            "dataDshAttributeNames": [],
+            "rect": {
+              "left": 80,
+              "right": 288,
+              "top": -1707,
+              "bottom": 1993.71875,
+              "width": 208,
+              "height": 3700.71875
+            },
+            "width": "208px",
+            "maxWidth": "100%",
+            "display": "flex"
+          },
+          {
+            "tag": "DIV",
+            "className": "EvIC1a_scroll",
+            "role": null,
+            "dataSlot": null,
+            "dataDshAttributeNames": [],
+            "rect": {
+              "left": 56,
+              "right": 312,
+              "top": -1723,
+              "bottom": 2009.71875,
+              "width": 256,
+              "height": 3732.71875
+            },
+            "width": "208px",
+            "maxWidth": "none",
+            "display": "block"
+          },
+          {
+            "tag": "DIV",
+            "className": "EvIC1a_root",
+            "role": null,
+            "dataSlot": null,
+            "dataDshAttributeNames": [],
+            "rect": {
+              "left": 56,
+              "right": 312,
+              "top": -1723,
+              "bottom": 2009.71875,
+              "width": 256,
+              "height": 3732.71875
+            },
+            "width": "256px",
+            "maxWidth": "none",
+            "display": "flex"
+          },
+          {
+            "tag": "DIV",
+            "className": "",
+            "role": null,
+            "dataSlot": "conversation.view",
+            "dataDshAttributeNames": [],
+            "rect": {
+              "left": 0,
+              "right": 0,
+              "top": 0,
+              "bottom": 0,
+              "width": 0,
+              "height": 0
+            },
+            "width": "auto",
+            "maxWidth": "none",
+            "display": "contents"
+          },
+          {
+            "tag": "DIV",
+            "className": "wSkVaW_viewArea",
+            "role": null,
+            "dataSlot": null,
+            "dataDshAttributeNames": [],
+            "rect": {
+              "left": 56,
+              "right": 312,
+              "top": -1723,
+              "bottom": 2009.71875,
+              "width": 256,
+              "height": 3732.71875
+            },
+            "width": "256px",
+            "maxWidth": "none",
+            "display": "flex"
+          },
+          {
+            "tag": "DIV",
+            "className": "",
+            "role": null,
+            "dataSlot": "conversation.session",
+            "dataDshAttributeNames": [],
+            "rect": {
+              "left": 0,
+              "right": 0,
+              "top": 0,
+              "bottom": 0,
+              "width": 0,
+              "height": 0
+            },
+            "width": "auto",
+            "maxWidth": "none",
+            "display": "contents"
+          },
+          {
+            "tag": "DIV",
+            "className": "wSkVaW_scrollBody",
+            "role": null,
+            "dataSlot": null,
+            "dataDshAttributeNames": [
+              "data-dsh-part"
+            ],
+            "rect": {
+              "left": 56,
+              "right": 320,
+              "top": 257,
+              "bottom": 720,
+              "width": 264,
+              "height": 463
+            },
+            "width": "256px",
+            "maxWidth": "none",
+            "display": "flex"
+          }
+        ],
+        "ratioOfConversation": 0.7879
+      }
+    },
+    "acceptance": {
+      "longBubbleAtLeast200": true,
+      "noHorizontalOverflow": true
+    },
+    "settingsFailure": "AssertionError [ERR_ASSERTION]: Settings switch became hidden after viewport change; inspect precheck ancestry\n\nfalse !== true\n",
+    "settings": {
+      "mode": "managed-rooms",
+      "auth": {
+        "sessionStatus": 200,
+        "enabled": true,
+        "authenticated": true,
+        "accountRole": "super-admin"
+      },
+      "manageableRooms": {
+        "status": 200,
+        "count": 24,
+        "requestFailed": false
+      },
+      "default": {
+        "desktop": {
+          "width": 1440,
+          "height": 900,
+          "documentWidth": 1440,
+          "bodyWidth": 1440,
+          "root": {
+            "left": 372,
+            "right": 1256,
+            "top": -616,
+            "bottom": 4377.34375,
+            "width": 884,
+            "height": 4993.34375,
+            "fontSize": 14,
+            "gridColumn": "auto",
+            "paddingLeft": 0,
+            "tag": "DIV",
+            "className": "dsh-chatroom-settings"
+          },
+          "card": {
+            "left": 372,
+            "right": 1256,
+            "top": 83.953125,
+            "bottom": 625.34375,
+            "width": 884,
+            "height": 541.390625,
+            "fontSize": 14,
+            "gridColumn": "1 / -1",
+            "paddingLeft": 16,
+            "tag": "SECTION",
+            "className": "dsh-chatroom-card dsh-chatroom-agent-settings-card"
+          },
+          "input": {
+            "left": 389,
+            "right": 665.65625,
+            "top": 346.953125,
+            "bottom": 384.953125,
+            "width": 276.65625,
+            "height": 38,
+            "fontSize": 14,
+            "gridColumn": "auto",
+            "paddingLeft": 10,
+            "tag": "INPUT",
+            "className": ""
+          },
+          "inputLabel": {
+            "left": 389,
+            "right": 665.65625,
+            "top": 319.953125,
+            "bottom": 384.953125,
+            "width": 276.65625,
+            "height": 65,
+            "fontSize": 14,
+            "gridColumn": "auto",
+            "paddingLeft": 0,
+            "tag": "LABEL",
+            "className": ""
+          },
+          "controls": [
+            {
+              "left": 405,
+              "right": 771,
+              "top": -201.046875,
+              "bottom": -165.046875,
+              "width": 366,
+              "height": 36,
+              "fontSize": 14,
+              "gridColumn": "auto",
+              "paddingLeft": 11,
+              "tag": "INPUT",
+              "className": ""
+            },
+            {
+              "left": 405,
+              "right": 771,
+              "top": -126.046875,
+              "bottom": -90.046875,
+              "width": 366,
+              "height": 36,
+              "fontSize": 14,
+              "gridColumn": "auto",
+              "paddingLeft": 11,
+              "tag": "INPUT",
+              "className": ""
+            },
+            {
+              "left": 405,
+              "right": 771,
+              "top": -51.046875,
+              "bottom": -15.046875,
+              "width": 366,
+              "height": 36,
+              "fontSize": 14,
+              "gridColumn": "auto",
+              "paddingLeft": 11,
+              "tag": "INPUT",
+              "className": ""
+            },
+            {
+              "left": 389,
+              "right": 1207,
+              "top": 176.953125,
+              "bottom": 200.953125,
+              "width": 818,
+              "height": 24,
+              "fontSize": 14,
+              "gridColumn": "auto",
+              "paddingLeft": 0,
+              "tag": "SELECT",
+              "className": ""
+            },
+            {
+              "left": 389,
+              "right": 665.65625,
+              "top": 346.953125,
+              "bottom": 384.953125,
+              "width": 276.65625,
+              "height": 38,
+              "fontSize": 14,
+              "gridColumn": "auto",
+              "paddingLeft": 10,
+              "tag": "INPUT",
+              "className": ""
+            },
+            {
+              "left": 675.65625,
+              "right": 952.328125,
+              "top": 346.953125,
+              "bottom": 384.953125,
+              "width": 276.671875,
+              "height": 38,
+              "fontSize": 14,
+              "gridColumn": "auto",
+              "paddingLeft": 10,
+              "tag": "INPUT",
+              "className": ""
+            },
+            {
+              "left": 402,
+              "right": 1225.984375,
+              "top": 460.953125,
+              "bottom": 560.953125,
+              "width": 823.984375,
+              "height": 100,
+              "fontSize": 14,
+              "gridColumn": "auto",
+              "paddingLeft": 2,
+              "tag": "TEXTAREA",
+              "className": ""
+            },
+            {
+              "left": 389,
+              "right": 665.65625,
+              "top": 471.953125,
+              "bottom": 509.953125,
+              "width": 276.65625,
+              "height": 38,
+              "fontSize": 14,
+              "gridColumn": "auto",
+              "paddingLeft": 10,
+              "tag": "SELECT",
+              "className": ""
+            },
+            {
+              "left": 675.65625,
+              "right": 952.328125,
+              "top": 471.953125,
+              "bottom": 509.953125,
+              "width": 276.671875,
+              "height": 38,
+              "fontSize": 14,
+              "gridColumn": "auto",
+              "paddingLeft": 10,
+              "tag": "SELECT",
+              "className": ""
+            },
+            {
+              "left": 389,
+              "right": 583,
+              "top": 756.34375,
+              "bottom": 794.34375,
+              "width": 194,
+              "height": 38,
+              "fontSize": 14,
+              "gridColumn": "auto",
+              "paddingLeft": 10,
+              "tag": "SELECT",
+              "className": ""
+            },
+            {
+              "left": 593,
+              "right": 787,
+              "top": 756.34375,
+              "bottom": 794.34375,
+              "width": 194,
+              "height": 38,
+              "fontSize": 14,
+              "gridColumn": "auto",
+              "paddingLeft": 10,
+              "tag": "SELECT",
+              "className": ""
+            },
+            {
+              "left": 854,
+              "right": 1226,
+              "top": 795.34375,
+              "bottom": 911.34375,
+              "width": 372,
+              "height": 116,
+              "fontSize": 14,
+              "gridColumn": "auto",
+              "paddingLeft": 11,
+              "tag": "TEXTAREA",
+              "className": ""
+            },
+            {
+              "left": 854,
+              "right": 1226,
+              "top": 976.34375,
+              "bottom": 1092.34375,
+              "width": 372,
+              "height": 116,
+              "fontSize": 14,
+              "gridColumn": "auto",
+              "paddingLeft": 11,
+              "tag": "TEXTAREA",
+              "className": ""
+            },
+            {
+              "left": 405,
+              "right": 807,
+              "top": 1287.34375,
+              "bottom": 1323.34375,
+              "width": 402,
+              "height": 36,
+              "fontSize": 14,
+              "gridColumn": "auto",
+              "paddingLeft": 11,
+              "tag": "INPUT",
+              "className": ""
+            },
+            {
+              "left": 821,
+              "right": 1223,
+              "top": 1287.34375,
+              "bottom": 1323.34375,
+              "width": 402,
+              "height": 36,
+              "fontSize": 14,
+              "gridColumn": "auto",
+              "paddingLeft": 11,
+              "tag": "INPUT",
+              "className": ""
+            },
+            {
+              "left": 405,
+              "right": 807,
+              "top": 1362.34375,
+              "bottom": 1398.34375,
+              "width": 402,
+              "height": 36,
+              "fontSize": 14,
+              "gridColumn": "auto",
+              "paddingLeft": 11,
+              "tag": "INPUT",
+              "className": ""
+            },
+            {
+              "left": 821,
+              "right": 1223,
+              "top": 1362.34375,
+              "bottom": 1398.34375,
+              "width": 402,
+              "height": 36,
+              "fontSize": 14,
+              "gridColumn": "auto",
+              "paddingLeft": 11,
+              "tag": "SELECT",
+              "className": ""
+            },
+            {
+              "left": 1058,
+              "right": 1176,
+              "top": 1786.34375,
+              "bottom": 1822.34375,
+              "width": 118,
+              "height": 36,
+              "fontSize": 14,
+              "gridColumn": "auto",
+              "paddingLeft": 11,
+              "tag": "SELECT",
+              "className": ""
+            },
+            {
+              "left": 1058,
+              "right": 1176,
+              "top": 1872.34375,
+              "bottom": 1908.34375,
+              "width": 118,
+              "height": 36,
+              "fontSize": 14,
+              "gridColumn": "auto",
+              "paddingLeft": 11,
+              "tag": "SELECT",
+              "className": ""
+            },
+            {
+              "left": 1058,
+              "right": 1176,
+              "top": 1958.34375,
+              "bottom": 1994.34375,
+              "width": 118,
+              "height": 36,
+              "fontSize": 14,
+              "gridColumn": "auto",
+              "paddingLeft": 11,
+              "tag": "SELECT",
+              "className": ""
+            },
+            {
+              "left": 1058,
+              "right": 1176,
+              "top": 2044.34375,
+              "bottom": 2080.34375,
+              "width": 118,
+              "height": 36,
+              "fontSize": 14,
+              "gridColumn": "auto",
+              "paddingLeft": 11,
+              "tag": "SELECT",
+              "className": ""
+            },
+            {
+              "left": 1058,
+              "right": 1176,
+              "top": 2130.34375,
+              "bottom": 2166.34375,
+              "width": 118,
+              "height": 36,
+              "fontSize": 14,
+              "gridColumn": "auto",
+              "paddingLeft": 11,
+              "tag": "SELECT",
+              "className": ""
+            },
+            {
+              "left": 1058,
+              "right": 1176,
+              "top": 2216.34375,
+              "bottom": 2252.34375,
+              "width": 118,
+              "height": 36,
+              "fontSize": 14,
+              "gridColumn": "auto",
+              "paddingLeft": 11,
+              "tag": "SELECT",
+              "className": ""
+            },
+            {
+              "left": 1058,
+              "right": 1176,
+              "top": 2302.34375,
+              "bottom": 2338.34375,
+              "width": 118,
+              "height": 36,
+              "fontSize": 14,
+              "gridColumn": "auto",
+              "paddingLeft": 11,
+              "tag": "SELECT",
+              "className": ""
+            },
+            {
+              "left": 1058,
+              "right": 1176,
+              "top": 2388.34375,
+              "bottom": 2424.34375,
+              "width": 118,
+              "height": 36,
+              "fontSize": 14,
+              "gridColumn": "auto",
+              "paddingLeft": 11,
+              "tag": "SELECT",
+              "className": ""
+            },
+            {
+              "left": 1058,
+              "right": 1176,
+              "top": 2474.34375,
+              "bottom": 2510.34375,
+              "width": 118,
+              "height": 36,
+              "fontSize": 14,
+              "gridColumn": "auto",
+              "paddingLeft": 11,
+              "tag": "SELECT",
+              "className": ""
+            },
+            {
+              "left": 1058,
+              "right": 1176,
+              "top": 2560.34375,
+              "bottom": 2596.34375,
+              "width": 118,
+              "height": 36,
+              "fontSize": 14,
+              "gridColumn": "auto",
+              "paddingLeft": 11,
+              "tag": "SELECT",
+              "className": ""
+            },
+            {
+              "left": 1058,
+              "right": 1176,
+              "top": 2646.34375,
+              "bottom": 2682.34375,
+              "width": 118,
+              "height": 36,
+              "fontSize": 14,
+              "gridColumn": "auto",
+              "paddingLeft": 11,
+              "tag": "SELECT",
+              "className": ""
+            },
+            {
+              "left": 1058,
+              "right": 1176,
+              "top": 2732.34375,
+              "bottom": 2768.34375,
+              "width": 118,
+              "height": 36,
+              "fontSize": 14,
+              "gridColumn": "auto",
+              "paddingLeft": 11,
+              "tag": "SELECT",
+              "className": ""
+            },
+            {
+              "left": 1058,
+              "right": 1176,
+              "top": 2818.34375,
+              "bottom": 2854.34375,
+              "width": 118,
+              "height": 36,
+              "fontSize": 14,
+              "gridColumn": "auto",
+              "paddingLeft": 11,
+              "tag": "SELECT",
+              "className": ""
+            },
+            {
+              "left": 1058,
+              "right": 1176,
+              "top": 2904.34375,
+              "bottom": 2940.34375,
+              "width": 118,
+              "height": 36,
+              "fontSize": 14,
+              "gridColumn": "auto",
+              "paddingLeft": 11,
+              "tag": "SELECT",
+              "className": ""
+            },
+            {
+              "left": 1058,
+              "right": 1176,
+              "top": 2990.34375,
+              "bottom": 3026.34375,
+              "width": 118,
+              "height": 36,
+              "fontSize": 14,
+              "gridColumn": "auto",
+              "paddingLeft": 11,
+              "tag": "SELECT",
+              "className": ""
+            },
+            {
+              "left": 1058,
+              "right": 1176,
+              "top": 3076.34375,
+              "bottom": 3112.34375,
+              "width": 118,
+              "height": 36,
+              "fontSize": 14,
+              "gridColumn": "auto",
+              "paddingLeft": 11,
+              "tag": "SELECT",
+              "className": ""
+            },
+            {
+              "left": 1058,
+              "right": 1176,
+              "top": 3162.34375,
+              "bottom": 3198.34375,
+              "width": 118,
+              "height": 36,
+              "fontSize": 14,
+              "gridColumn": "auto",
+              "paddingLeft": 11,
+              "tag": "SELECT",
+              "className": ""
+            },
+            {
+              "left": 1058,
+              "right": 1176,
+              "top": 3248.34375,
+              "bottom": 3284.34375,
+              "width": 118,
+              "height": 36,
+              "fontSize": 14,
+              "gridColumn": "auto",
+              "paddingLeft": 11,
+              "tag": "SELECT",
+              "className": ""
+            },
+            {
+              "left": 1058,
+              "right": 1176,
+              "top": 3334.34375,
+              "bottom": 3370.34375,
+              "width": 118,
+              "height": 36,
+              "fontSize": 14,
+              "gridColumn": "auto",
+              "paddingLeft": 11,
+              "tag": "SELECT",
+              "className": ""
+            },
+            {
+              "left": 1058,
+              "right": 1176,
+              "top": 3420.34375,
+              "bottom": 3456.34375,
+              "width": 118,
+              "height": 36,
+              "fontSize": 14,
+              "gridColumn": "auto",
+              "paddingLeft": 11,
+              "tag": "SELECT",
+              "className": ""
+            },
+            {
+              "left": 1058,
+              "right": 1176,
+              "top": 3506.34375,
+              "bottom": 3542.34375,
+              "width": 118,
+              "height": 36,
+              "fontSize": 14,
+              "gridColumn": "auto",
+              "paddingLeft": 11,
+              "tag": "SELECT",
+              "className": ""
+            },
+            {
+              "left": 1058,
+              "right": 1176,
+              "top": 3592.34375,
+              "bottom": 3628.34375,
+              "width": 118,
+              "height": 36,
+              "fontSize": 14,
+              "gridColumn": "auto",
+              "paddingLeft": 11,
+              "tag": "SELECT",
+              "className": ""
+            },
+            {
+              "left": 1058,
+              "right": 1176,
+              "top": 3678.34375,
+              "bottom": 3714.34375,
+              "width": 118,
+              "height": 36,
+              "fontSize": 14,
+              "gridColumn": "auto",
+              "paddingLeft": 11,
+              "tag": "SELECT",
+              "className": ""
+            },
+            {
+              "left": 389,
+              "right": 1239,
+              "top": 3848.34375,
+              "bottom": 3884.34375,
+              "width": 850,
+              "height": 36,
+              "fontSize": 14,
+              "gridColumn": "auto",
+              "paddingLeft": 11,
+              "tag": "SELECT",
+              "className": ""
+            },
+            {
+              "left": 405,
+              "right": 807,
+              "top": 3965.34375,
+              "bottom": 4001.34375,
+              "width": 402,
+              "height": 36,
+              "fontSize": 14,
+              "gridColumn": "auto",
+              "paddingLeft": 11,
+              "tag": "INPUT",
+              "className": ""
+            },
+            {
+              "left": 821,
+              "right": 1223,
+              "top": 3965.34375,
+              "bottom": 4001.34375,
+              "width": 402,
+              "height": 36,
+              "fontSize": 14,
+              "gridColumn": "auto",
+              "paddingLeft": 11,
+              "tag": "INPUT",
+              "className": ""
+            },
+            {
+              "left": 405,
+              "right": 807,
+              "top": 4040.34375,
+              "bottom": 4076.34375,
+              "width": 402,
+              "height": 36,
+              "fontSize": 14,
+              "gridColumn": "auto",
+              "paddingLeft": 11,
+              "tag": "INPUT",
+              "className": ""
+            },
+            {
+              "left": 821,
+              "right": 1223,
+              "top": 4040.34375,
+              "bottom": 4076.34375,
+              "width": 402,
+              "height": 36,
+              "fontSize": 14,
+              "gridColumn": "auto",
+              "paddingLeft": 11,
+              "tag": "INPUT",
+              "className": ""
+            },
+            {
+              "left": 405,
+              "right": 807,
+              "top": 4115.34375,
+              "bottom": 4151.34375,
+              "width": 402,
+              "height": 36,
+              "fontSize": 14,
+              "gridColumn": "auto",
+              "paddingLeft": 11,
+              "tag": "INPUT",
+              "className": ""
+            },
+            {
+              "left": 821,
+              "right": 1223,
+              "top": 4115.34375,
+              "bottom": 4151.34375,
+              "width": 402,
+              "height": 36,
+              "fontSize": 14,
+              "gridColumn": "auto",
+              "paddingLeft": 11,
+              "tag": "INPUT",
+              "className": ""
+            },
+            {
+              "left": 405,
+              "right": 807,
+              "top": 4190.34375,
+              "bottom": 4226.34375,
+              "width": 402,
+              "height": 36,
+              "fontSize": 14,
+              "gridColumn": "auto",
+              "paddingLeft": 11,
+              "tag": "INPUT",
+              "className": ""
+            },
+            {
+              "left": 821,
+              "right": 1223,
+              "top": 4190.34375,
+              "bottom": 4226.34375,
+              "width": 402,
+              "height": 36,
+              "fontSize": 14,
+              "gridColumn": "auto",
+              "paddingLeft": 11,
+              "tag": "INPUT",
+              "className": ""
+            }
+          ],
+          "controlLabels": [
+            {
+              "left": 405,
+              "right": 771,
+              "top": -228.046875,
+              "bottom": -165.046875,
+              "width": 366,
+              "height": 63,
+              "fontSize": 14,
+              "gridColumn": "auto",
+              "paddingLeft": 0,
+              "tag": "LABEL",
+              "className": ""
+            },
+            {
+              "left": 405,
+              "right": 771,
+              "top": -153.046875,
+              "bottom": -90.046875,
+              "width": 366,
+              "height": 63,
+              "fontSize": 14,
+              "gridColumn": "auto",
+              "paddingLeft": 0,
+              "tag": "LABEL",
+              "className": ""
+            },
+            {
+              "left": 405,
+              "right": 771,
+              "top": -78.046875,
+              "bottom": -15.046875,
+              "width": 366,
+              "height": 63,
+              "fontSize": 14,
+              "gridColumn": "auto",
+              "paddingLeft": 0,
+              "tag": "LABEL",
+              "className": ""
+            },
+            {
+              "left": 389,
+              "right": 1239,
+              "top": 156.953125,
+              "bottom": 220.953125,
+              "width": 850,
+              "height": 64,
+              "fontSize": 14,
+              "gridColumn": "auto",
+              "paddingLeft": 0,
+              "tag": "LABEL",
+              "className": ""
+            },
+            {
+              "left": 389,
+              "right": 665.65625,
+              "top": 319.953125,
+              "bottom": 384.953125,
+              "width": 276.65625,
+              "height": 65,
+              "fontSize": 14,
+              "gridColumn": "auto",
+              "paddingLeft": 0,
+              "tag": "LABEL",
+              "className": ""
+            },
+            {
+              "left": 675.65625,
+              "right": 952.328125,
+              "top": 319.953125,
+              "bottom": 384.953125,
+              "width": 276.671875,
+              "height": 65,
+              "fontSize": 14,
+              "gridColumn": "auto",
+              "paddingLeft": 0,
+              "tag": "LABEL",
+              "className": ""
+            },
+            {
+              "left": 402,
+              "right": 1225.984375,
+              "top": 433.953125,
+              "bottom": 560.953125,
+              "width": 823.984375,
+              "height": 127,
+              "fontSize": 14,
+              "gridColumn": "auto",
+              "paddingLeft": 0,
+              "tag": "LABEL",
+              "className": ""
+            },
+            {
+              "left": 389,
+              "right": 665.65625,
+              "top": 444.953125,
+              "bottom": 509.953125,
+              "width": 276.65625,
+              "height": 65,
+              "fontSize": 14,
+              "gridColumn": "auto",
+              "paddingLeft": 0,
+              "tag": "LABEL",
+              "className": ""
+            },
+            {
+              "left": 675.65625,
+              "right": 952.328125,
+              "top": 444.953125,
+              "bottom": 509.953125,
+              "width": 276.671875,
+              "height": 65,
+              "fontSize": 14,
+              "gridColumn": "auto",
+              "paddingLeft": 0,
+              "tag": "LABEL",
+              "className": ""
+            },
+            {
+              "left": 389,
+              "right": 583,
+              "top": 729.34375,
+              "bottom": 794.34375,
+              "width": 194,
+              "height": 65,
+              "fontSize": 14,
+              "gridColumn": "auto",
+              "paddingLeft": 0,
+              "tag": "LABEL",
+              "className": ""
+            },
+            {
+              "left": 593,
+              "right": 787,
+              "top": 729.34375,
+              "bottom": 794.34375,
+              "width": 194,
+              "height": 65,
+              "fontSize": 14,
+              "gridColumn": "auto",
+              "paddingLeft": 0,
+              "tag": "LABEL",
+              "className": ""
+            },
+            {
+              "left": 854,
+              "right": 1226,
+              "top": 768.34375,
+              "bottom": 935.34375,
+              "width": 372,
+              "height": 167,
+              "fontSize": 14,
+              "gridColumn": "auto",
+              "paddingLeft": 0,
+              "tag": "LABEL",
+              "className": ""
+            },
+            {
+              "left": 854,
+              "right": 1226,
+              "top": 949.34375,
+              "bottom": 1134.34375,
+              "width": 372,
+              "height": 185,
+              "fontSize": 14,
+              "gridColumn": "auto",
+              "paddingLeft": 0,
+              "tag": "LABEL",
+              "className": ""
+            },
+            {
+              "left": 405,
+              "right": 807,
+              "top": 1260.34375,
+              "bottom": 1323.34375,
+              "width": 402,
+              "height": 63,
+              "fontSize": 14,
+              "gridColumn": "auto",
+              "paddingLeft": 0,
+              "tag": "LABEL",
+              "className": ""
+            },
+            {
+              "left": 821,
+              "right": 1223,
+              "top": 1260.34375,
+              "bottom": 1323.34375,
+              "width": 402,
+              "height": 63,
+              "fontSize": 14,
+              "gridColumn": "auto",
+              "paddingLeft": 0,
+              "tag": "LABEL",
+              "className": ""
+            },
+            {
+              "left": 405,
+              "right": 807,
+              "top": 1335.34375,
+              "bottom": 1398.34375,
+              "width": 402,
+              "height": 63,
+              "fontSize": 14,
+              "gridColumn": "auto",
+              "paddingLeft": 0,
+              "tag": "LABEL",
+              "className": ""
+            },
+            {
+              "left": 821,
+              "right": 1223,
+              "top": 1335.34375,
+              "bottom": 1398.34375,
+              "width": 402,
+              "height": 63,
+              "fontSize": 14,
+              "gridColumn": "auto",
+              "paddingLeft": 0,
+              "tag": "LABEL",
+              "className": ""
+            },
+            {
+              "left": 389,
+              "right": 1239,
+              "top": 3820.34375,
+              "bottom": 3884.34375,
+              "width": 850,
+              "height": 64,
+              "fontSize": 14,
+              "gridColumn": "auto",
+              "paddingLeft": 0,
+              "tag": "LABEL",
+              "className": "dsh-chatroom-admin-field"
+            },
+            {
+              "left": 405,
+              "right": 807,
+              "top": 3938.34375,
+              "bottom": 4001.34375,
+              "width": 402,
+              "height": 63,
+              "fontSize": 14,
+              "gridColumn": "auto",
+              "paddingLeft": 0,
+              "tag": "LABEL",
+              "className": ""
+            },
+            {
+              "left": 821,
+              "right": 1223,
+              "top": 3938.34375,
+              "bottom": 4001.34375,
+              "width": 402,
+              "height": 63,
+              "fontSize": 14,
+              "gridColumn": "auto",
+              "paddingLeft": 0,
+              "tag": "LABEL",
+              "className": ""
+            },
+            {
+              "left": 405,
+              "right": 807,
+              "top": 4013.34375,
+              "bottom": 4076.34375,
+              "width": 402,
+              "height": 63,
+              "fontSize": 14,
+              "gridColumn": "auto",
+              "paddingLeft": 0,
+              "tag": "LABEL",
+              "className": ""
+            },
+            {
+              "left": 821,
+              "right": 1223,
+              "top": 4013.34375,
+              "bottom": 4076.34375,
+              "width": 402,
+              "height": 63,
+              "fontSize": 14,
+              "gridColumn": "auto",
+              "paddingLeft": 0,
+              "tag": "LABEL",
+              "className": ""
+            },
+            {
+              "left": 405,
+              "right": 807,
+              "top": 4088.34375,
+              "bottom": 4151.34375,
+              "width": 402,
+              "height": 63,
+              "fontSize": 14,
+              "gridColumn": "auto",
+              "paddingLeft": 0,
+              "tag": "LABEL",
+              "className": ""
+            },
+            {
+              "left": 821,
+              "right": 1223,
+              "top": 4088.34375,
+              "bottom": 4151.34375,
+              "width": 402,
+              "height": 63,
+              "fontSize": 14,
+              "gridColumn": "auto",
+              "paddingLeft": 0,
+              "tag": "LABEL",
+              "className": ""
+            },
+            {
+              "left": 405,
+              "right": 807,
+              "top": 4163.34375,
+              "bottom": 4226.34375,
+              "width": 402,
+              "height": 63,
+              "fontSize": 14,
+              "gridColumn": "auto",
+              "paddingLeft": 0,
+              "tag": "LABEL",
+              "className": ""
+            },
+            {
+              "left": 821,
+              "right": 1223,
+              "top": 4163.34375,
+              "bottom": 4226.34375,
+              "width": 402,
+              "height": 63,
+              "fontSize": 14,
+              "gridColumn": "auto",
+              "paddingLeft": 0,
+              "tag": "LABEL",
+              "className": ""
+            }
+          ],
+          "switchLabel": {
+            "left": 962.328125,
+            "right": 1062.328125,
+            "top": 455.453125,
+            "bottom": 499.453125,
+            "width": 100,
+            "height": 44,
+            "fontSize": 12,
+            "gridColumn": "auto",
+            "paddingLeft": 3,
+            "tag": "LABEL",
+            "className": "dsh-chatroom-switch"
+          },
+          "track": {
+            "left": 965.328125,
+            "right": 1003.328125,
+            "top": 466.453125,
+            "bottom": 488.453125,
+            "width": 38,
+            "height": 22,
+            "fontSize": 12,
+            "gridColumn": "auto",
+            "paddingLeft": 0,
+            "tag": "SPAN",
+            "className": ""
+          },
+          "trackHit": true,
+          "switchLabelHit": true
+        },
+        "narrow": {
+          "precheck": true,
+          "width": 390,
+          "documentWidth": 390,
+          "scrollX": 0,
+          "scrollY": 0,
+          "visibilityState": "visible",
+          "ancestry": [
+            {
+              "tag": "DIV",
+              "className": "VOzbGW_panel",
+              "slot": null,
+              "side": null,
+              "width": 0,
+              "height": 0,
+              "display": "flex",
+              "visibility": "visible",
+              "inlineStyle": null,
+              "hidden": false,
+              "markers": [
+                [
+                  "data-dsh-surface",
+                  "settings"
+                ]
+              ],
+              "displayRules": []
+            },
+            {
+              "tag": "DIV",
+              "className": "VOzbGW_overlay",
+              "slot": null,
+              "side": null,
+              "width": 0,
+              "height": 0,
+              "display": "flex",
+              "visibility": "visible",
+              "inlineStyle": null,
+              "hidden": false,
+              "markers": [],
+              "displayRules": []
+            },
+            {
+              "tag": "DIV",
+              "className": "",
+              "slot": "sidebar.settings",
+              "side": null,
+              "width": 0,
+              "height": 0,
+              "display": "contents",
+              "visibility": "visible",
+              "inlineStyle": "display: contents;",
+              "hidden": false,
+              "markers": [],
+              "displayRules": []
+            },
+            {
+              "tag": "DIV",
+              "className": "hHd-Xa_settingsArea",
+              "slot": null,
+              "side": null,
+              "width": 0,
+              "height": 0,
+              "display": "block",
+              "visibility": "visible",
+              "inlineStyle": null,
+              "hidden": false,
+              "markers": [],
+              "displayRules": []
+            },
+            {
+              "tag": "DIV",
+              "className": "hHd-Xa_footArea",
+              "slot": null,
+              "side": null,
+              "width": 0,
+              "height": 0,
+              "display": "none",
+              "visibility": "visible",
+              "inlineStyle": null,
+              "hidden": false,
+              "markers": [],
+              "displayRules": [
+                {
+                  "selector": "[data-dsh-frame][data-sidebar-collapsed] [data-pane=\"sidebar\"] > [data-slot=\"sidebar\"] > :first-child > :not(:first-child), [data-dsh-frame][data-sidebar-collapsed] [data-pane=\"sidebar\"] > [data-slot=\"sidebar\"] > :first-child > :first-child > :not([data-dsh-responsive-part=\"sidebar-toggle\"])",
+                  "display": "none",
+                  "priority": "important"
+                },
+                {
+                  "selector": ".hHd-Xa_footArea",
+                  "display": "flex",
+                  "priority": ""
+                }
+              ]
+            },
+            {
+              "tag": "DIV",
+              "className": "hHd-Xa_root hHd-Xa_fading hHd-Xa_quietBars",
+              "slot": null,
+              "side": null,
+              "width": 280,
+              "height": 844,
+              "display": "flex",
+              "visibility": "visible",
+              "inlineStyle": "width: 280px;",
+              "hidden": false,
+              "markers": [],
+              "displayRules": []
+            },
+            {
+              "tag": "DIV",
+              "className": "",
+              "slot": "sidebar",
+              "side": null,
+              "width": 0,
+              "height": 0,
+              "display": "contents",
+              "visibility": "visible",
+              "inlineStyle": "display: contents;",
+              "hidden": false,
+              "markers": [
+                [
+                  "data-dsh-surface",
+                  "sidebar"
+                ]
+              ],
+              "displayRules": []
+            },
+            {
+              "tag": "DIV",
+              "className": "pI_x6G_sidebarCol",
+              "slot": null,
+              "side": null,
+              "width": 52,
+              "height": 844,
+              "display": "block",
+              "visibility": "visible",
+              "inlineStyle": null,
+              "hidden": false,
+              "markers": [],
+              "displayRules": []
+            },
+            {
+              "tag": "DIV",
+              "className": "pI_x6G_frame",
+              "slot": null,
+              "side": null,
+              "width": 390,
+              "height": 844,
+              "display": "grid",
+              "visibility": "visible",
+              "inlineStyle": "grid-template-columns: 56px minmax(0px, 1fr) 0px;",
+              "hidden": false,
+              "markers": [
+                [
+                  "data-dsh-frame",
+                  ""
+                ]
+              ],
+              "displayRules": []
+            },
+            {
+              "tag": "DIV",
+              "className": "",
+              "slot": "root",
+              "side": null,
+              "width": 0,
+              "height": 0,
+              "display": "contents",
+              "visibility": "visible",
+              "inlineStyle": "display: contents;",
+              "hidden": false,
+              "markers": [
+                [
+                  "data-dsh-surface",
+                  "root"
+                ]
+              ],
+              "displayRules": []
+            },
+            {
+              "tag": "DIV",
+              "className": "",
+              "slot": null,
+              "side": null,
+              "width": 390,
+              "height": 844,
+              "display": "block",
+              "visibility": "visible",
+              "inlineStyle": null,
+              "hidden": false,
+              "markers": [],
+              "displayRules": []
+            },
+            {
+              "tag": "BODY",
+              "className": "",
+              "slot": null,
+              "side": null,
+              "width": 390,
+              "height": 844,
+              "display": "block",
+              "visibility": "visible",
+              "inlineStyle": "--dsh-content-font-size: 14px; --dsw-skin-scrim: 0; --dsh-input-card-blur: 10px; --dsh-skin-bubble-alpha: 0.5; background-color: transparent;",
+              "hidden": false,
+              "markers": [
+                [
+                  "data-dsh-skin-center",
+                  ""
+                ],
+                [
+                  "data-dsh-sidebar-collapsed",
+                  ""
+                ],
+                [
+                  "data-dsh-backdrop-active",
+                  "true"
+                ],
+                [
+                  "data-dsh-conversation-content",
+                  "true"
+                ]
+              ],
+              "displayRules": []
+            },
+            {
+              "tag": "HTML",
+              "className": "",
+              "slot": null,
+              "side": null,
+              "width": 390,
+              "height": 844,
+              "display": "block",
+              "visibility": "visible",
+              "inlineStyle": "color-scheme: light; --dsh-composer-height: 198px; --dsh-sidebar-width: 0px; --dsh-sidebar-height: 0px;",
+              "hidden": false,
+              "markers": [
+                [
+                  "data-dsh-skin",
+                  "blue-fantasy"
+                ],
+                [
+                  "data-dsh-chatroom-installed",
+                  ""
+                ],
+                [
+                  "data-dsh-backdrop-active",
+                  "true"
+                ],
+                [
+                  "data-dsh-chatroom-active",
+                  ""
+                ],
+                [
+                  "data-dsh-conversation-content",
+                  "true"
+                ]
+              ],
+              "displayRules": []
+            }
+          ],
+          "dialogs": [
+            {
+              "tag": "DIV",
+              "ariaLabel": null,
+              "ariaHidden": null,
+              "modal": false,
+              "inert": false,
+              "parentInert": false
+            }
+          ],
+          "overflowing": []
+        }
+      }
+    }
+  },
+  "error": "Error: Playwright browser close timed out after 15000ms"
+}

@@ -1,0 +1,200 @@
+{
+  "version": "1.5.0-codex.rc1.42",
+  "at": "2026-09-12T04:47:07.668Z",
+  "mode": "public-super-admin-files-slot-probe",
+  "scope": [
+    "fresh headless context",
+    "existing super-admin account and 全国可飞 room",
+    "deep-link and non-sensitive native details-slot observation only",
+    "no click, gallery, message, input, upload, AI request, role change, or setting mutation"
+  ],
+  "passed": true,
+  "readbacks": {
+    "deepLink": {
+      "requested": true,
+      "requestSent": true,
+      "active": true,
+      "nativeSelected": true,
+      "selectedNativeTitle": true,
+      "timeline": [
+        {
+          "atMs": 5413,
+          "atUtc": "2026-09-12T04:47:15.724Z",
+          "event": "request",
+          "path": "/api/session/list",
+          "method": "POST"
+        },
+        {
+          "atMs": 10791,
+          "atUtc": "2026-09-12T04:47:21.102Z",
+          "event": "response",
+          "path": "/api/session/list",
+          "status": 200
+        },
+        {
+          "atMs": 10792,
+          "atUtc": "2026-09-12T04:47:21.103Z",
+          "event": "requestfinished",
+          "path": "/api/session/list",
+          "status": 200,
+          "timing": {
+            "queueOrBlockedMs": 13,
+            "dnsMs": null,
+            "connectMs": null,
+            "requestMs": 5373,
+            "downloadMs": 17,
+            "responseEndMs": 5403
+          }
+        },
+        {
+          "atMs": 10866,
+          "atUtc": "2026-09-12T04:47:21.177Z",
+          "event": "request",
+          "path": "/rooms/select",
+          "method": "POST"
+        },
+        {
+          "atMs": 10867,
+          "atUtc": "2026-09-12T04:47:21.178Z",
+          "event": "request",
+          "path": "/api/session/list",
+          "method": "POST"
+        },
+        {
+          "atMs": 11594,
+          "atUtc": "2026-09-12T04:47:21.905Z",
+          "event": "response",
+          "path": "/rooms/select",
+          "status": 200
+        },
+        {
+          "atMs": 11599,
+          "atUtc": "2026-09-12T04:47:21.910Z",
+          "event": "requestfinished",
+          "path": "/rooms/select",
+          "status": 200,
+          "timing": {
+            "queueOrBlockedMs": 0,
+            "dnsMs": null,
+            "connectMs": null,
+            "requestMs": 793,
+            "downloadMs": 2,
+            "responseEndMs": 796
+          }
+        }
+      ]
+    },
+    "workbench": {
+      "files": [
+        {
+          "tag": "DIV",
+          "role": null,
+          "ariaLabel": null,
+          "title": null,
+          "rect": {
+            "left": 1451.080078125,
+            "right": 1954.080078125,
+            "top": 0,
+            "bottom": 35,
+            "width": 503,
+            "height": 35
+          },
+          "panel": true,
+          "pane": "pane:1"
+        },
+        {
+          "tag": "DIV",
+          "role": null,
+          "ariaLabel": null,
+          "title": null,
+          "rect": {
+            "left": 1451.080078125,
+            "right": 1954.080078125,
+            "top": 0,
+            "bottom": 34,
+            "width": 503,
+            "height": 34
+          },
+          "panel": true,
+          "pane": "pane:1"
+        },
+        {
+          "tag": "DIV",
+          "role": null,
+          "ariaLabel": null,
+          "title": "Files",
+          "rect": {
+            "left": 1451.080078125,
+            "right": 1530.080078125,
+            "top": 0,
+            "bottom": 34,
+            "width": 79,
+            "height": 34
+          },
+          "panel": true,
+          "pane": "pane:1"
+        },
+        {
+          "tag": "SPAN",
+          "role": null,
+          "ariaLabel": null,
+          "title": null,
+          "rect": {
+            "left": 1479.080078125,
+            "right": 1503.080078125,
+            "top": 8,
+            "bottom": 26,
+            "width": 24,
+            "height": 18
+          },
+          "panel": true,
+          "pane": "pane:1"
+        }
+      ],
+      "panels": [
+        {
+          "rect": {
+            "left": 1450.080078125,
+            "right": 1954.080078125,
+            "top": 0,
+            "bottom": 900,
+            "width": 504,
+            "height": 900
+          },
+          "pane": null
+        },
+        {
+          "rect": {
+            "left": 280,
+            "right": 1440,
+            "top": 904.4199829101562,
+            "bottom": 1125.419921875,
+            "width": 1160,
+            "height": 220.99993896484375
+          },
+          "pane": null
+        }
+      ]
+    },
+    "details": [
+      {
+        "visible": false,
+        "rect": {
+          "left": 0,
+          "right": 0,
+          "top": 0,
+          "bottom": 0,
+          "width": 0,
+          "height": 0
+        },
+        "dataState": null,
+        "ariaExpanded": null,
+        "childTags": [
+          "DIV"
+        ],
+        "hasFilesExactText": false,
+        "text": "[present:nonempty;length:16]"
+      }
+    ]
+  }
+}

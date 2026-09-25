@@ -1,0 +1,9 @@
+# rc1.43 long-bubble and lifecycle candidate boundary
+
+Version: `1.5.0-codex.rc1.43`. Source is frozen and full CI passed typecheck/build, 54 unit files / 470 tests and 15 browser files / 79 tests (`RC143-check-ci-r3.log`). It stops long human-message bubbles from subtracting their already-reserved avatar layout space a second time. Sidebar disposal now sets its disposed guard first; queued reconciliation/scheduling and late private-directory continuations short-circuit afterwards. Focused sidebar evidence is 33 passing tests plus typecheck. The retained first full-CI receipt (`RC143-check-ci.log`) failed: 53/54 unit files and 469/470 tests passed, while `ui.test.tsx` super-administrator coverage exceeded its 5s timeout (6511ms); fork-termination timeouts also appeared. r2 was cut off by its hard-coded 120s executor guard after browser output. r3 naturally exited after approximately ten minutes of post-summary teardown. Immutable stage has matching bundle hashes in two directories; its packaged README is a stage-time snapshot. Production remains rc1.42. Isolated execution is in progress; no rc1.43 health, isolated, public, IAB, or reconnect result is claimed.
+
+## Retained rc1.42 evidence and limits
+
+rc1.42 passed full CI (54 unit files / 468 tests; 15 browser files / 78 tests). Production activated through the 04:40:47 stop / 04:41:07 start overlay without a PID change; ready health passed. Partial public coverage passed member `403` boundaries, three gallery items, reconnect, and two catalogue reads.
+
+Failures remain retained: QQ 320px measured 162px; the Files locator required a harness correction; a targeted deep link timed out at 30 seconds; and original IAB read/screenshot focus timed out (`RC142-IAB-live`). Manual recovery is not root-cause or full-acceptance evidence.

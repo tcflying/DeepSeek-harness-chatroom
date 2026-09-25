@@ -1,0 +1,917 @@
+{
+  "at": "2026-09-11T13:51:05.240Z",
+  "version": "1.5.0-codex.rc1.26",
+  "overlaySha256": "287ed374b09d83102b8ac85b8ddb1d37b6030fdced6dcd2c40f7b443d2b09a98",
+  "bundles": [
+    {
+      "name": "dist/index.js",
+      "bytes": 507822,
+      "sha256": "974d161f68b751589a0cf09c37b7f6bdfeb489dad0f277a666157a96fd60221d"
+    },
+    {
+      "name": "dist/client.js",
+      "bytes": 1119788,
+      "sha256": "28992ce98fc968520b214e16a6ad0450eb7ffe2175f0dad6ea58c9c3a2ce2c2a"
+    }
+  ],
+  "health": {
+    "ready": true,
+    "diagnostics": {
+      "enabled": true,
+      "healthy": true,
+      "dropped": 0
+    }
+  },
+  "clientUrl": "/plugins/??deepseek-harness-chatroom/client.js&rev=57cdb04781389ddc-52",
+  "clients": [
+    {
+      "base": "http://127.0.0.1:3181",
+      "status": 200,
+      "bytes": 1119852,
+      "sha256": "c794b9ab7d7ad511017f9e94c9a5d8d2b124483d62b3ac9d38118e0e451c52db"
+    },
+    {
+      "base": "https://talk.opcvip.net",
+      "status": 200,
+      "bytes": 1119852,
+      "sha256": "c794b9ab7d7ad511017f9e94c9a5d8d2b124483d62b3ac9d38118e0e451c52db"
+    }
+  ],
+  "sse": {
+    "at": "2026-09-11T12:46:00.473Z",
+    "duration": 185000,
+    "results": [
+      {
+        "base": "http://127.0.0.1:3181",
+        "stream": "notifications",
+        "frames": [
+          {
+            "ms": 158,
+            "type": "heartbeat",
+            "bytes": 93
+          },
+          {
+            "ms": 15138,
+            "type": "heartbeat",
+            "bytes": 93
+          },
+          {
+            "ms": 30152,
+            "type": "heartbeat",
+            "bytes": 93
+          },
+          {
+            "ms": 45155,
+            "type": "heartbeat",
+            "bytes": 93
+          },
+          {
+            "ms": 60169,
+            "type": "heartbeat",
+            "bytes": 93
+          },
+          {
+            "ms": 75175,
+            "type": "heartbeat",
+            "bytes": 93
+          },
+          {
+            "ms": 90197,
+            "type": "heartbeat",
+            "bytes": 93
+          },
+          {
+            "ms": 105198,
+            "type": "heartbeat",
+            "bytes": 93
+          },
+          {
+            "ms": 120203,
+            "type": "heartbeat",
+            "bytes": 93
+          },
+          {
+            "ms": 135211,
+            "type": "heartbeat",
+            "bytes": 93
+          },
+          {
+            "ms": 150218,
+            "type": "heartbeat",
+            "bytes": 93
+          },
+          {
+            "ms": 165223,
+            "type": "heartbeat",
+            "bytes": 93
+          },
+          {
+            "ms": 180226,
+            "type": "heartbeat",
+            "bytes": 93
+          }
+        ],
+        "bytes": 1235,
+        "status": 200,
+        "headersMs": 148,
+        "type": "text/event-stream; charset=utf-8",
+        "operationId": "e7a3c24d-c92e-43af-b33e-9c05dd353ec8",
+        "error": "probe-complete",
+        "elapsedMs": 185007
+      },
+      {
+        "base": "http://127.0.0.1:3181",
+        "stream": "room",
+        "frames": [
+          {
+            "ms": 170,
+            "type": "heartbeat",
+            "bytes": 93
+          },
+          {
+            "ms": 170,
+            "type": "data",
+            "bytes": 1208
+          },
+          {
+            "ms": 170,
+            "type": "data",
+            "bytes": 423
+          },
+          {
+            "ms": 170,
+            "type": "data",
+            "bytes": 423
+          },
+          {
+            "ms": 8175,
+            "type": "data",
+            "bytes": 423
+          },
+          {
+            "ms": 15180,
+            "type": "heartbeat",
+            "bytes": 93
+          },
+          {
+            "ms": 30192,
+            "type": "heartbeat",
+            "bytes": 93
+          },
+          {
+            "ms": 45195,
+            "type": "heartbeat",
+            "bytes": 93
+          },
+          {
+            "ms": 60210,
+            "type": "heartbeat",
+            "bytes": 93
+          },
+          {
+            "ms": 75216,
+            "type": "heartbeat",
+            "bytes": 93
+          },
+          {
+            "ms": 90229,
+            "type": "heartbeat",
+            "bytes": 93
+          },
+          {
+            "ms": 105237,
+            "type": "heartbeat",
+            "bytes": 93
+          },
+          {
+            "ms": 120246,
+            "type": "heartbeat",
+            "bytes": 93
+          },
+          {
+            "ms": 135252,
+            "type": "heartbeat",
+            "bytes": 93
+          },
+          {
+            "ms": 150258,
+            "type": "heartbeat",
+            "bytes": 93
+          },
+          {
+            "ms": 165267,
+            "type": "heartbeat",
+            "bytes": 93
+          },
+          {
+            "ms": 180268,
+            "type": "heartbeat",
+            "bytes": 93
+          }
+        ],
+        "bytes": 3720,
+        "status": 200,
+        "headersMs": 170,
+        "type": "text/event-stream; charset=utf-8",
+        "operationId": "2eef3c0b-d3b7-427d-8e3b-22c0ab896f3c",
+        "error": "probe-complete",
+        "elapsedMs": 185001
+      },
+      {
+        "base": "http://127.0.0.1:3185",
+        "stream": "notifications",
+        "frames": [
+          {
+            "ms": 95,
+            "type": "heartbeat",
+            "bytes": 93
+          },
+          {
+            "ms": 15090,
+            "type": "heartbeat",
+            "bytes": 93
+          },
+          {
+            "ms": 30103,
+            "type": "heartbeat",
+            "bytes": 93
+          },
+          {
+            "ms": 45106,
+            "type": "heartbeat",
+            "bytes": 93
+          },
+          {
+            "ms": 60105,
+            "type": "heartbeat",
+            "bytes": 93
+          },
+          {
+            "ms": 75111,
+            "type": "heartbeat",
+            "bytes": 93
+          },
+          {
+            "ms": 90134,
+            "type": "heartbeat",
+            "bytes": 93
+          },
+          {
+            "ms": 105134,
+            "type": "heartbeat",
+            "bytes": 93
+          },
+          {
+            "ms": 120139,
+            "type": "heartbeat",
+            "bytes": 93
+          },
+          {
+            "ms": 135147,
+            "type": "heartbeat",
+            "bytes": 93
+          },
+          {
+            "ms": 150154,
+            "type": "heartbeat",
+            "bytes": 93
+          },
+          {
+            "ms": 165159,
+            "type": "heartbeat",
+            "bytes": 93
+          },
+          {
+            "ms": 180162,
+            "type": "heartbeat",
+            "bytes": 93
+          }
+        ],
+        "bytes": 1235,
+        "status": 200,
+        "headersMs": 95,
+        "type": "text/event-stream; charset=utf-8",
+        "operationId": "5cddfeb1-a03e-4a40-b530-cfe6d6432aab",
+        "error": "probe-complete",
+        "elapsedMs": 185004
+      },
+      {
+        "base": "http://127.0.0.1:3185",
+        "stream": "room",
+        "frames": [
+          {
+            "ms": 144,
+            "type": "heartbeat",
+            "bytes": 93
+          },
+          {
+            "ms": 144,
+            "type": "data",
+            "bytes": 1207
+          },
+          {
+            "ms": 144,
+            "type": "data",
+            "bytes": 423
+          },
+          {
+            "ms": 8148,
+            "type": "data",
+            "bytes": 423
+          },
+          {
+            "ms": 15153,
+            "type": "heartbeat",
+            "bytes": 93
+          },
+          {
+            "ms": 30165,
+            "type": "heartbeat",
+            "bytes": 93
+          },
+          {
+            "ms": 45169,
+            "type": "heartbeat",
+            "bytes": 93
+          },
+          {
+            "ms": 60183,
+            "type": "heartbeat",
+            "bytes": 93
+          },
+          {
+            "ms": 75189,
+            "type": "heartbeat",
+            "bytes": 93
+          },
+          {
+            "ms": 90203,
+            "type": "heartbeat",
+            "bytes": 93
+          },
+          {
+            "ms": 105210,
+            "type": "heartbeat",
+            "bytes": 93
+          },
+          {
+            "ms": 120219,
+            "type": "heartbeat",
+            "bytes": 93
+          },
+          {
+            "ms": 135225,
+            "type": "heartbeat",
+            "bytes": 93
+          },
+          {
+            "ms": 150231,
+            "type": "heartbeat",
+            "bytes": 93
+          },
+          {
+            "ms": 165240,
+            "type": "heartbeat",
+            "bytes": 93
+          },
+          {
+            "ms": 180241,
+            "type": "heartbeat",
+            "bytes": 93
+          },
+          {
+            "ms": 184975,
+            "type": "data",
+            "bytes": 423
+          }
+        ],
+        "bytes": 3719,
+        "status": 200,
+        "headersMs": 144,
+        "type": "text/event-stream; charset=utf-8",
+        "operationId": "ba750767-b8e0-4dac-96a9-ee954367d0d8",
+        "error": "probe-complete",
+        "elapsedMs": 185007
+      },
+      {
+        "base": "https://talk.opcvip.net",
+        "stream": "notifications",
+        "frames": [
+          {
+            "ms": 496,
+            "type": "heartbeat",
+            "bytes": 93
+          },
+          {
+            "ms": 15507,
+            "type": "heartbeat",
+            "bytes": 93
+          },
+          {
+            "ms": 30519,
+            "type": "heartbeat",
+            "bytes": 93
+          },
+          {
+            "ms": 45528,
+            "type": "heartbeat",
+            "bytes": 93
+          },
+          {
+            "ms": 60555,
+            "type": "heartbeat",
+            "bytes": 93
+          },
+          {
+            "ms": 75558,
+            "type": "heartbeat",
+            "bytes": 93
+          },
+          {
+            "ms": 90610,
+            "type": "heartbeat",
+            "bytes": 93
+          },
+          {
+            "ms": 105615,
+            "type": "heartbeat",
+            "bytes": 93
+          },
+          {
+            "ms": 120620,
+            "type": "heartbeat",
+            "bytes": 93
+          },
+          {
+            "ms": 135625,
+            "type": "heartbeat",
+            "bytes": 93
+          },
+          {
+            "ms": 150634,
+            "type": "heartbeat",
+            "bytes": 93
+          },
+          {
+            "ms": 165644,
+            "type": "heartbeat",
+            "bytes": 93
+          },
+          {
+            "ms": 180652,
+            "type": "heartbeat",
+            "bytes": 93
+          }
+        ],
+        "bytes": 1235,
+        "status": 200,
+        "headersMs": 495,
+        "type": "text/event-stream; charset=utf-8",
+        "operationId": "d230b183-eeea-4799-baca-f0f97f07163d",
+        "error": "probe-complete",
+        "elapsedMs": 185007
+      },
+      {
+        "base": "https://talk.opcvip.net",
+        "stream": "room",
+        "frames": [
+          {
+            "ms": 8341,
+            "type": "heartbeat",
+            "bytes": 93
+          },
+          {
+            "ms": 8341,
+            "type": "data",
+            "bytes": 1207
+          },
+          {
+            "ms": 8341,
+            "type": "data",
+            "bytes": 423
+          },
+          {
+            "ms": 23335,
+            "type": "heartbeat",
+            "bytes": 93
+          },
+          {
+            "ms": 38334,
+            "type": "heartbeat",
+            "bytes": 93
+          },
+          {
+            "ms": 53349,
+            "type": "heartbeat",
+            "bytes": 93
+          },
+          {
+            "ms": 68361,
+            "type": "heartbeat",
+            "bytes": 93
+          },
+          {
+            "ms": 83369,
+            "type": "heartbeat",
+            "bytes": 93
+          },
+          {
+            "ms": 98375,
+            "type": "heartbeat",
+            "bytes": 93
+          },
+          {
+            "ms": 113387,
+            "type": "heartbeat",
+            "bytes": 93
+          },
+          {
+            "ms": 128384,
+            "type": "heartbeat",
+            "bytes": 93
+          },
+          {
+            "ms": 143399,
+            "type": "heartbeat",
+            "bytes": 93
+          },
+          {
+            "ms": 158403,
+            "type": "heartbeat",
+            "bytes": 93
+          },
+          {
+            "ms": 173411,
+            "type": "heartbeat",
+            "bytes": 93
+          }
+        ],
+        "bytes": 2774,
+        "status": 200,
+        "headersMs": 8341,
+        "type": "text/event-stream; charset=utf-8",
+        "operationId": "e5273d3f-cead-4fea-92e7-e4de520dace2",
+        "error": "probe-complete",
+        "elapsedMs": 185002
+      }
+    ]
+  },
+  "browser": {
+    "ai": {
+      "addTop": 609.2999877929688,
+      "at": "2026-09-11T13:26:12.446Z",
+      "controls": [
+        {
+          "fontSize": "16px",
+          "height": 42
+        },
+        {
+          "fontSize": "16px",
+          "height": 42
+        },
+        {
+          "fontSize": "16px",
+          "height": 42
+        },
+        {
+          "fontSize": "16px",
+          "height": 42
+        }
+      ],
+      "files": true,
+      "hit": true,
+      "labelBottom": 534.2000122070312,
+      "loadedMembers": true,
+      "overflow": false,
+      "rect": {
+        "bottom": 814.3000335693359,
+        "height": 676.6000366210938,
+        "left": 103.20000457763672,
+        "right": 823.2000045776367,
+        "top": 137.6999969482422,
+        "width": 720,
+        "x": 103.20000457763672,
+        "y": 137.6999969482422
+      },
+      "title": "AI 成员",
+      "topLayer": true
+    },
+    "group": {
+      "at": "2026-09-11T13:35:43.265Z",
+      "files": true,
+      "hit": true,
+      "loaded": true,
+      "overflow": false,
+      "rect": {
+        "bottom": 919.8999900817872,
+        "height": 887.7999877929688,
+        "left": 103.20000457763672,
+        "right": 823.2000045776367,
+        "top": 32.10000228881836,
+        "width": 720,
+        "x": 103.20000457763672,
+        "y": 32.10000228881836
+      },
+      "title": "群管理",
+      "topLayer": true
+    },
+    "nativeGroup": {
+      "at": "2026-09-11T13:04:06.946Z",
+      "files": true,
+      "hit": true,
+      "overflow": false,
+      "rect": {
+        "bottom": 928.3000373840332,
+        "height": 904.6000366210938,
+        "left": 103.20000457763672,
+        "right": 823.2000045776367,
+        "top": 23.700000762939453,
+        "width": 720,
+        "x": 103.20000457763672,
+        "y": 23.700000762939453
+      },
+      "skin": null,
+      "topLayer": true
+    },
+    "freshLoad": {
+      "at": "2026-09-11T13:44:33.198Z",
+      "drafts": [
+        ""
+      ],
+      "historyLoading": false,
+      "imageCount": 1,
+      "state": {
+        "native": "connected",
+        "notifications": "online",
+        "room": "online",
+        "state": "connected",
+        "wide": "false"
+      },
+      "startedAt": "2026-09-11T13:42:18.618Z",
+      "forcedConnectionWarnings": []
+    },
+    "reconnect": {
+      "before": {
+        "at": "2026-09-11T13:48:23.968Z",
+        "drafts": [
+          "重连验收草稿（未发送）"
+        ],
+        "state": {
+          "native": "connected",
+          "notifications": "online",
+          "room": "online",
+          "state": "connected",
+          "wide": "false"
+        }
+      },
+      "after": {
+        "at": "2026-09-11T13:49:48.024Z",
+        "drafts": [
+          "重连验收草稿（未发送）"
+        ],
+        "historyLoading": false,
+        "images": [
+          {
+            "complete": true,
+            "width": 267
+          }
+        ],
+        "state": {
+          "native": "connected",
+          "notifications": "online",
+          "room": "online",
+          "state": "connected",
+          "wide": "false"
+        }
+      },
+      "warnings": [
+        {
+          "message": "[connection] connection lost, retry #1",
+          "timestamp": "2026-09-11T13:48:24.102Z"
+        },
+        {
+          "message": "[connection] generation is still not ready after 3000ms",
+          "timestamp": "2026-09-11T13:48:27.107Z"
+        }
+      ]
+    },
+    "scope": "Original in-app browser tab 1. Files remained open. No messages or member/model changes submitted. Test draft restored to empty. Modal geometry unchanged from rc125; rc126 adds identity-scoped native reset."
+  },
+  "native": [
+    {
+      "base": "https://talk.opcvip.net",
+      "route": "public-default",
+      "pings": 0,
+      "closedByProbe": false,
+      "error": "ECONNRESET",
+      "code": 1006,
+      "elapsedMs": 520
+    },
+    {
+      "base": "http://127.0.0.1:3181",
+      "route": "local",
+      "pings": 10,
+      "closedByProbe": true,
+      "openMs": 19,
+      "code": 1005,
+      "elapsedMs": 155006
+    },
+    {
+      "base": "http://127.0.0.1:3185",
+      "route": "bridge",
+      "pings": 10,
+      "closedByProbe": true,
+      "openMs": 16,
+      "code": 1005,
+      "elapsedMs": 155003
+    },
+    {
+      "base": "https://talk.opcvip.net",
+      "route": "public-explicit-environment-agent",
+      "pings": 10,
+      "closedByProbe": true,
+      "openMs": 926,
+      "code": 1005,
+      "elapsedMs": 155404
+    }
+  ],
+  "anonymous": 401,
+  "crossOrigin": 422,
+  "nativeProbe": "NATIVE-ROUTE-1789132869493.json",
+  "sseCleanup": [
+    {
+      "version": 1,
+      "at": "2026-09-11T12:49:05.482Z",
+      "pid": 45580,
+      "event": "sse.close",
+      "operationId": "e7a3c24d-c92e-43af-b33e-9c05dd353ec8",
+      "elapsedMs": 184878,
+      "stream": "notifications",
+      "heartbeatCount": 13,
+      "reason": "peer-end"
+    },
+    {
+      "version": 1,
+      "at": "2026-09-11T12:49:05.527Z",
+      "pid": 45580,
+      "event": "sse.close",
+      "operationId": "2eef3c0b-d3b7-427d-8e3b-22c0ab896f3c",
+      "elapsedMs": 184837,
+      "stream": "room",
+      "heartbeatCount": 13,
+      "reason": "peer-end"
+    },
+    {
+      "version": 1,
+      "at": "2026-09-11T12:49:05.544Z",
+      "pid": 45580,
+      "event": "sse.close",
+      "operationId": "5cddfeb1-a03e-4a40-b530-cfe6d6432aab",
+      "elapsedMs": 184916,
+      "stream": "notifications",
+      "heartbeatCount": 13,
+      "reason": "peer-end"
+    },
+    {
+      "version": 1,
+      "at": "2026-09-11T12:49:05.561Z",
+      "pid": 45580,
+      "event": "sse.close",
+      "operationId": "ba750767-b8e0-4dac-96a9-ee954367d0d8",
+      "elapsedMs": 184866,
+      "stream": "room",
+      "heartbeatCount": 13,
+      "reason": "peer-end"
+    },
+    {
+      "version": 1,
+      "at": "2026-09-11T12:49:16.192Z",
+      "pid": 45580,
+      "event": "sse.close",
+      "operationId": "d230b183-eeea-4799-baca-f0f97f07163d",
+      "elapsedMs": 195357,
+      "stream": "notifications",
+      "heartbeatCount": 14,
+      "reason": "peer-end"
+    },
+    {
+      "version": 1,
+      "at": "2026-09-11T12:49:08.981Z",
+      "pid": 45580,
+      "event": "sse.close",
+      "operationId": "e5273d3f-cead-4fea-92e7-e4de520dace2",
+      "elapsedMs": 180290,
+      "stream": "room",
+      "heartbeatCount": 13,
+      "reason": "peer-end"
+    }
+  ],
+  "clientStateReceipts": [
+    {
+      "version": 1,
+      "at": "2026-09-11T13:36:01.366Z",
+      "pid": 45580,
+      "event": "client.connection",
+      "connectionState": {
+        "native": "connected",
+        "room": "online",
+        "notifications": "online",
+        "visible": true,
+        "online": true
+      }
+    },
+    {
+      "version": 1,
+      "at": "2026-09-11T13:42:18.595Z",
+      "pid": 45580,
+      "event": "client.connection",
+      "connectionState": {
+        "native": "connecting",
+        "room": "online",
+        "notifications": "online",
+        "visible": true,
+        "online": true
+      }
+    },
+    {
+      "version": 1,
+      "at": "2026-09-11T13:42:29.638Z",
+      "pid": 45580,
+      "event": "client.connection",
+      "connectionState": {
+        "native": "connected",
+        "room": "offline",
+        "notifications": "online",
+        "visible": true,
+        "online": true
+      }
+    },
+    {
+      "version": 1,
+      "at": "2026-09-11T13:42:46.413Z",
+      "pid": 45580,
+      "event": "client.connection",
+      "connectionState": {
+        "native": "connected",
+        "room": "online",
+        "notifications": "online",
+        "visible": true,
+        "online": true
+      }
+    },
+    {
+      "version": 1,
+      "at": "2026-09-11T13:45:10.955Z",
+      "pid": 45580,
+      "event": "client.connection",
+      "connectionState": {
+        "native": "connecting",
+        "room": "online",
+        "notifications": "online",
+        "visible": true,
+        "online": true
+      }
+    },
+    {
+      "version": 1,
+      "at": "2026-09-11T13:45:19.372Z",
+      "pid": 45580,
+      "event": "client.connection",
+      "connectionState": {
+        "native": "connected",
+        "room": "online",
+        "notifications": "online",
+        "visible": true,
+        "online": true
+      }
+    },
+    {
+      "version": 1,
+      "at": "2026-09-11T13:48:28.833Z",
+      "pid": 45580,
+      "event": "client.connection",
+      "connectionState": {
+        "native": "connecting",
+        "room": "online",
+        "notifications": "online",
+        "visible": true,
+        "online": true
+      }
+    },
+    {
+      "version": 1,
+      "at": "2026-09-11T13:48:33.235Z",
+      "pid": 45580,
+      "event": "client.connection",
+      "connectionState": {
+        "native": "connected",
+        "room": "online",
+        "notifications": "online",
+        "visible": true,
+        "online": true
+      }
+    }
+  ],
+  "automationState": "PAUSED",
+  "finishedAt": "2026-09-11T13:51:07.576Z"
+}

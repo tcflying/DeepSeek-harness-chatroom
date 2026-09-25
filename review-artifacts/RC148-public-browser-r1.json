@@ -1,0 +1,1785 @@
+{
+  "version": "1.5.0-codex.rc1.48",
+  "at": "2026-09-12T17:38:23.870Z",
+  "mode": "public-authenticated",
+  "base": "https://talk.opcvip.net",
+  "roles": [
+    {
+      "role": "member",
+      "rpc": [
+        {
+          "method": "settings/describe",
+          "status": 403
+        },
+        {
+          "method": "credentials/list",
+          "status": 403
+        },
+        {
+          "method": "session/selectModel",
+          "status": 403
+        },
+        {
+          "method": "agentPresets/select",
+          "status": 403
+        },
+        {
+          "method": "commands/execute",
+          "status": 403
+        }
+      ],
+      "errors": [],
+      "roomSelected": true,
+      "geometry": {
+        "320": {
+          "width": 320,
+          "height": 720,
+          "documentWidth": 320,
+          "bodyWidth": 320,
+          "control": "▧ 会话图库",
+          "nativeSidebar": {
+            "viewportWidth": 320,
+            "settingsTextVisible": false,
+            "leftStaticChrome": [
+              {
+                "ariaLabel": "打开侧边栏",
+                "text": "",
+                "left": 10,
+                "top": 14,
+                "width": 44,
+                "height": 44
+              }
+            ]
+          },
+          "account": {
+            "left": 116,
+            "right": 195.75,
+            "top": 136,
+            "bottom": 170,
+            "width": 79.75,
+            "height": 34,
+            "viewportWidth": 320,
+            "viewportHeight": 720,
+            "hit": true
+          },
+          "style": {
+            "left": 186,
+            "right": 264,
+            "top": 12,
+            "bottom": 48,
+            "width": 78,
+            "height": 36,
+            "viewportWidth": 320,
+            "viewportHeight": 720,
+            "hit": true
+          }
+        },
+        "390": {
+          "width": 390,
+          "height": 844,
+          "documentWidth": 390,
+          "bodyWidth": 390,
+          "control": "▧ 会话图库",
+          "nativeSidebar": {
+            "viewportWidth": 390,
+            "settingsTextVisible": false,
+            "leftStaticChrome": [
+              {
+                "ariaLabel": "打开侧边栏",
+                "text": "",
+                "left": 10,
+                "top": 14,
+                "width": 44,
+                "height": 44
+              }
+            ]
+          },
+          "account": {
+            "left": 116,
+            "right": 195.75,
+            "top": 136,
+            "bottom": 170,
+            "width": 79.75,
+            "height": 34,
+            "viewportWidth": 390,
+            "viewportHeight": 844,
+            "hit": true
+          },
+          "style": {
+            "left": 256,
+            "right": 334,
+            "top": 12,
+            "bottom": 48,
+            "width": 78,
+            "height": 36,
+            "viewportWidth": 390,
+            "viewportHeight": 844,
+            "hit": true
+          }
+        },
+        "768": {
+          "width": 768,
+          "height": 900,
+          "documentWidth": 768,
+          "bodyWidth": 768,
+          "control": "▧ 会话图库",
+          "nativeSidebar": {
+            "viewportWidth": 768,
+            "settingsTextVisible": false,
+            "leftStaticChrome": [
+              {
+                "ariaLabel": "打开侧边栏",
+                "text": "",
+                "left": 224,
+                "top": 14,
+                "width": 44,
+                "height": 44
+              }
+            ]
+          },
+          "account": {
+            "left": 499.78125,
+            "right": 579.53125,
+            "top": 58,
+            "bottom": 88,
+            "width": 79.75,
+            "height": 30,
+            "viewportWidth": 768,
+            "viewportHeight": 900,
+            "hit": true
+          },
+          "style": {
+            "left": 610,
+            "right": 688,
+            "top": 15,
+            "bottom": 45,
+            "width": 78,
+            "height": 30,
+            "viewportWidth": 768,
+            "viewportHeight": 900,
+            "hit": true
+          }
+        },
+        "native": {
+          "width": 1440,
+          "height": 900,
+          "documentWidth": 1440,
+          "bodyWidth": 1440,
+          "styleControl": {
+            "left": 1284,
+            "right": 1362,
+            "top": 13,
+            "bottom": 43,
+            "width": 78,
+            "height": 30,
+            "viewportWidth": 1440,
+            "viewportHeight": 900,
+            "hit": true
+          }
+        },
+        "qq2007": {
+          "width": 1440,
+          "height": 900,
+          "documentWidth": 1440,
+          "bodyWidth": 1440,
+          "styleControl": {
+            "left": 1284,
+            "right": 1362,
+            "top": 11,
+            "bottom": 41,
+            "width": 78,
+            "height": 30,
+            "viewportWidth": 1440,
+            "viewportHeight": 900,
+            "hit": true
+          }
+        }
+      },
+      "mediaRoom": {
+        "kind": "owned-accessible-room",
+        "contentClaim": "not asserted"
+      },
+      "deepLink": {
+        "readinessDeadlineMs": 30000,
+        "requested": true,
+        "requestSent": true,
+        "selectResponseSucceeded": true,
+        "active": true,
+        "nativeSelected": true,
+        "selectedNativeTitle": true,
+        "timeline": [
+          {
+            "atMs": 7202,
+            "atUtc": "2026-09-12T17:38:36.433Z",
+            "event": "request",
+            "path": "/api/session/list",
+            "method": "POST"
+          },
+          {
+            "atMs": 15744,
+            "atUtc": "2026-09-12T17:38:44.975Z",
+            "event": "response",
+            "path": "/api/session/list",
+            "status": 200
+          },
+          {
+            "atMs": 15745,
+            "atUtc": "2026-09-12T17:38:44.976Z",
+            "event": "requestfinished",
+            "path": "/api/session/list",
+            "status": 200,
+            "timing": {
+              "queueOrBlockedMs": 0,
+              "dnsMs": null,
+              "connectMs": null,
+              "requestMs": 8552,
+              "downloadMs": 1,
+              "responseEndMs": 8553
+            }
+          },
+          {
+            "atMs": 15777,
+            "atUtc": "2026-09-12T17:38:45.008Z",
+            "event": "request",
+            "path": "/rooms/select",
+            "method": "POST"
+          },
+          {
+            "atMs": 15778,
+            "atUtc": "2026-09-12T17:38:45.009Z",
+            "event": "request",
+            "path": "/api/session/list",
+            "method": "POST"
+          },
+          {
+            "atMs": 16133,
+            "atUtc": "2026-09-12T17:38:45.364Z",
+            "event": "response",
+            "path": "/rooms/select",
+            "status": 200
+          },
+          {
+            "atMs": 16134,
+            "atUtc": "2026-09-12T17:38:45.365Z",
+            "event": "requestfinished",
+            "path": "/rooms/select",
+            "status": 200,
+            "timing": {
+              "queueOrBlockedMs": 0,
+              "dnsMs": null,
+              "connectMs": null,
+              "requestMs": 384,
+              "downloadMs": 0,
+              "responseEndMs": 384
+            }
+          }
+        ]
+      },
+      "servedClient": {
+        "manifest": true,
+        "status": 200,
+        "servedSha256": "011a4168e92d127bf4fbfd9d58f29578c413d90a8d0c72de1827e1d04e52d380",
+        "candidateSha256": "f332d44b37555599b15a845d0d016c46c876ae35178f54a499fa8b48713c6915",
+        "servedBytes": 1157925,
+        "candidateBytes": 1157861,
+        "exactCandidate": true,
+        "normalizedPayload": true,
+        "normalization": "terminal-semicolon-and-source-map-footer-v1",
+        "servedNormalizedSha256": "dcd8b8ef1e5673485af46df5866cc7f802d2a4aac82d24020e87653da769b240",
+        "candidateNormalizedSha256": "dcd8b8ef1e5673485af46df5866cc7f802d2a4aac82d24020e87653da769b240",
+        "servedSourceMapFooter": true,
+        "candidateSourceMapFooter": true,
+        "difference": {
+          "firstDifference": 1157827,
+          "commonSuffixBytes": 0,
+          "lengthDelta": 64,
+          "servedFooterKind": "line-source-map",
+          "candidateFooterKind": "line-source-map"
+        },
+        "structure": "host-terminal-source-map-wrapper-normalized",
+        "marker": "rc135-assistant-actions-and-auth-aware-auto-reply"
+      },
+      "gallery": {
+        "kind": "empty-owned-room",
+        "multiImagePass": false,
+        "normalEmptyState": true,
+        "responses": [
+          {
+            "status": 200,
+            "expectedRoom": true,
+            "expectedSession": true
+          }
+        ]
+      },
+      "accountModal": true
+    },
+    {
+      "role": "super-admin",
+      "rpc": [],
+      "errors": [],
+      "roomSelected": true,
+      "geometry": {
+        "native": {
+          "width": 1440,
+          "height": 900,
+          "documentWidth": 1440,
+          "bodyWidth": 1440,
+          "styleControl": {
+            "left": 1284,
+            "right": 1362,
+            "top": 13,
+            "bottom": 43,
+            "width": 78,
+            "height": 30,
+            "viewportWidth": 1440,
+            "viewportHeight": 900,
+            "hit": true
+          }
+        },
+        "qq2007": {
+          "width": 1440,
+          "height": 900,
+          "documentWidth": 1440,
+          "bodyWidth": 1440,
+          "styleControl": {
+            "left": 1284,
+            "right": 1362,
+            "top": 11,
+            "bottom": 41,
+            "width": 78,
+            "height": 30,
+            "viewportWidth": 1440,
+            "viewportHeight": 900,
+            "hit": true
+          }
+        }
+      },
+      "mediaRoom": {
+        "kind": "national-fly",
+        "preflightItems": 3
+      },
+      "deepLink": {
+        "readinessDeadlineMs": 30000,
+        "requested": true,
+        "requestSent": true,
+        "selectResponseSucceeded": true,
+        "active": true,
+        "nativeSelected": true,
+        "selectedNativeTitle": true,
+        "timeline": [
+          {
+            "atMs": 6062,
+            "atUtc": "2026-09-12T17:39:01.626Z",
+            "event": "request",
+            "path": "/api/session/list",
+            "method": "POST"
+          },
+          {
+            "atMs": 18638,
+            "atUtc": "2026-09-12T17:39:14.202Z",
+            "event": "response",
+            "path": "/api/session/list",
+            "status": 200
+          },
+          {
+            "atMs": 18639,
+            "atUtc": "2026-09-12T17:39:14.203Z",
+            "event": "requestfinished",
+            "path": "/api/session/list",
+            "status": 200,
+            "timing": {
+              "queueOrBlockedMs": 0,
+              "dnsMs": null,
+              "connectMs": null,
+              "requestMs": 12586,
+              "downloadMs": 1,
+              "responseEndMs": 12587
+            }
+          },
+          {
+            "atMs": 18693,
+            "atUtc": "2026-09-12T17:39:14.257Z",
+            "event": "request",
+            "path": "/rooms/select",
+            "method": "POST"
+          },
+          {
+            "atMs": 18693,
+            "atUtc": "2026-09-12T17:39:14.257Z",
+            "event": "request",
+            "path": "/api/session/list",
+            "method": "POST"
+          },
+          {
+            "atMs": 19084,
+            "atUtc": "2026-09-12T17:39:14.648Z",
+            "event": "response",
+            "path": "/rooms/select",
+            "status": 200
+          },
+          {
+            "atMs": 19084,
+            "atUtc": "2026-09-12T17:39:14.648Z",
+            "event": "requestfinished",
+            "path": "/rooms/select",
+            "status": 200,
+            "timing": {
+              "queueOrBlockedMs": 0,
+              "dnsMs": null,
+              "connectMs": null,
+              "requestMs": 437,
+              "downloadMs": 1,
+              "responseEndMs": 438
+            }
+          }
+        ]
+      },
+      "servedClient": {
+        "manifest": true,
+        "status": 200,
+        "servedSha256": "011a4168e92d127bf4fbfd9d58f29578c413d90a8d0c72de1827e1d04e52d380",
+        "candidateSha256": "f332d44b37555599b15a845d0d016c46c876ae35178f54a499fa8b48713c6915",
+        "servedBytes": 1157925,
+        "candidateBytes": 1157861,
+        "exactCandidate": true,
+        "normalizedPayload": true,
+        "normalization": "terminal-semicolon-and-source-map-footer-v1",
+        "servedNormalizedSha256": "dcd8b8ef1e5673485af46df5866cc7f802d2a4aac82d24020e87653da769b240",
+        "candidateNormalizedSha256": "dcd8b8ef1e5673485af46df5866cc7f802d2a4aac82d24020e87653da769b240",
+        "servedSourceMapFooter": true,
+        "candidateSourceMapFooter": true,
+        "difference": {
+          "firstDifference": 1157827,
+          "commonSuffixBytes": 0,
+          "lengthDelta": 64,
+          "servedFooterKind": "line-source-map",
+          "candidateFooterKind": "line-source-map"
+        },
+        "structure": "host-terminal-source-map-wrapper-normalized",
+        "marker": "rc135-assistant-actions-and-auth-aware-auto-reply"
+      },
+      "stages": {
+        "qqNarrow320": {
+          "passed": false,
+          "error": "AssertionError [ERR_ASSERTION]: native-style counterexample missing assistant action labels"
+        },
+        "gallery": {
+          "passed": false,
+          "error": "TimeoutError: page.waitForResponse: Timeout 15000ms exceeded while waiting for event \"response\""
+        },
+        "viewports": {
+          "passed": false,
+          "error": "AssertionError [ERR_ASSERTION]: super-admin/768/▧ 会话图库: control is covered"
+        },
+        "files-AI 成员": {
+          "passed": false,
+          "error": "TimeoutError: locator.click: Timeout 30000ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('button, [role=\"tab\"], [title=\"Files\"]').nth(176)\u001b[22m\n\u001b[2m    - locator resolved to <div title=\"Files\" draggable=\"true\" class=\"nArs4W_tab nArs4W_tabActive\">…</div>\u001b[22m\n\u001b[2m  - attempting click action\u001b[22m\n\u001b[2m    - waiting for element to be visible, enabled and stable\u001b[22m\n\u001b[2m    - element is not stable\u001b[22m\n\u001b[2m  - retrying click action\u001b[22m\n\u001b[2m    - waiting for element to be visible, enabled and stable\u001b[22m\n\u001b[2m    - element is visible, enabled and stable\u001b[22m\n\u001b[2m    - scrolling into view if needed\u001b[22m\n\u001b[2m    - done scrolling\u001b[22m\n\u001b[2m    - <dialog open=\"\" aria-label=\"会话图片图库\" class=\"dsh-chatroom-image-viewer\">…</dialog> intercepts pointer events\u001b[22m\n\u001b[2m  - retrying click action\u001b[22m\n\u001b[2m    - waiting 20ms\u001b[22m\n\u001b[2m    2 × waiting for element to be visible, enabled and stable\u001b[22m\n\u001b[2m      - element is visible, enabled and stable\u001b[22m\n\u001b[2m      - scrolling into view if needed\u001b[22m\n\u001b[2m      - done scrolling\u001b[22m\n\u001b[2m      - <dialog open=\"\" aria-label=\"会话图片图库\" class=\"dsh-chatroom-image-viewer\">…</dialog> intercepts pointer events\u001b[22m\n\u001b[2m    - retrying click action\u001b[22m\n\u001b[2m      - waiting 100ms\u001b[22m\n\u001b[2m    57 × waiting for element to be visible, enabled and stable\u001b[22m\n\u001b[2m       - element is visible, enabled and stable\u001b[22m\n\u001b[2m       - scrolling into view if needed\u001b[22m\n\u001b[2m       - done scrolling\u001b[22m\n\u001b[2m       - <dialog open=\"\" aria-label=\"会话图片图库\" class=\"dsh-chatroom-image-viewer\">…</dialog> intercepts pointer events\u001b[22m\n\u001b[2m     - retrying click action\u001b[22m\n\u001b[2m       - waiting 500ms\u001b[22m\n"
+        },
+        "files-群管理": {
+          "passed": true
+        },
+        "settings-manageable-rooms": {
+          "passed": false,
+          "error": "AssertionError [ERR_ASSERTION]: public/super-admin/settings/desktop: AI enabled switch track is covered"
+        },
+        "reconnect": {
+          "passed": true
+        },
+        "pageErrors": {
+          "passed": true
+        }
+      },
+      "gallery": {
+        "failed": true,
+        "responses": [],
+        "pendingDialogOwnedReads": [],
+        "selectedOriginalUrls": 0,
+        "metadataItemUrls": 0,
+        "closeInitiated": false,
+        "hidden": false,
+        "excluded": {
+          "nativeThumbnails": 0,
+          "otherMedia": 0,
+          "unrelatedMetadata": 0
+        },
+        "error": "TimeoutError: page.waitForResponse: Timeout 15000ms exceeded while waiting for event \"response\""
+      },
+      "files": {
+        "nativeSlot": "workbench-right-pane",
+        "openedExistingFilesEntry": true,
+        "controlRole": "div",
+        "controlAriaSelected": null,
+        "panelContract": "true",
+        "panelVisible": true,
+        "composerControls": {
+          "trailing": {
+            "left": 452.734375,
+            "right": 904,
+            "top": 818,
+            "bottom": 854,
+            "width": 451.265625,
+            "height": 36,
+            "hit": true
+          },
+          "buttonShapes": [
+            {
+              "label": "■ 停止",
+              "type": "button",
+              "disabled": true,
+              "slot": "conversation.input.right",
+              "rect": {
+                "left": 452.734375,
+                "right": 506.375,
+                "top": 818,
+                "bottom": 854,
+                "width": 53.640625,
+                "height": 36,
+                "hit": true
+              }
+            },
+            {
+              "label": "＋ 新会话",
+              "type": "button",
+              "disabled": false,
+              "slot": "conversation.input.right",
+              "rect": {
+                "left": 511.375,
+                "right": 578.671875,
+                "top": 818,
+                "bottom": 854,
+                "width": 67.296875,
+                "height": 36,
+                "hit": true
+              }
+            },
+            {
+              "label": "⚡ 快速会议",
+              "type": "button",
+              "disabled": false,
+              "slot": "conversation.input.right",
+              "rect": {
+                "left": 583.671875,
+                "right": 667.46875,
+                "top": 818,
+                "bottom": 854,
+                "width": 83.796875,
+                "height": 36,
+                "hit": true
+              }
+            },
+            {
+              "label": "选择模型，当前 MiniMax-M3，推理等级 High",
+              "type": "button",
+              "disabled": false,
+              "slot": "conversation.input.model",
+              "rect": {
+                "left": 679.46875,
+                "right": 818,
+                "top": 822,
+                "bottom": 850,
+                "width": 138.53125,
+                "height": 28,
+                "hit": true
+              }
+            },
+            {
+              "label": "上下文已用 6%",
+              "type": "button",
+              "disabled": false,
+              "slot": "conversation.composer.bar",
+              "rect": {
+                "left": 830,
+                "right": 858,
+                "top": 822,
+                "bottom": 850,
+                "width": 28,
+                "height": 28,
+                "hit": true
+              }
+            },
+            {
+              "label": "发送消息",
+              "type": "button",
+              "disabled": true,
+              "slot": "conversation.composer.bar",
+              "rect": {
+                "left": 870,
+                "right": 904,
+                "top": 817,
+                "bottom": 851,
+                "width": 34,
+                "height": 34,
+                "hit": true
+              }
+            }
+          ],
+          "controls": {
+            "model": {
+              "left": 679.46875,
+              "right": 818,
+              "top": 822,
+              "bottom": 850,
+              "width": 138.53125,
+              "height": 28,
+              "hit": true
+            },
+            "context": {
+              "left": 830,
+              "right": 858,
+              "top": 822,
+              "bottom": 850,
+              "width": 28,
+              "height": 28,
+              "hit": true
+            },
+            "send": {
+              "left": 870,
+              "right": 904,
+              "top": 817,
+              "bottom": 851,
+              "width": 34,
+              "height": 34,
+              "hit": true
+            }
+          },
+          "primaryActions": [
+            {
+              "left": 870,
+              "right": 904,
+              "top": 817,
+              "bottom": 851,
+              "width": 34,
+              "height": 34,
+              "hit": true
+            }
+          ],
+          "overlaps": {
+            "modelContext": false,
+            "modelSend": false,
+            "contextSend": false
+          }
+        }
+      },
+      "群管理": {
+        "modal": true,
+        "pointOwnedByDialog": true,
+        "rect": {
+          "left": 360,
+          "right": 1080,
+          "top": 102.5,
+          "bottom": 797.5
+        }
+      },
+      "settingsSection": {
+        "mode": "managed-rooms",
+        "auth": {
+          "sessionStatus": 200,
+          "enabled": true,
+          "authenticated": true,
+          "accountRole": "super-admin"
+        },
+        "manageableRooms": {
+          "status": 200,
+          "count": 24,
+          "requestFailed": false
+        },
+        "default": {
+          "desktop": {
+            "width": 1440,
+            "height": 900,
+            "documentWidth": 1440,
+            "bodyWidth": 1440,
+            "root": {
+              "left": 372,
+              "right": 1256,
+              "top": 104,
+              "bottom": 5097.34375,
+              "width": 884,
+              "height": 4993.34375,
+              "fontSize": 14,
+              "gridColumn": "auto",
+              "paddingLeft": 0,
+              "tag": "DIV",
+              "className": "dsh-chatroom-settings"
+            },
+            "card": {
+              "left": 372,
+              "right": 1256,
+              "top": 803.953125,
+              "bottom": 1345.34375,
+              "width": 884,
+              "height": 541.390625,
+              "fontSize": 14,
+              "gridColumn": "1 / -1",
+              "paddingLeft": 16,
+              "tag": "SECTION",
+              "className": "dsh-chatroom-card dsh-chatroom-agent-settings-card"
+            },
+            "input": {
+              "left": 389,
+              "right": 665.65625,
+              "top": 1066.953125,
+              "bottom": 1104.953125,
+              "width": 276.65625,
+              "height": 38,
+              "fontSize": 14,
+              "gridColumn": "auto",
+              "paddingLeft": 10,
+              "tag": "INPUT",
+              "className": ""
+            },
+            "inputLabel": {
+              "left": 389,
+              "right": 665.65625,
+              "top": 1039.953125,
+              "bottom": 1104.953125,
+              "width": 276.65625,
+              "height": 65,
+              "fontSize": 14,
+              "gridColumn": "auto",
+              "paddingLeft": 0,
+              "tag": "LABEL",
+              "className": ""
+            },
+            "controls": [
+              {
+                "left": 405,
+                "right": 771,
+                "top": 518.953125,
+                "bottom": 554.953125,
+                "width": 366,
+                "height": 36,
+                "fontSize": 14,
+                "gridColumn": "auto",
+                "paddingLeft": 11,
+                "tag": "INPUT",
+                "className": ""
+              },
+              {
+                "left": 405,
+                "right": 771,
+                "top": 593.953125,
+                "bottom": 629.953125,
+                "width": 366,
+                "height": 36,
+                "fontSize": 14,
+                "gridColumn": "auto",
+                "paddingLeft": 11,
+                "tag": "INPUT",
+                "className": ""
+              },
+              {
+                "left": 405,
+                "right": 771,
+                "top": 668.953125,
+                "bottom": 704.953125,
+                "width": 366,
+                "height": 36,
+                "fontSize": 14,
+                "gridColumn": "auto",
+                "paddingLeft": 11,
+                "tag": "INPUT",
+                "className": ""
+              },
+              {
+                "left": 389,
+                "right": 1207,
+                "top": 896.953125,
+                "bottom": 920.953125,
+                "width": 818,
+                "height": 24,
+                "fontSize": 14,
+                "gridColumn": "auto",
+                "paddingLeft": 0,
+                "tag": "SELECT",
+                "className": ""
+              },
+              {
+                "left": 389,
+                "right": 665.65625,
+                "top": 1066.953125,
+                "bottom": 1104.953125,
+                "width": 276.65625,
+                "height": 38,
+                "fontSize": 14,
+                "gridColumn": "auto",
+                "paddingLeft": 10,
+                "tag": "INPUT",
+                "className": ""
+              },
+              {
+                "left": 675.65625,
+                "right": 952.328125,
+                "top": 1066.953125,
+                "bottom": 1104.953125,
+                "width": 276.671875,
+                "height": 38,
+                "fontSize": 14,
+                "gridColumn": "auto",
+                "paddingLeft": 10,
+                "tag": "INPUT",
+                "className": ""
+              },
+              {
+                "left": 402,
+                "right": 1225.984375,
+                "top": 1180.953125,
+                "bottom": 1280.953125,
+                "width": 823.984375,
+                "height": 100,
+                "fontSize": 14,
+                "gridColumn": "auto",
+                "paddingLeft": 2,
+                "tag": "TEXTAREA",
+                "className": ""
+              },
+              {
+                "left": 389,
+                "right": 665.65625,
+                "top": 1191.953125,
+                "bottom": 1229.953125,
+                "width": 276.65625,
+                "height": 38,
+                "fontSize": 14,
+                "gridColumn": "auto",
+                "paddingLeft": 10,
+                "tag": "SELECT",
+                "className": ""
+              },
+              {
+                "left": 675.65625,
+                "right": 952.328125,
+                "top": 1191.953125,
+                "bottom": 1229.953125,
+                "width": 276.671875,
+                "height": 38,
+                "fontSize": 14,
+                "gridColumn": "auto",
+                "paddingLeft": 10,
+                "tag": "SELECT",
+                "className": ""
+              },
+              {
+                "left": 389,
+                "right": 583,
+                "top": 1476.34375,
+                "bottom": 1514.34375,
+                "width": 194,
+                "height": 38,
+                "fontSize": 14,
+                "gridColumn": "auto",
+                "paddingLeft": 10,
+                "tag": "SELECT",
+                "className": ""
+              },
+              {
+                "left": 593,
+                "right": 787,
+                "top": 1476.34375,
+                "bottom": 1514.34375,
+                "width": 194,
+                "height": 38,
+                "fontSize": 14,
+                "gridColumn": "auto",
+                "paddingLeft": 10,
+                "tag": "SELECT",
+                "className": ""
+              },
+              {
+                "left": 854,
+                "right": 1226,
+                "top": 1515.34375,
+                "bottom": 1631.34375,
+                "width": 372,
+                "height": 116,
+                "fontSize": 14,
+                "gridColumn": "auto",
+                "paddingLeft": 11,
+                "tag": "TEXTAREA",
+                "className": ""
+              },
+              {
+                "left": 854,
+                "right": 1226,
+                "top": 1696.34375,
+                "bottom": 1812.34375,
+                "width": 372,
+                "height": 116,
+                "fontSize": 14,
+                "gridColumn": "auto",
+                "paddingLeft": 11,
+                "tag": "TEXTAREA",
+                "className": ""
+              },
+              {
+                "left": 405,
+                "right": 807,
+                "top": 2007.34375,
+                "bottom": 2043.34375,
+                "width": 402,
+                "height": 36,
+                "fontSize": 14,
+                "gridColumn": "auto",
+                "paddingLeft": 11,
+                "tag": "INPUT",
+                "className": ""
+              },
+              {
+                "left": 821,
+                "right": 1223,
+                "top": 2007.34375,
+                "bottom": 2043.34375,
+                "width": 402,
+                "height": 36,
+                "fontSize": 14,
+                "gridColumn": "auto",
+                "paddingLeft": 11,
+                "tag": "INPUT",
+                "className": ""
+              },
+              {
+                "left": 405,
+                "right": 807,
+                "top": 2082.34375,
+                "bottom": 2118.34375,
+                "width": 402,
+                "height": 36,
+                "fontSize": 14,
+                "gridColumn": "auto",
+                "paddingLeft": 11,
+                "tag": "INPUT",
+                "className": ""
+              },
+              {
+                "left": 821,
+                "right": 1223,
+                "top": 2082.34375,
+                "bottom": 2118.34375,
+                "width": 402,
+                "height": 36,
+                "fontSize": 14,
+                "gridColumn": "auto",
+                "paddingLeft": 11,
+                "tag": "SELECT",
+                "className": ""
+              },
+              {
+                "left": 1058,
+                "right": 1176,
+                "top": 2506.34375,
+                "bottom": 2542.34375,
+                "width": 118,
+                "height": 36,
+                "fontSize": 14,
+                "gridColumn": "auto",
+                "paddingLeft": 11,
+                "tag": "SELECT",
+                "className": ""
+              },
+              {
+                "left": 1058,
+                "right": 1176,
+                "top": 2592.34375,
+                "bottom": 2628.34375,
+                "width": 118,
+                "height": 36,
+                "fontSize": 14,
+                "gridColumn": "auto",
+                "paddingLeft": 11,
+                "tag": "SELECT",
+                "className": ""
+              },
+              {
+                "left": 1058,
+                "right": 1176,
+                "top": 2678.34375,
+                "bottom": 2714.34375,
+                "width": 118,
+                "height": 36,
+                "fontSize": 14,
+                "gridColumn": "auto",
+                "paddingLeft": 11,
+                "tag": "SELECT",
+                "className": ""
+              },
+              {
+                "left": 1058,
+                "right": 1176,
+                "top": 2764.34375,
+                "bottom": 2800.34375,
+                "width": 118,
+                "height": 36,
+                "fontSize": 14,
+                "gridColumn": "auto",
+                "paddingLeft": 11,
+                "tag": "SELECT",
+                "className": ""
+              },
+              {
+                "left": 1058,
+                "right": 1176,
+                "top": 2850.34375,
+                "bottom": 2886.34375,
+                "width": 118,
+                "height": 36,
+                "fontSize": 14,
+                "gridColumn": "auto",
+                "paddingLeft": 11,
+                "tag": "SELECT",
+                "className": ""
+              },
+              {
+                "left": 1058,
+                "right": 1176,
+                "top": 2936.34375,
+                "bottom": 2972.34375,
+                "width": 118,
+                "height": 36,
+                "fontSize": 14,
+                "gridColumn": "auto",
+                "paddingLeft": 11,
+                "tag": "SELECT",
+                "className": ""
+              },
+              {
+                "left": 1058,
+                "right": 1176,
+                "top": 3022.34375,
+                "bottom": 3058.34375,
+                "width": 118,
+                "height": 36,
+                "fontSize": 14,
+                "gridColumn": "auto",
+                "paddingLeft": 11,
+                "tag": "SELECT",
+                "className": ""
+              },
+              {
+                "left": 1058,
+                "right": 1176,
+                "top": 3108.34375,
+                "bottom": 3144.34375,
+                "width": 118,
+                "height": 36,
+                "fontSize": 14,
+                "gridColumn": "auto",
+                "paddingLeft": 11,
+                "tag": "SELECT",
+                "className": ""
+              },
+              {
+                "left": 1058,
+                "right": 1176,
+                "top": 3194.34375,
+                "bottom": 3230.34375,
+                "width": 118,
+                "height": 36,
+                "fontSize": 14,
+                "gridColumn": "auto",
+                "paddingLeft": 11,
+                "tag": "SELECT",
+                "className": ""
+              },
+              {
+                "left": 1058,
+                "right": 1176,
+                "top": 3280.34375,
+                "bottom": 3316.34375,
+                "width": 118,
+                "height": 36,
+                "fontSize": 14,
+                "gridColumn": "auto",
+                "paddingLeft": 11,
+                "tag": "SELECT",
+                "className": ""
+              },
+              {
+                "left": 1058,
+                "right": 1176,
+                "top": 3366.34375,
+                "bottom": 3402.34375,
+                "width": 118,
+                "height": 36,
+                "fontSize": 14,
+                "gridColumn": "auto",
+                "paddingLeft": 11,
+                "tag": "SELECT",
+                "className": ""
+              },
+              {
+                "left": 1058,
+                "right": 1176,
+                "top": 3452.34375,
+                "bottom": 3488.34375,
+                "width": 118,
+                "height": 36,
+                "fontSize": 14,
+                "gridColumn": "auto",
+                "paddingLeft": 11,
+                "tag": "SELECT",
+                "className": ""
+              },
+              {
+                "left": 1058,
+                "right": 1176,
+                "top": 3538.34375,
+                "bottom": 3574.34375,
+                "width": 118,
+                "height": 36,
+                "fontSize": 14,
+                "gridColumn": "auto",
+                "paddingLeft": 11,
+                "tag": "SELECT",
+                "className": ""
+              },
+              {
+                "left": 1058,
+                "right": 1176,
+                "top": 3624.34375,
+                "bottom": 3660.34375,
+                "width": 118,
+                "height": 36,
+                "fontSize": 14,
+                "gridColumn": "auto",
+                "paddingLeft": 11,
+                "tag": "SELECT",
+                "className": ""
+              },
+              {
+                "left": 1058,
+                "right": 1176,
+                "top": 3710.34375,
+                "bottom": 3746.34375,
+                "width": 118,
+                "height": 36,
+                "fontSize": 14,
+                "gridColumn": "auto",
+                "paddingLeft": 11,
+                "tag": "SELECT",
+                "className": ""
+              },
+              {
+                "left": 1058,
+                "right": 1176,
+                "top": 3796.34375,
+                "bottom": 3832.34375,
+                "width": 118,
+                "height": 36,
+                "fontSize": 14,
+                "gridColumn": "auto",
+                "paddingLeft": 11,
+                "tag": "SELECT",
+                "className": ""
+              },
+              {
+                "left": 1058,
+                "right": 1176,
+                "top": 3882.34375,
+                "bottom": 3918.34375,
+                "width": 118,
+                "height": 36,
+                "fontSize": 14,
+                "gridColumn": "auto",
+                "paddingLeft": 11,
+                "tag": "SELECT",
+                "className": ""
+              },
+              {
+                "left": 1058,
+                "right": 1176,
+                "top": 3968.34375,
+                "bottom": 4004.34375,
+                "width": 118,
+                "height": 36,
+                "fontSize": 14,
+                "gridColumn": "auto",
+                "paddingLeft": 11,
+                "tag": "SELECT",
+                "className": ""
+              },
+              {
+                "left": 1058,
+                "right": 1176,
+                "top": 4054.34375,
+                "bottom": 4090.34375,
+                "width": 118,
+                "height": 36,
+                "fontSize": 14,
+                "gridColumn": "auto",
+                "paddingLeft": 11,
+                "tag": "SELECT",
+                "className": ""
+              },
+              {
+                "left": 1058,
+                "right": 1176,
+                "top": 4140.34375,
+                "bottom": 4176.34375,
+                "width": 118,
+                "height": 36,
+                "fontSize": 14,
+                "gridColumn": "auto",
+                "paddingLeft": 11,
+                "tag": "SELECT",
+                "className": ""
+              },
+              {
+                "left": 1058,
+                "right": 1176,
+                "top": 4226.34375,
+                "bottom": 4262.34375,
+                "width": 118,
+                "height": 36,
+                "fontSize": 14,
+                "gridColumn": "auto",
+                "paddingLeft": 11,
+                "tag": "SELECT",
+                "className": ""
+              },
+              {
+                "left": 1058,
+                "right": 1176,
+                "top": 4312.34375,
+                "bottom": 4348.34375,
+                "width": 118,
+                "height": 36,
+                "fontSize": 14,
+                "gridColumn": "auto",
+                "paddingLeft": 11,
+                "tag": "SELECT",
+                "className": ""
+              },
+              {
+                "left": 1058,
+                "right": 1176,
+                "top": 4398.34375,
+                "bottom": 4434.34375,
+                "width": 118,
+                "height": 36,
+                "fontSize": 14,
+                "gridColumn": "auto",
+                "paddingLeft": 11,
+                "tag": "SELECT",
+                "className": ""
+              },
+              {
+                "left": 389,
+                "right": 1239,
+                "top": 4568.34375,
+                "bottom": 4604.34375,
+                "width": 850,
+                "height": 36,
+                "fontSize": 14,
+                "gridColumn": "auto",
+                "paddingLeft": 11,
+                "tag": "SELECT",
+                "className": ""
+              },
+              {
+                "left": 405,
+                "right": 807,
+                "top": 4685.34375,
+                "bottom": 4721.34375,
+                "width": 402,
+                "height": 36,
+                "fontSize": 14,
+                "gridColumn": "auto",
+                "paddingLeft": 11,
+                "tag": "INPUT",
+                "className": ""
+              },
+              {
+                "left": 821,
+                "right": 1223,
+                "top": 4685.34375,
+                "bottom": 4721.34375,
+                "width": 402,
+                "height": 36,
+                "fontSize": 14,
+                "gridColumn": "auto",
+                "paddingLeft": 11,
+                "tag": "INPUT",
+                "className": ""
+              },
+              {
+                "left": 405,
+                "right": 807,
+                "top": 4760.34375,
+                "bottom": 4796.34375,
+                "width": 402,
+                "height": 36,
+                "fontSize": 14,
+                "gridColumn": "auto",
+                "paddingLeft": 11,
+                "tag": "INPUT",
+                "className": ""
+              },
+              {
+                "left": 821,
+                "right": 1223,
+                "top": 4760.34375,
+                "bottom": 4796.34375,
+                "width": 402,
+                "height": 36,
+                "fontSize": 14,
+                "gridColumn": "auto",
+                "paddingLeft": 11,
+                "tag": "INPUT",
+                "className": ""
+              },
+              {
+                "left": 405,
+                "right": 807,
+                "top": 4835.34375,
+                "bottom": 4871.34375,
+                "width": 402,
+                "height": 36,
+                "fontSize": 14,
+                "gridColumn": "auto",
+                "paddingLeft": 11,
+                "tag": "INPUT",
+                "className": ""
+              },
+              {
+                "left": 821,
+                "right": 1223,
+                "top": 4835.34375,
+                "bottom": 4871.34375,
+                "width": 402,
+                "height": 36,
+                "fontSize": 14,
+                "gridColumn": "auto",
+                "paddingLeft": 11,
+                "tag": "INPUT",
+                "className": ""
+              },
+              {
+                "left": 405,
+                "right": 807,
+                "top": 4910.34375,
+                "bottom": 4946.34375,
+                "width": 402,
+                "height": 36,
+                "fontSize": 14,
+                "gridColumn": "auto",
+                "paddingLeft": 11,
+                "tag": "INPUT",
+                "className": ""
+              },
+              {
+                "left": 821,
+                "right": 1223,
+                "top": 4910.34375,
+                "bottom": 4946.34375,
+                "width": 402,
+                "height": 36,
+                "fontSize": 14,
+                "gridColumn": "auto",
+                "paddingLeft": 11,
+                "tag": "INPUT",
+                "className": ""
+              }
+            ],
+            "controlLabels": [
+              {
+                "left": 405,
+                "right": 771,
+                "top": 491.953125,
+                "bottom": 554.953125,
+                "width": 366,
+                "height": 63,
+                "fontSize": 14,
+                "gridColumn": "auto",
+                "paddingLeft": 0,
+                "tag": "LABEL",
+                "className": ""
+              },
+              {
+                "left": 405,
+                "right": 771,
+                "top": 566.953125,
+                "bottom": 629.953125,
+                "width": 366,
+                "height": 63,
+                "fontSize": 14,
+                "gridColumn": "auto",
+                "paddingLeft": 0,
+                "tag": "LABEL",
+                "className": ""
+              },
+              {
+                "left": 405,
+                "right": 771,
+                "top": 641.953125,
+                "bottom": 704.953125,
+                "width": 366,
+                "height": 63,
+                "fontSize": 14,
+                "gridColumn": "auto",
+                "paddingLeft": 0,
+                "tag": "LABEL",
+                "className": ""
+              },
+              {
+                "left": 389,
+                "right": 1239,
+                "top": 876.953125,
+                "bottom": 940.953125,
+                "width": 850,
+                "height": 64,
+                "fontSize": 14,
+                "gridColumn": "auto",
+                "paddingLeft": 0,
+                "tag": "LABEL",
+                "className": ""
+              },
+              {
+                "left": 389,
+                "right": 665.65625,
+                "top": 1039.953125,
+                "bottom": 1104.953125,
+                "width": 276.65625,
+                "height": 65,
+                "fontSize": 14,
+                "gridColumn": "auto",
+                "paddingLeft": 0,
+                "tag": "LABEL",
+                "className": ""
+              },
+              {
+                "left": 675.65625,
+                "right": 952.328125,
+                "top": 1039.953125,
+                "bottom": 1104.953125,
+                "width": 276.671875,
+                "height": 65,
+                "fontSize": 14,
+                "gridColumn": "auto",
+                "paddingLeft": 0,
+                "tag": "LABEL",
+                "className": ""
+              },
+              {
+                "left": 402,
+                "right": 1225.984375,
+                "top": 1153.953125,
+                "bottom": 1280.953125,
+                "width": 823.984375,
+                "height": 127,
+                "fontSize": 14,
+                "gridColumn": "auto",
+                "paddingLeft": 0,
+                "tag": "LABEL",
+                "className": ""
+              },
+              {
+                "left": 389,
+                "right": 665.65625,
+                "top": 1164.953125,
+                "bottom": 1229.953125,
+                "width": 276.65625,
+                "height": 65,
+                "fontSize": 14,
+                "gridColumn": "auto",
+                "paddingLeft": 0,
+                "tag": "LABEL",
+                "className": ""
+              },
+              {
+                "left": 675.65625,
+                "right": 952.328125,
+                "top": 1164.953125,
+                "bottom": 1229.953125,
+                "width": 276.671875,
+                "height": 65,
+                "fontSize": 14,
+                "gridColumn": "auto",
+                "paddingLeft": 0,
+                "tag": "LABEL",
+                "className": ""
+              },
+              {
+                "left": 389,
+                "right": 583,
+                "top": 1449.34375,
+                "bottom": 1514.34375,
+                "width": 194,
+                "height": 65,
+                "fontSize": 14,
+                "gridColumn": "auto",
+                "paddingLeft": 0,
+                "tag": "LABEL",
+                "className": ""
+              },
+              {
+                "left": 593,
+                "right": 787,
+                "top": 1449.34375,
+                "bottom": 1514.34375,
+                "width": 194,
+                "height": 65,
+                "fontSize": 14,
+                "gridColumn": "auto",
+                "paddingLeft": 0,
+                "tag": "LABEL",
+                "className": ""
+              },
+              {
+                "left": 854,
+                "right": 1226,
+                "top": 1488.34375,
+                "bottom": 1655.34375,
+                "width": 372,
+                "height": 167,
+                "fontSize": 14,
+                "gridColumn": "auto",
+                "paddingLeft": 0,
+                "tag": "LABEL",
+                "className": ""
+              },
+              {
+                "left": 854,
+                "right": 1226,
+                "top": 1669.34375,
+                "bottom": 1854.34375,
+                "width": 372,
+                "height": 185,
+                "fontSize": 14,
+                "gridColumn": "auto",
+                "paddingLeft": 0,
+                "tag": "LABEL",
+                "className": ""
+              },
+              {
+                "left": 405,
+                "right": 807,
+                "top": 1980.34375,
+                "bottom": 2043.34375,
+                "width": 402,
+                "height": 63,
+                "fontSize": 14,
+                "gridColumn": "auto",
+                "paddingLeft": 0,
+                "tag": "LABEL",
+                "className": ""
+              },
+              {
+                "left": 821,
+                "right": 1223,
+                "top": 1980.34375,
+                "bottom": 2043.34375,
+                "width": 402,
+                "height": 63,
+                "fontSize": 14,
+                "gridColumn": "auto",
+                "paddingLeft": 0,
+                "tag": "LABEL",
+                "className": ""
+              },
+              {
+                "left": 405,
+                "right": 807,
+                "top": 2055.34375,
+                "bottom": 2118.34375,
+                "width": 402,
+                "height": 63,
+                "fontSize": 14,
+                "gridColumn": "auto",
+                "paddingLeft": 0,
+                "tag": "LABEL",
+                "className": ""
+              },
+              {
+                "left": 821,
+                "right": 1223,
+                "top": 2055.34375,
+                "bottom": 2118.34375,
+                "width": 402,
+                "height": 63,
+                "fontSize": 14,
+                "gridColumn": "auto",
+                "paddingLeft": 0,
+                "tag": "LABEL",
+                "className": ""
+              },
+              {
+                "left": 389,
+                "right": 1239,
+                "top": 4540.34375,
+                "bottom": 4604.34375,
+                "width": 850,
+                "height": 64,
+                "fontSize": 14,
+                "gridColumn": "auto",
+                "paddingLeft": 0,
+                "tag": "LABEL",
+                "className": "dsh-chatroom-admin-field"
+              },
+              {
+                "left": 405,
+                "right": 807,
+                "top": 4658.34375,
+                "bottom": 4721.34375,
+                "width": 402,
+                "height": 63,
+                "fontSize": 14,
+                "gridColumn": "auto",
+                "paddingLeft": 0,
+                "tag": "LABEL",
+                "className": ""
+              },
+              {
+                "left": 821,
+                "right": 1223,
+                "top": 4658.34375,
+                "bottom": 4721.34375,
+                "width": 402,
+                "height": 63,
+                "fontSize": 14,
+                "gridColumn": "auto",
+                "paddingLeft": 0,
+                "tag": "LABEL",
+                "className": ""
+              },
+              {
+                "left": 405,
+                "right": 807,
+                "top": 4733.34375,
+                "bottom": 4796.34375,
+                "width": 402,
+                "height": 63,
+                "fontSize": 14,
+                "gridColumn": "auto",
+                "paddingLeft": 0,
+                "tag": "LABEL",
+                "className": ""
+              },
+              {
+                "left": 821,
+                "right": 1223,
+                "top": 4733.34375,
+                "bottom": 4796.34375,
+                "width": 402,
+                "height": 63,
+                "fontSize": 14,
+                "gridColumn": "auto",
+                "paddingLeft": 0,
+                "tag": "LABEL",
+                "className": ""
+              },
+              {
+                "left": 405,
+                "right": 807,
+                "top": 4808.34375,
+                "bottom": 4871.34375,
+                "width": 402,
+                "height": 63,
+                "fontSize": 14,
+                "gridColumn": "auto",
+                "paddingLeft": 0,
+                "tag": "LABEL",
+                "className": ""
+              },
+              {
+                "left": 821,
+                "right": 1223,
+                "top": 4808.34375,
+                "bottom": 4871.34375,
+                "width": 402,
+                "height": 63,
+                "fontSize": 14,
+                "gridColumn": "auto",
+                "paddingLeft": 0,
+                "tag": "LABEL",
+                "className": ""
+              },
+              {
+                "left": 405,
+                "right": 807,
+                "top": 4883.34375,
+                "bottom": 4946.34375,
+                "width": 402,
+                "height": 63,
+                "fontSize": 14,
+                "gridColumn": "auto",
+                "paddingLeft": 0,
+                "tag": "LABEL",
+                "className": ""
+              },
+              {
+                "left": 821,
+                "right": 1223,
+                "top": 4883.34375,
+                "bottom": 4946.34375,
+                "width": 402,
+                "height": 63,
+                "fontSize": 14,
+                "gridColumn": "auto",
+                "paddingLeft": 0,
+                "tag": "LABEL",
+                "className": ""
+              }
+            ],
+            "switchLabel": {
+              "left": 962.328125,
+              "right": 1062.328125,
+              "top": 1175.453125,
+              "bottom": 1219.453125,
+              "width": 100,
+              "height": 44,
+              "fontSize": 12,
+              "gridColumn": "auto",
+              "paddingLeft": 3,
+              "tag": "LABEL",
+              "className": "dsh-chatroom-switch"
+            },
+            "track": {
+              "left": 965.328125,
+              "right": 1003.328125,
+              "top": 1186.453125,
+              "bottom": 1208.453125,
+              "width": 38,
+              "height": 22,
+              "fontSize": 12,
+              "gridColumn": "auto",
+              "paddingLeft": 0,
+              "tag": "SPAN",
+              "className": ""
+            },
+            "trackHit": false,
+            "switchLabelHit": false
+          }
+        }
+      },
+      "reconnect": {
+        "oneClick": true,
+        "sessionListRequests": 1,
+        "roomStillSelected": true,
+        "before": {
+          "native": "connected",
+          "room": "online",
+          "notifications": "online"
+        },
+        "after": {
+          "native": "connected",
+          "room": "online",
+          "notifications": "online"
+        }
+      }
+    }
+  ],
+  "screenshots": [
+    "RC148-public-member-gallery-empty-r1.png",
+    "RC148-public-member-account-r1.png",
+    "RC148-public-super-admin-768-failure-r1.png",
+    "RC148-public-admin-group-files-r1.png"
+  ],
+  "passed": false,
+  "anonymousGallery": 401,
+  "error": "Error: super-admin/qqNarrow320: AssertionError [ERR_ASSERTION]: native-style counterexample missing assistant action labels\nsuper-admin/gallery: TimeoutError: page.waitForResponse: Timeout 15000ms exceeded while waiting for event \"response\"\nsuper-admin/viewports: AssertionError [ERR_ASSERTION]: super-admin/768/▧ 会话图库: control is covered\nsuper-admin/files-AI 成员: TimeoutError: locator.click: Timeout 30000ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('button, [role=\"tab\"], [title=\"Files\"]').nth(176)\u001b[22m\n\u001b[2m    - locator resolved to <div title=\"Files\" draggable=\"true\" class=\"nArs4W_tab nArs4W_tabActive\">…</div>\u001b[22m\n\u001b[2m  - attempting click action\u001b[22m\n\u001b[2m    - waiting for element to be visible, enabled and stable\u001b[22m\n\u001b[2m    - element is not stable\u001b[22m\n\u001b[2m  - retrying click action\u001b[22m\n\u001b[2m    - waiting for element to be visible, enabled and stable\u001b[22m\n\u001b[2m    - element is visible, enabled and stable\u001b[22m\n\u001b[2m    - scrolling into view if needed\u001b[22m\n\u001b[2m    - done scrolling\u001b[22m\n\u001b[2m    - <dialog open=\"\" aria-label=\"会话图片图库\" class=\"dsh-chatroom-image-viewer\">…</dialog> intercepts pointer events\u001b[22m\n\u001b[2m  - retrying click action\u001b[22m\n\u001b[2m    - waiting 20ms\u001b[22m\n\u001b[2m    2 × waiting for element to be visible, enabled and stable\u001b[22m\n\u001b[2m      - element is visible, enabled and stable\u001b[22m\n\u001b[2m      - scrolling into view if needed\u001b[22m\n\u001b[2m      - done scrolling\u001b[22m\n\u001b[2m      - <dialog open=\"\" aria-label=\"会话图片图库\" class=\"dsh-chatroom-image-viewer\">…</dialog> intercepts pointer events\u001b[22m\n\u001b[2m    - retrying click action\u001b[22m\n\u001b[2m      - waiting 100ms\u001b[22m\n\u001b[2m    57 × waiting for element to be visible, enabled and stable\u001b[22m\n\u001b[2m       - element is visible, enabled and stable\u001b[22m\n\u001b[2m       - scrolling into view if needed\u001b[22m\n\u001b[2m       - done scrolling\u001b[22m\n\u001b[2m       - <dialog open=\"\" aria-label=\"会话图片图库\" class=\"dsh-chatroom-image-viewer\">…</dialog> intercepts pointer events\u001b[22m\n\u001b[2m     - retrying click action\u001b[22m\n\u001b[2m       - waiting 500ms\u001b[22m\n\nsuper-admin/settings-manageable-rooms: AssertionError [ERR_ASSERTION]: public/super-admin/settings/desktop: AI enabled switch track is covered",
+  "browserCleanup": {
+    "startedAt": "2026-09-12T17:40:11.097Z",
+    "connected": true,
+    "contextsRemaining": 0
+  }
+}

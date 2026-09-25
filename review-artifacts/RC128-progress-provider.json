@@ -1,0 +1,9 @@
+{
+  "version": "1.5.0-codex.rc1.28",
+  "at": "2026-09-11T15:46:04.434Z",
+  "kind": "real-provider-public-browser-progress",
+  "runs": [],
+  "passed": false,
+  "error": "TimeoutError: locator.click: Timeout 25000ms exceeded.\nCall log:\n\u001b[2m  - waiting for getByRole('treeitem').filter({ hasText: 'GPT 与 M3 生图验收' }).first()\u001b[22m\n",
+  "testProfilesRemoved": true
+}

@@ -1,0 +1,21 @@
+{
+  "room": {
+    "id": "6e163745-815f-461c-be4a-9662ed9ee52d",
+    "title": "权限与进展验收 20260912",
+    "aiDisplayName": "DeepSeek",
+    "sessionId": "chatroom-v1-6e163745-815f-461c-be4a-9662ed9ee52d",
+    "updatedAt": 1789147007217,
+    "pinned": false,
+    "autoTriggerEnabled": false,
+    "memberAvatarIds": [
+      "whale"
+    ],
+    "memberAvatars": [
+      {
+        "participantId": "ea786e32-459a-44d2-9efd-1e7daae0cdd9",
+        "avatarId": "whale"
+      }
+    ]
+  },
+  "at": "2026-09-11T17:16:54.071Z"
+}

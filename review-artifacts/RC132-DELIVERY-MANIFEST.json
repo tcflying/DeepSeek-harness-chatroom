@@ -1,0 +1,95 @@
+{
+  "at": "2026-09-11T17:57:28.399Z",
+  "version": "1.5.0-codex.rc1.32",
+  "bundles": [
+    {
+      "file": "dist/index.js",
+      "sha256": "d1b452ff5af1249135477071fae22ecca5fa511163e468da7e8c88e47f5d8951",
+      "bytes": 515174
+    },
+    {
+      "file": "dist/client.js",
+      "sha256": "0a8e1ff2cae0b1994e4fdae03c60ae24c516d9f5fee7742797a91005fce06c57",
+      "bytes": 1127421
+    }
+  ],
+  "overlaySha256": "f9a7955fc00a3f12f1779852c12249dfede297ca0acc0ddb9a600d2ec0181369",
+  "health": {
+    "ready": true,
+    "diagnostics": {
+      "enabled": true,
+      "healthy": true,
+      "dropped": 0
+    }
+  },
+  "memberProof": "RC132-member-stability.json",
+  "adminProof": "RC132-GPT-iab-live.json",
+  "providers": [
+    {
+      "label": "GPT",
+      "eventCount": 73,
+      "states": [
+        "waiting",
+        "writing",
+        "completed"
+      ],
+      "cleaned": true
+    },
+    {
+      "label": "M3",
+      "eventCount": 18,
+      "states": [
+        "waiting",
+        "thinking",
+        "writing",
+        "completed"
+      ],
+      "cleaned": true
+    }
+  ],
+  "originalBrowserFrames": [
+    {
+      "at": "2026-09-11T17:48:11.319Z",
+      "footer": "服务器已连接↻重连",
+      "progress": [
+        {
+          "state": "waiting",
+          "text": "M3文字进展验收1789148888065 · 等待响应等待模型响应…刚刚更新"
+        }
+      ]
+    },
+    {
+      "at": "2026-09-11T17:48:16.506Z",
+      "footer": "服务器已连接↻重连",
+      "progress": [
+        {
+          "state": "writing",
+          "text": "M3文字进展验收1789148888065 · 正在回复13. 已读回执小刚刚更新"
+        }
+      ]
+    },
+    {
+      "at": "2026-09-11T17:48:21.673Z",
+      "footer": "服务器已连接↻重连",
+      "progress": [
+        {
+          "state": "completed",
+          "text": "M3文字进展验收1789148888065 · 已完成M3-PROGRESS-1789148888109已完成"
+        }
+      ]
+    }
+  ],
+  "isolatedProof": {
+    "file": "RC127-isolated-r2-acceptance.json",
+    "scope": "Retained real native cold-start; byte-identical server bundle. Current client independently browser-tested."
+  },
+  "tests": {
+    "unit": 396,
+    "affectedBrowser": 6
+  },
+  "limits": [
+    "Group/named-agent and branch progress; not a new Solo backend progress feed.",
+    "No claim of indefinite WAN uptime or historical 13:34 initiating-trigger recovery.",
+    "Earlier browser-control timeouts and pre-readiness 503 attempts retained; not counted as passes."
+  ]
+}

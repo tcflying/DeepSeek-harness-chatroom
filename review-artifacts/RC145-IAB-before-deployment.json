@@ -1,0 +1,15 @@
+{
+  "candidateVersion": "1.5.0-codex.rc1.45",
+  "productionVersion": "1.5.0-codex.rc1.42",
+  "passed": false,
+  "surface": "original Codex In-app Browser",
+  "tab": "1",
+  "observation": "The supported runtime reinitialized successfully and listed the original talk.opcvip.net tab. Its accessibility read did not finish within the 40-second execution limit; the tool reset its kernel.",
+  "error": "js execution timed out; kernel reset, rerun your request",
+  "followup": {
+    "discovery": "Supported runtime found original tab 1 on talk.opcvip.net; current installed browser runtime 26.903.71938 loaded successfully.",
+    "read": "Even a bounded dev.logs read filtered to RangeError timed out at 15 seconds and reset the kernel. No UI mutation or page reload was attempted.",
+    "result": "Original page control remains unverified; no further identical read attempts before a relevant state change."
+  },
+  "limits": "This is retained production failure evidence, not candidate acceptance. No reload, message, upload, image/video generation, settings save or profile change was performed. Previously recorded same-site versus ordinary-page probes were not repeated without new evidence."
+}

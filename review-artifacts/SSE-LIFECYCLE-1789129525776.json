@@ -1,0 +1,444 @@
+{
+  "at": "2026-09-11T12:22:50.755Z",
+  "duration": 155000,
+  "results": [
+    {
+      "base": "http://127.0.0.1:3181",
+      "stream": "notifications",
+      "frames": [
+        {
+          "ms": 15010,
+          "type": "comment-heartbeat",
+          "bytes": 11
+        },
+        {
+          "ms": 30023,
+          "type": "comment-heartbeat",
+          "bytes": 11
+        },
+        {
+          "ms": 45036,
+          "type": "comment-heartbeat",
+          "bytes": 11
+        },
+        {
+          "ms": 60052,
+          "type": "comment-heartbeat",
+          "bytes": 11
+        },
+        {
+          "ms": 74308,
+          "type": "data",
+          "bytes": 657
+        },
+        {
+          "ms": 75071,
+          "type": "comment-heartbeat",
+          "bytes": 11
+        },
+        {
+          "ms": 90079,
+          "type": "comment-heartbeat",
+          "bytes": 11
+        },
+        {
+          "ms": 105083,
+          "type": "comment-heartbeat",
+          "bytes": 11
+        },
+        {
+          "ms": 120095,
+          "type": "comment-heartbeat",
+          "bytes": 11
+        },
+        {
+          "ms": 135110,
+          "type": "comment-heartbeat",
+          "bytes": 11
+        },
+        {
+          "ms": 150112,
+          "type": "comment-heartbeat",
+          "bytes": 11
+        }
+      ],
+      "bytes": 789,
+      "status": 200,
+      "headersMs": 15010,
+      "type": "text/event-stream; charset=utf-8",
+      "operationId": null,
+      "error": "probe-complete",
+      "elapsedMs": 155012
+    },
+    {
+      "base": "http://127.0.0.1:3181",
+      "stream": "room",
+      "frames": [
+        {
+          "ms": 9,
+          "type": "data",
+          "bytes": 1208
+        },
+        {
+          "ms": 9,
+          "type": "data",
+          "bytes": 423
+        },
+        {
+          "ms": 19,
+          "type": "data",
+          "bytes": 423
+        },
+        {
+          "ms": 1325,
+          "type": "data",
+          "bytes": 423
+        },
+        {
+          "ms": 15010,
+          "type": "comment-heartbeat",
+          "bytes": 11
+        },
+        {
+          "ms": 30024,
+          "type": "comment-heartbeat",
+          "bytes": 11
+        },
+        {
+          "ms": 45036,
+          "type": "comment-heartbeat",
+          "bytes": 11
+        },
+        {
+          "ms": 60052,
+          "type": "comment-heartbeat",
+          "bytes": 11
+        },
+        {
+          "ms": 75071,
+          "type": "comment-heartbeat",
+          "bytes": 11
+        },
+        {
+          "ms": 90079,
+          "type": "comment-heartbeat",
+          "bytes": 11
+        },
+        {
+          "ms": 105083,
+          "type": "comment-heartbeat",
+          "bytes": 11
+        },
+        {
+          "ms": 120096,
+          "type": "comment-heartbeat",
+          "bytes": 11
+        },
+        {
+          "ms": 135110,
+          "type": "comment-heartbeat",
+          "bytes": 11
+        },
+        {
+          "ms": 150113,
+          "type": "comment-heartbeat",
+          "bytes": 11
+        }
+      ],
+      "bytes": 2615,
+      "status": 200,
+      "headersMs": 8,
+      "type": "text/event-stream; charset=utf-8",
+      "operationId": null,
+      "error": "probe-complete",
+      "elapsedMs": 155013
+    },
+    {
+      "base": "http://127.0.0.1:3185",
+      "stream": "notifications",
+      "frames": [
+        {
+          "ms": 15010,
+          "type": "comment-heartbeat",
+          "bytes": 11
+        },
+        {
+          "ms": 30023,
+          "type": "comment-heartbeat",
+          "bytes": 11
+        },
+        {
+          "ms": 45035,
+          "type": "comment-heartbeat",
+          "bytes": 11
+        },
+        {
+          "ms": 60051,
+          "type": "comment-heartbeat",
+          "bytes": 11
+        },
+        {
+          "ms": 74307,
+          "type": "data",
+          "bytes": 657
+        },
+        {
+          "ms": 75070,
+          "type": "comment-heartbeat",
+          "bytes": 11
+        },
+        {
+          "ms": 90078,
+          "type": "comment-heartbeat",
+          "bytes": 11
+        },
+        {
+          "ms": 105082,
+          "type": "comment-heartbeat",
+          "bytes": 11
+        },
+        {
+          "ms": 120095,
+          "type": "comment-heartbeat",
+          "bytes": 11
+        },
+        {
+          "ms": 135109,
+          "type": "comment-heartbeat",
+          "bytes": 11
+        },
+        {
+          "ms": 150112,
+          "type": "comment-heartbeat",
+          "bytes": 11
+        }
+      ],
+      "bytes": 789,
+      "status": 200,
+      "headersMs": 15010,
+      "type": "text/event-stream; charset=utf-8",
+      "operationId": null,
+      "error": "probe-complete",
+      "elapsedMs": 155012
+    },
+    {
+      "base": "http://127.0.0.1:3185",
+      "stream": "room",
+      "frames": [
+        {
+          "ms": 18,
+          "type": "data",
+          "bytes": 1207
+        },
+        {
+          "ms": 18,
+          "type": "data",
+          "bytes": 423
+        },
+        {
+          "ms": 1324,
+          "type": "data",
+          "bytes": 423
+        },
+        {
+          "ms": 15024,
+          "type": "comment-heartbeat",
+          "bytes": 11
+        },
+        {
+          "ms": 30037,
+          "type": "comment-heartbeat",
+          "bytes": 11
+        },
+        {
+          "ms": 45051,
+          "type": "comment-heartbeat",
+          "bytes": 11
+        },
+        {
+          "ms": 60066,
+          "type": "comment-heartbeat",
+          "bytes": 11
+        },
+        {
+          "ms": 75071,
+          "type": "comment-heartbeat",
+          "bytes": 11
+        },
+        {
+          "ms": 90078,
+          "type": "comment-heartbeat",
+          "bytes": 11
+        },
+        {
+          "ms": 105083,
+          "type": "comment-heartbeat",
+          "bytes": 11
+        },
+        {
+          "ms": 120095,
+          "type": "comment-heartbeat",
+          "bytes": 11
+        },
+        {
+          "ms": 135109,
+          "type": "comment-heartbeat",
+          "bytes": 11
+        },
+        {
+          "ms": 150112,
+          "type": "comment-heartbeat",
+          "bytes": 11
+        }
+      ],
+      "bytes": 2189,
+      "status": 200,
+      "headersMs": 18,
+      "type": "text/event-stream; charset=utf-8",
+      "operationId": null,
+      "error": "probe-complete",
+      "elapsedMs": 155015
+    },
+    {
+      "base": "https://talk.opcvip.net",
+      "stream": "notifications",
+      "frames": [
+        {
+          "ms": 15417,
+          "type": "comment-heartbeat",
+          "bytes": 11
+        },
+        {
+          "ms": 30429,
+          "type": "comment-heartbeat",
+          "bytes": 11
+        },
+        {
+          "ms": 45442,
+          "type": "comment-heartbeat",
+          "bytes": 11
+        },
+        {
+          "ms": 60457,
+          "type": "comment-heartbeat",
+          "bytes": 11
+        },
+        {
+          "ms": 74516,
+          "type": "data",
+          "bytes": 657
+        },
+        {
+          "ms": 75491,
+          "type": "comment-heartbeat",
+          "bytes": 11
+        },
+        {
+          "ms": 90488,
+          "type": "comment-heartbeat",
+          "bytes": 11
+        },
+        {
+          "ms": 105492,
+          "type": "comment-heartbeat",
+          "bytes": 11
+        },
+        {
+          "ms": 120503,
+          "type": "comment-heartbeat",
+          "bytes": 11
+        },
+        {
+          "ms": 135518,
+          "type": "comment-heartbeat",
+          "bytes": 11
+        },
+        {
+          "ms": 150526,
+          "type": "comment-heartbeat",
+          "bytes": 11
+        }
+      ],
+      "bytes": 789,
+      "status": 200,
+      "headersMs": 15417,
+      "type": "text/event-stream; charset=utf-8",
+      "operationId": null,
+      "error": "probe-complete",
+      "elapsedMs": 155016
+    },
+    {
+      "base": "https://talk.opcvip.net",
+      "stream": "room",
+      "frames": [
+        {
+          "ms": 1507,
+          "type": "data",
+          "bytes": 1207
+        },
+        {
+          "ms": 1507,
+          "type": "data",
+          "bytes": 423
+        },
+        {
+          "ms": 16516,
+          "type": "comment-heartbeat",
+          "bytes": 11
+        },
+        {
+          "ms": 31524,
+          "type": "comment-heartbeat",
+          "bytes": 11
+        },
+        {
+          "ms": 46536,
+          "type": "comment-heartbeat",
+          "bytes": 11
+        },
+        {
+          "ms": 61554,
+          "type": "comment-heartbeat",
+          "bytes": 11
+        },
+        {
+          "ms": 76581,
+          "type": "comment-heartbeat",
+          "bytes": 11
+        },
+        {
+          "ms": 91577,
+          "type": "comment-heartbeat",
+          "bytes": 11
+        },
+        {
+          "ms": 106587,
+          "type": "comment-heartbeat",
+          "bytes": 11
+        },
+        {
+          "ms": 121612,
+          "type": "comment-heartbeat",
+          "bytes": 11
+        },
+        {
+          "ms": 136633,
+          "type": "comment-heartbeat",
+          "bytes": 11
+        },
+        {
+          "ms": 151636,
+          "type": "comment-heartbeat",
+          "bytes": 11
+        }
+      ],
+      "bytes": 1764,
+      "status": 200,
+      "headersMs": 1507,
+      "type": "text/event-stream; charset=utf-8",
+      "operationId": null,
+      "error": "probe-complete",
+      "elapsedMs": 155018
+    }
+  ]
+}

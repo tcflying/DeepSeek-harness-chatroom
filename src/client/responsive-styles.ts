@@ -14,7 +14,14 @@ export const CHATROOM_RESPONSIVE_STYLES = `
 .dsh-chatroom-settings > .dsh-chatroom-settings-header,
 .dsh-chatroom-settings > .dsh-chatroom-admin-card,
 .dsh-chatroom-settings > .dsh-chatroom-error { grid-column: 1 / -1; }
-.dsh-chatroom-settings > .dsh-chatroom-card { container: chatroom-card / inline-size; }
+.dsh-chatroom-settings > .dsh-chatroom-agent-settings-card { grid-column: 1 / -1; }
+.dsh-chatroom-settings > .dsh-chatroom-card {
+  container: chatroom-card / inline-size;
+  border: 1px solid var(--dsw-alias-border-l2, #dce0e6);
+  border-radius: 12px;
+  background: var(--dsw-alias-bg-module-platform, var(--bg-secondary, #f3f4f6));
+  padding: 16px;
+}
 .dsh-chatroom-settings > .dsh-chatroom-card > header { padding-bottom: 10px; border-bottom: 1px solid var(--dsw-alias-border-l2, #dce0e6); }
 .dsh-chatroom-settings > .dsh-chatroom-card > header h2 { margin: 0; font-size: 15px; line-height: 22px; font-weight: 600; }
 .dsh-chatroom-settings > .dsh-chatroom-card > header p { margin: 4px 0 0; font-size: 12px; line-height: 18px; }
@@ -22,7 +29,12 @@ export const CHATROOM_RESPONSIVE_STYLES = `
 .dsh-chatroom-settings .dsh-chatroom-account-card > button { border: 1px solid var(--dsw-alias-border-l2, #dce0e6); border-radius: 8px; background: transparent; color: inherit; padding: 8px 12px; font: inherit; cursor: pointer; }
 .dsh-chatroom-settings .dsh-chatroom-account-card > small { display: block; margin-top: 6px; color: var(--dsw-alias-label-secondary, #505666); font-size: 12px; }
 .dsh-chatroom-settings :is(p, strong, small, label, code) { overflow-wrap: anywhere; }
-.dsh-chatroom-settings :is(input, select, textarea) { min-width: 0; max-width: 100%; box-sizing: border-box; }
+.dsh-chatroom-settings .dsh-chatroom-card label:has(input:not([type="checkbox"]), select, textarea) {
+  font-size: max(14px, 1em); line-height: 1.5;
+}
+.dsh-chatroom-settings :is(input:not([type="checkbox"]), select, textarea) {
+  min-width: 0; max-width: 100%; box-sizing: border-box; font-size: max(14px, 1em);
+}
 .dsh-chatroom-settings .dsh-chatroom-group-setup-fields { grid-template-columns: repeat(auto-fit, minmax(min(100%, 14rem), 1fr)); }
 .dsh-chatroom-settings .dsh-chatroom-group-setup-list { grid-template-columns: repeat(auto-fit, minmax(min(100%, 20rem), 1fr)); }
 .dsh-chatroom-settings .dsh-chatroom-wecom-account-row { flex-wrap: wrap; }
@@ -30,7 +42,12 @@ export const CHATROOM_RESPONSIVE_STYLES = `
 .dsh-chatroom-settings .dsh-chatroom-agents-form { grid-template-columns: repeat(auto-fit, minmax(min(100%, 13rem), 1fr)); }
 .dsh-chatroom-agents-form > .dsh-chatroom-settings-advanced { grid-column: 1 / -1; }
 .dsh-chatroom-agents-form label { min-width: 0; }
+.dsh-chatroom-settings .dsh-chatroom-agents-form > label:not(.dsh-chatroom-switch) { font-size: 14px; line-height: 20px; }
 .dsh-chatroom-agents-form label:has(input[type="checkbox"]) { display: flex; align-items: center; gap: 8px; width: auto; min-height: 38px; white-space: nowrap; overflow-wrap: normal; }
+.dsh-chatroom-settings .dsh-chatroom-agents-form > label.dsh-chatroom-switch {
+  align-self: center; justify-self: start; box-sizing: border-box; width: max-content; min-width: 44px; height: 44px; min-height: 44px; padding-inline: 3px;
+}
+.dsh-chatroom-settings .dsh-chatroom-agents-form > label.dsh-chatroom-switch > span[aria-hidden] { flex: 0 0 38px; width: 38px; height: 22px; }
 .dsh-chatroom-agents-form textarea { width: 100%; min-height: 100px; box-sizing: border-box; resize: vertical; }
 .dsh-chatroom-settings .dsh-chatroom-agents-room-picker { display: flex; gap: 6px; min-width: 0; }
 .dsh-chatroom-settings .dsh-chatroom-agents-room-picker select { flex: 1; min-width: 0; }
@@ -79,6 +96,17 @@ export const CHATROOM_RESPONSIVE_STYLES = `
 .dsh-chatroom-emoji-picker, .dsh-chatroom-direct-emoji-picker { max-height: min(280px, 42dvh); overflow-y: auto; }
 .dsh-chatroom-control-label { white-space: nowrap; }
 
+/* dsh-web-all's legacy mobile shim hides every sidebar child except its logo.
+   The current Host nests Settings under that footer too. Restore only the
+   footer hosting our status/account/settings surface, not other native regions
+   or a Settings component that the authorization slot has already unmounted. */
+@media (max-width: 768px) {
+  html[data-dsh-chatroom-installed] [data-dsh-frame][data-sidebar-collapsed] [data-pane="sidebar"]
+    > [data-slot="sidebar"] > :first-child > :has(.dsh-chatroom-server-status, [data-slot="sidebar.settings"] .dsh-chatroom-settings) {
+    display: flex !important; flex-direction: column; margin-top: auto; opacity: 1; pointer-events: auto;
+  }
+}
+
 @container chatroom-direct (max-width: 40rem) {
   .dsh-chatroom-direct-messages { padding-inline: 12px; }
   .dsh-chatroom-direct-messages > .dsh-chatroom-direct-message { max-width: 96%; }
@@ -119,7 +147,7 @@ export const CHATROOM_RESPONSIVE_STYLES = `
   .dsh-chatroom-session-controls button,
   .dsh-chatroom-composer-actions > button,
   .dsh-chatroom-direct-composer-tools button { min-height: 44px; min-width: 44px; touch-action: manipulation; }
-  .dsh-chatroom-settings :is(input:not([type="checkbox"]), select, textarea),
+  .dsh-chatroom-settings :is(input:not([type="checkbox"]), select, textarea) { font-size: max(16px, 1em) !important; }
   .dsh-chatroom-direct-composer textarea,
   .dsh-chatroom-thread-composer textarea { font-size: 16px; }
   .dsh-chatroom-settings :is(input:not([type="checkbox"]), select) { min-height: 44px; }

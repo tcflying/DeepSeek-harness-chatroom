@@ -1,0 +1,32 @@
+{
+  "at": "2026-09-11T10:39:13.357Z",
+  "marker": "EDIT-1789123153357",
+  "roomId": "29f58452-d88b-4495-9aee-03028b49df15",
+  "sourceFileId": "2f0179c0-ddae-480b-8d7f-b8661f992ee2",
+  "results": [
+    {
+      "name": "GPT框选验收",
+      "provider": "oc-gpt6-low",
+      "model": "gpt-6-astra",
+      "fileId": "dc047014-230d-4934-ba89-079b6f1b39f4",
+      "artifact": "/G:/codex-project/dsh-chatroom-next/review-artifacts/EDIT-1789123153357-0.png",
+      "bytes": 1074428,
+      "width": 1254,
+      "height": 1254,
+      "sha256": "be592e591825d2e2c7511a32df326036ab9d14d02b569d5d184d8a0f8ac27a3a",
+      "elapsedMs": 60045
+    },
+    {
+      "name": "M3框选验收",
+      "provider": "minimax-cn",
+      "model": "MiniMax-M3",
+      "fileId": "b819c409-ddc5-42fc-8ffd-5e21b9b3c40c",
+      "artifact": "/G:/codex-project/dsh-chatroom-next/review-artifacts/EDIT-1789123153357-1.png",
+      "bytes": 1105093,
+      "width": 1254,
+      "height": 1254,
+      "sha256": "e3f4bfa022a67a26f8de957f9be0b08f89ab2e195c12d8d755b12662181061c2",
+      "elapsedMs": 94871
+    }
+  ]
+}

@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import type { PropsRuntime } from '@deepseek-ai/dsh-client-ui-slots'
-import { CHATROOM_AVATARS, type ChatroomAvatarId } from '../avatars.js'
+import { CHATROOM_AVATARS, chatroomAvatar, type ChatroomAvatarId } from '../avatars.js'
+import { classicAvatarUrl } from './avatar-images.js'
 import { authProviderStartLocation } from '../auth-redirect.js'
 import type { ChatroomClientStore, ChatroomView } from './store.js'
 import type { ChatroomAuthState, ChatroomForwardItem, ChatroomReplyReference, ChatroomSearchResult } from '../types.js'
@@ -141,7 +142,7 @@ function AuthStep({
   const [password, setPassword] = useState('')
   const [displayName, setDisplayName] = useState('')
   const [bootstrapToken, setBootstrapToken] = useState('')
-  const [avatarId, setAvatarId] = useState<ChatroomAvatarId>(CHATROOM_AVATARS[0].id)
+  const [avatarId, setAvatarId] = useState<ChatroomAvatarId>(CHATROOM_AVATARS[0]!.id)
   const returnTo = typeof location === 'undefined' ? '/' : `${location.pathname}${location.search}`
   const autoProvider = room.auth.bootstrapRequired ? undefined : room.auth.autoRedirectProvider
   const localLogin = room.auth.authMode !== 'dsh-auth-only'
@@ -191,8 +192,9 @@ function AuthStep({
                 type="button"
                 role="radio"
                 aria-checked={avatar.id === avatarId}
+                aria-label={avatar.label}
                 onClick={() => { setAvatarId(avatar.id) }}
-              >{avatar.emoji}</button>)}
+              ><img src={classicAvatarUrl(avatar.id, '')} alt="" /></button>)}
             </div>
           </fieldset>
         </>}
@@ -226,7 +228,8 @@ function IdentityStep({
   close(): void
 }): JSX.Element {
   const [name, setName] = useState(room.identity?.displayName ?? '')
-  const [avatarId, setAvatarId] = useState<ChatroomAvatarId>(room.identity?.avatarId ?? CHATROOM_AVATARS[0].id)
+  const [avatarId, setAvatarId] = useState<ChatroomAvatarId>(room.identity === undefined
+    ? CHATROOM_AVATARS[0]!.id : chatroomAvatar(room.identity.avatarId, room.identity.participantId).id)
   return (
     <form className="dsh-chatroom-card" onSubmit={(event) => { event.preventDefault(); void join(name, avatarId) }}>
       <button className="dsh-chatroom-close" aria-label="关闭" type="button" onClick={close}>×</button>
@@ -256,7 +259,7 @@ function IdentityStep({
               aria-label={avatar.label}
               onClick={() => { setAvatarId(avatar.id) }}
             >
-              {avatar.emoji}
+              <img src={classicAvatarUrl(avatar.id, '')} alt="" />
             </button>
           ))}
         </div>

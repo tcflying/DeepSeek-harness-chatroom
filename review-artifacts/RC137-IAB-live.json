@@ -1,0 +1,34 @@
+{
+  "version": "1.5.0-codex.rc1.37",
+  "passed": false,
+  "browser": "original Codex In-app Browser, original tab 1",
+  "observed": {
+    "servedNarrowRailMarker": true,
+    "firstReloadWelcomeWithoutRoom": true,
+    "nativeTestNoticeDismissed": true,
+    "sidebarExpandedAndNativeRoomManuallySelected": true,
+    "existingUnsentDraftRetained": true,
+    "nativeRoomNotificationConnectedAfterSelection": true,
+    "filesSidebarActuallyOpen": true,
+    "viewport": { "width": 924, "height": 1030 },
+    "filesNarrowedConversationWidth": 320,
+    "assistantTools": { "width": 24.4875, "height": 149.2, "actionsHeight": 141.2 },
+    "nativeActionsMarkerPresent": false,
+    "nativeTurnTailAttributePresent": true,
+    "humanMessageColumnWidth": 205.825,
+    "nativeHumanStack": { "maxWidth": "70.2%", "width": 144.4875 },
+    "aiDialogVisibleAboveFiles": true,
+    "groupDialog": { "modal": true, "width": 720, "height": 887.8, "left": 102, "right": 822, "clientWidth": 718, "scrollWidth": 718 },
+    "managementDialogsClosedAfterChecks": true,
+    "768pxNavigationOverlay": { "styleHitBeforeClosingLeftNavigation": false, "styleHitAfterActualCollapseClick": true, "openModalCount": 0 },
+    "temporaryViewportOverrideReset": true
+  },
+  "screenshots": ["RC137-IAB-files.png", "RC137-IAB-ai-files.png"],
+  "failures": [
+    "Initial reload did not select the URL room; native catalogue timeouts were logged during the acceptance window. Manual selection recovered the room; root cause is not assigned from timing alone.",
+    "Actual Host has a data-turn-tail action rail but no data-time-hover-root or plugin native-actions marker. The rc137 marker-dependent wrapping rule therefore does not match, leaving a 24.49px vertical action rail.",
+    "The native human userStack applies max-width 70.2% inside the already-narrowed plugin column, reducing long-message width from 205.83px to 144.49px.",
+    "Two browser actions batched inside a 40-second control call timed out and reset the control binding. A subsequent single-action readback recovered the original tab; no repeated message submission occurred."
+  ],
+  "limits": "No message, upload, paid generation, account/role change or server setting save. rc138 candidates address confirmed plugin defects; this rc137 failure receipt is retained and not promoted by later tests."
+}

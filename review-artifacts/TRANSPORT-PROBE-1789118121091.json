@@ -1,0 +1,95 @@
+{
+  "at": "2026-09-11T09:14:35.663Z",
+  "sockets": [
+    {
+      "origin": "http://127.0.0.1:3181",
+      "pongDelay": 0,
+      "pings": [
+        15033,
+        30047
+      ],
+      "closedByProbe": true,
+      "openMs": 24,
+      "code": 1005,
+      "elapsedMs": 45005
+    },
+    {
+      "origin": "http://127.0.0.1:3181",
+      "pongDelay": 7500,
+      "pings": [
+        15020,
+        30034
+      ],
+      "closedByProbe": true,
+      "openMs": 11,
+      "code": 1005,
+      "elapsedMs": 45007
+    },
+    {
+      "origin": "https://talk.opcvip.net",
+      "pongDelay": 7500,
+      "pings": [
+        15939,
+        31839
+      ],
+      "closedByProbe": true,
+      "openMs": 6421,
+      "code": 1005,
+      "elapsedMs": 45397
+    },
+    {
+      "origin": "https://talk.opcvip.net",
+      "pongDelay": 0,
+      "pings": [
+        15960,
+        31858
+      ],
+      "closedByProbe": true,
+      "openMs": 6444,
+      "code": 1005,
+      "elapsedMs": 45425
+    }
+  ],
+  "files": [
+    {
+      "origin": "http://127.0.0.1:3181",
+      "preview": false,
+      "status": 200,
+      "type": "image/png",
+      "bytes": 2636898,
+      "elapsedMs": 32
+    },
+    {
+      "origin": "http://127.0.0.1:3181",
+      "preview": true,
+      "status": 200,
+      "type": "image/webp",
+      "bytes": 16592,
+      "elapsedMs": 257
+    },
+    {
+      "origin": "http://127.0.0.1:3181",
+      "unauthenticatedThumbnail": 401
+    },
+    {
+      "origin": "https://talk.opcvip.net",
+      "preview": false,
+      "status": 200,
+      "type": "image/png",
+      "bytes": 2636898,
+      "elapsedMs": 6427
+    },
+    {
+      "origin": "https://talk.opcvip.net",
+      "preview": true,
+      "status": 200,
+      "type": "image/webp",
+      "bytes": 16592,
+      "elapsedMs": 7385
+    },
+    {
+      "origin": "https://talk.opcvip.net",
+      "unauthenticatedThumbnail": 401
+    }
+  ]
+}

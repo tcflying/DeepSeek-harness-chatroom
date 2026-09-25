@@ -1,0 +1,21 @@
+{
+  "dialog": [
+    {
+      "client": 365,
+      "scroll": 365,
+      "width": 366.3999938964844
+    }
+  ],
+  "images": [
+    {
+      "complete": true,
+      "height": 1536,
+      "width": 1024
+    }
+  ],
+  "style": null,
+  "viewport": [
+    390,
+    844
+  ]
+}

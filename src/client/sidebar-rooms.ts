@@ -1,4 +1,4 @@
-import { chatroomAvatar } from '../avatars.js'
+import { classicAvatarUrl, createAvatarImage } from './avatar-images.js'
 import type {
   ChatroomDirectConversation,
   ChatroomDirectPeer,
@@ -90,10 +90,12 @@ let activeNativeMenuItem: HTMLElement | undefined
 /** Decorate native Workspace Session rows without replacing the Harness sidebar. */
 export function installSidebarRoomRows(store: ChatroomClientStore, sessions: ISessions): () => void {
   if (typeof document === 'undefined' || typeof MutationObserver === 'undefined') return () => undefined
+  let disposed = false
   let scheduled = false
   let directoryIdentity: string | undefined
   let directoryRetry: ReturnType<typeof setTimeout> | undefined
   const reconcile = (): void => {
+    if (disposed) return
     scheduled = false
     const list = sessions.list.getSnapshot()
     const snapshot = store.getSnapshot()
@@ -111,6 +113,7 @@ export function installSidebarRoomRows(store: ChatroomClientStore, sessions: ISe
     else if (directoryIdentity !== identity) {
       directoryIdentity = identity
       void store.loadDirectDirectory().then(loaded => {
+        if (disposed) return
         if (loaded || directoryIdentity !== identity) return
         directoryIdentity = undefined
         directoryRetry = setTimeout(schedule, 2_000)
@@ -118,7 +121,7 @@ export function installSidebarRoomRows(store: ChatroomClientStore, sessions: ISe
     }
   }
   const schedule = (): void => {
-    if (scheduled) return
+    if (disposed || scheduled) return
     scheduled = true
     queueMicrotask(reconcile)
   }
@@ -141,6 +144,7 @@ export function installSidebarRoomRows(store: ChatroomClientStore, sessions: ISe
   const unsubscribeSessions = sessions.list.subscribe(schedule)
   schedule()
   return () => {
+    disposed = true
     unsubscribe()
     unsubscribeSessions()
     observer.disconnect()
@@ -518,27 +522,12 @@ function decorateRoomRow(
   avatar.dataset.count = String(Math.max(1, avatars.length))
   avatar.dataset.signature = signature
   avatar.setAttribute('aria-hidden', 'true')
-  const cells: Array<{ readonly emoji: string; readonly avatarUrl?: string }> = avatars.length === 0
-    ? [{ emoji: '✦' }]
-    : avatars.map(identity => ({
-        ...identity,
-        emoji: chatroomAvatar(identity.avatarId, identity.participantId).emoji,
-      }))
+  const cells: readonly { participantId: string; avatarId?: string; avatarUrl?: string }[] = avatars.length === 0
+    ? [{ participantId: `room:${room.id}` }]
+    : avatars
   for (const entry of cells) {
     const cell = row.ownerDocument.createElement('span')
-    if (entry.avatarUrl === undefined) {
-      cell.textContent = entry.emoji
-    } else {
-      const image = row.ownerDocument.createElement('img')
-      image.src = entry.avatarUrl
-      image.alt = ''
-      image.referrerPolicy = 'no-referrer'
-      image.addEventListener('error', () => {
-        image.remove()
-        cell.textContent = entry.emoji
-      }, { once: true })
-      cell.append(image)
-    }
+    cell.append(createAvatarImage(row.ownerDocument, classicAvatarUrl(entry.avatarId, entry.participantId), entry.avatarUrl))
     avatar.append(cell)
   }
   row.prepend(avatar)
@@ -1204,20 +1193,7 @@ function reconcileDirectAvatar(container: HTMLElement, peer: ChatroomDirectPeer)
   if (container.dataset.signature === signature) return
   container.dataset.signature = signature
   container.replaceChildren()
-  const fallback = chatroomAvatar(peer.avatarId, peer.participantId).emoji
-  if (peer.avatarUrl === undefined) {
-    container.textContent = fallback
-    return
-  }
-  const image = container.ownerDocument.createElement('img')
-  image.src = peer.avatarUrl
-  image.alt = ''
-  image.referrerPolicy = 'no-referrer'
-  image.addEventListener('error', () => {
-    image.remove()
-    container.textContent = fallback
-  }, { once: true })
-  container.append(image)
+  container.append(createAvatarImage(container.ownerDocument, classicAvatarUrl(peer.avatarId, peer.participantId), peer.avatarUrl))
 }
 
 function formatDirectTime(timestamp: number): string {

@@ -1,0 +1,208 @@
+{
+  "version": "1.5.0-codex.rc1.35",
+  "at": "2026-09-12T00:12:12.950Z",
+  "mode": "public-authenticated",
+  "base": "https://talk.opcvip.net",
+  "roles": [
+    {
+      "role": "member",
+      "rpc": [
+        {
+          "method": "settings/describe",
+          "status": 403
+        },
+        {
+          "method": "credentials/list",
+          "status": 403
+        },
+        {
+          "method": "session/selectModel",
+          "status": 403
+        },
+        {
+          "method": "agentPresets/select",
+          "status": 403
+        },
+        {
+          "method": "commands/execute",
+          "status": 403
+        }
+      ],
+      "errors": [],
+      "roomSelected": true,
+      "geometry": {
+        "320": {
+          "width": 320,
+          "height": 720,
+          "documentWidth": 320,
+          "bodyWidth": 320,
+          "control": "▧ 会话图库",
+          "account": {
+            "left": 116,
+            "right": 195.75,
+            "top": 136,
+            "bottom": 170,
+            "width": 79.75,
+            "height": 34,
+            "viewportWidth": 320,
+            "viewportHeight": 720,
+            "hit": true
+          },
+          "style": {
+            "left": 186,
+            "right": 264,
+            "top": 12,
+            "bottom": 48,
+            "width": 78,
+            "height": 36,
+            "viewportWidth": 320,
+            "viewportHeight": 720,
+            "hit": true
+          }
+        },
+        "390": {
+          "width": 390,
+          "height": 844,
+          "documentWidth": 390,
+          "bodyWidth": 390,
+          "control": "▧ 会话图库",
+          "account": {
+            "left": 116,
+            "right": 195.75,
+            "top": 136,
+            "bottom": 170,
+            "width": 79.75,
+            "height": 34,
+            "viewportWidth": 390,
+            "viewportHeight": 844,
+            "hit": true
+          },
+          "style": {
+            "left": 256,
+            "right": 334,
+            "top": 12,
+            "bottom": 48,
+            "width": 78,
+            "height": 36,
+            "viewportWidth": 390,
+            "viewportHeight": 844,
+            "hit": true
+          }
+        },
+        "768": {
+          "width": 768,
+          "height": 900,
+          "documentWidth": 768,
+          "bodyWidth": 768,
+          "control": "▧ 会话图库",
+          "account": {
+            "left": 499.78125,
+            "right": 579.53125,
+            "top": 58,
+            "bottom": 88,
+            "width": 79.75,
+            "height": 30,
+            "viewportWidth": 768,
+            "viewportHeight": 900,
+            "hit": true
+          },
+          "style": {
+            "left": 610,
+            "right": 688,
+            "top": 15,
+            "bottom": 45,
+            "width": 78,
+            "height": 30,
+            "viewportWidth": 768,
+            "viewportHeight": 900,
+            "hit": true
+          }
+        },
+        "native": {
+          "width": 1440,
+          "height": 900,
+          "documentWidth": 1440,
+          "bodyWidth": 1440,
+          "styleControl": {
+            "left": 1284,
+            "right": 1362,
+            "top": 13,
+            "bottom": 43,
+            "width": 78,
+            "height": 30,
+            "viewportWidth": 1440,
+            "viewportHeight": 900,
+            "hit": true
+          }
+        },
+        "qq2007": {
+          "width": 1440,
+          "height": 900,
+          "documentWidth": 1440,
+          "bodyWidth": 1440,
+          "styleControl": {
+            "left": 1284,
+            "right": 1362,
+            "top": 11,
+            "bottom": 41,
+            "width": 78,
+            "height": 30,
+            "viewportWidth": 1440,
+            "viewportHeight": 900,
+            "hit": true
+          }
+        }
+      },
+      "mediaRoom": {
+        "kind": "owned-accessible-room",
+        "contentClaim": "not asserted"
+      },
+      "deepLink": {
+        "requested": true,
+        "requestSent": true,
+        "active": true,
+        "nativeSelected": true,
+        "selectedNativeTitle": true
+      },
+      "gallery": {
+        "kind": "empty-owned-room",
+        "multiImagePass": false,
+        "normalEmptyState": true,
+        "responses": [
+          {
+            "status": 200,
+            "expectedRoom": true,
+            "expectedSession": true
+          }
+        ]
+      },
+      "accountModal": true
+    },
+    {
+      "role": "super-admin",
+      "rpc": [],
+      "errors": [],
+      "roomSelected": true,
+      "geometry": {},
+      "mediaRoom": {
+        "kind": "national-fly",
+        "preflightItems": 3
+      },
+      "deepLink": {
+        "requested": true,
+        "requestSent": false,
+        "active": false,
+        "failure": "TimeoutError: page.waitForFunction: Timeout 30000ms exceeded."
+      },
+      "failure": "TimeoutError: page.waitForFunction: Timeout 30000ms exceeded."
+    }
+  ],
+  "screenshots": [
+    "RC135-public-member-gallery-empty.png",
+    "RC135-public-member-account.png",
+    "RC135-public-super-admin-deep-link-failure.png"
+  ],
+  "passed": false,
+  "anonymousGallery": 401,
+  "error": "Error: super-admin: TimeoutError: page.waitForFunction: Timeout 30000ms exceeded."
+}

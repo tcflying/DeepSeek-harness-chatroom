@@ -1,0 +1,27 @@
+{
+  "verifiedAt": "2026-09-09T14:47:17.131Z",
+  "directory": "G:/codex-project/dsh-chatroom-next",
+  "branch": "codex/chatroom-next-20260909",
+  "status": "LOCAL_CANDIDATE_NOT_DEPLOYED",
+  "finalCommand": "pnpm run check:ci",
+  "exitCode": 0,
+  "typecheck": "passed",
+  "unitTests": { "files": 29, "passed": 306 },
+  "browserTests": { "engine": "Chromium", "files": 7, "passed": 25, "widths": [320, 360, 390, 768, 1280] },
+  "build": ["host", "types", "client"],
+  "diffCheckExit": 0,
+  "baselineFilesChecked": 163,
+  "originalSourceChangedFiles": [],
+  "installedHashes": {
+    "host": "c72551227be112e45d751a17f0484bf2f8ef694e60f1bb0c76bd2309c9b2eae1",
+    "client": "ba5a13b81988803c0f2cb8756f2450be1ebeb80de6fb19a7f52ec66e466c4bf5"
+  },
+  "candidateHashes": {
+    "host": "b64846095ef22179f01e141c14fc4da43bc92f319c8cec3a5fae5bbf5a7074d7",
+    "client": "904d183d7c17b646f46a84664ba712c8004419866c127cd725f3de7657c22dd3"
+  },
+  "notMeasured": ["real provider throughput", "multi-account full-host E2E", "Safari and Firefox", "real mobile keyboard", "sustained real socket backpressure"],
+  "productionDeployed": false,
+  "gitCommitted": false,
+  "prPublished": false
+}

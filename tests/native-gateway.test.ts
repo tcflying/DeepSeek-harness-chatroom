@@ -13,20 +13,26 @@ import { NativeGateway } from '../src/native-gateway.js'
 import type { ChatroomRuntime } from '../src/room.js'
 import type { Config } from '../src/config.js'
 
-function fixture() {
+function fixture(sessionListDeadlineMs?: number) {
   let active = true
   const permitted = new Set(['alice-solo', 'shared-room'])
+  const headerScan = vi.fn(async () => [])
   const account = { participantId: 'alice', displayName: 'Alice', avatarId: 'whale', role: 'member' }
   const runtime = {
     isReady: true,
     auth: { accountForRequest: vi.fn(async (token: string) => token === 'alice-token' && active ? { account } : {}) },
     canAccessNativeSession: vi.fn(async (id: string) => permitted.has(id)),
+    createNativeSessionAccessSnapshot: vi.fn(() => ({ headers: (() => {
+      let pending: Promise<unknown[]> | undefined
+      return () => pending ??= headerScan()
+    })() })),
     reserveSoloSession: vi.fn(async () => 'alice-solo'),
     ownsSoloSession: vi.fn((id: string) => id === 'alice-solo'),
     ownsSession: vi.fn((id: string) => id === 'shared-room'),
     assertPromptReferences: vi.fn(),
     submitNativeSession: vi.fn(async () => true),
     ownNativeFork: vi.fn(),
+    diagnostics: { record: vi.fn() },
   } as unknown as ChatroomRuntime
   const config = {
     cwd: process.cwd(), authEnabled: true, authCookieName: 'chatroom-auth', authPublicOrigin: '',
@@ -58,8 +64,8 @@ function fixture() {
   }
   const ctx = {} as Context
   const transport = { Mux: RemoteStreamMuxServer, gateway: { wireStream: { open: (_endpoint: string, payload: unknown, signal: AbortSignal) => events(payload, signal), failure: (error: Error) => ({ code: 'internal', message: error.message }) } } } as unknown as NativeTransport
-  const gateway = new NativeGateway(ctx, runtime, config, dispatch, transport)
-  return { gateway, runtime, dispatch, permitted, account, config, ready, eventsClosed, revoke: () => { active = false }, push: (frame: (typeof queue)[number]) => { queue.push(frame); notify() } }
+  const gateway = new NativeGateway(ctx, runtime, config, dispatch, transport, sessionListDeadlineMs)
+  return { gateway, runtime, dispatch, permitted, account, config, headerScan, ready, eventsClosed, revoke: () => { active = false }, push: (frame: (typeof queue)[number]) => { queue.push(frame); notify() } }
 }
 
 function rpc(method: string, payload: Record<string, unknown> = {}, token = 'alice-token'): Request {
@@ -81,13 +87,31 @@ describe('native account gateway', () => {
     } finally { await f.gateway.close() }
   })
 
-  it.each(['super-admin', 'allowlisted'])('retains settings access for %s without widening member privileges', async role => {
+  it.each(['super-admin', 'allowlisted'])('permits only platform admin, not legacy %s grants', async role => {
     const f = fixture()
     if (role === 'super-admin') f.account.role = role
     else f.config.settingsAdminParticipantIds.push('alice')
     try {
-      expect((await f.gateway.fetch(rpc('settings/describe'))).status).toBe(200)
-      expect(f.dispatch).toHaveBeenCalledOnce()
+      expect((await f.gateway.fetch(rpc('settings/describe'))).status).toBe(role === 'super-admin' ? 200 : 403)
+      expect(f.dispatch).toHaveBeenCalledTimes(role === 'super-admin' ? 1 : 0)
+    } finally { await f.gateway.close() }
+  })
+  it.each(['member', 'admin'])('denies %s preset/model and command bypass on own sessions', async role => {
+    const f = fixture()
+    f.account.role = role
+    f.config.settingsAdminParticipantIds.push('alice')
+    try {
+      for (const method of ['session/selectModel', 'agentPresets/select']) {
+        expect((await f.gateway.fetch(rpc(method, { sessionId: 'alice-solo' }))).status).toBe(403)
+      }
+      for (const line of ['/permission full', '/model secret', '/plugin install x', '/agent unrestricted']) {
+        expect((await f.gateway.fetch(rpc('commands/execute', { sessionId: 'alice-solo', line }))).status).toBe(403)
+        expect((await f.gateway.fetch(rpc('session/prompt', { sessionId: 'alice-solo', mode: 'queue', content: [{ type: 'text', text: line }] }))).status).toBe(403)
+        expect((await f.gateway.fetch(rpc('subagents/prompt', { sessionId: 'alice-solo', content: [{ type: 'text', text: line }] }))).status).toBe(403)
+      }
+      expect((await f.gateway.fetch(rpc('session/create', { agentPreset: 'unrestricted' }))).status).toBe(403)
+      expect((await f.gateway.fetch(rpc('session/rename', { sessionId: 'shared-room', title: 'forged' }))).status).toBe(403)
+      expect(f.dispatch).not.toHaveBeenCalled()
     } finally { await f.gateway.close() }
   })
   it.each(['session/list', 'session/page', 'session/prompt', 'settings/describe', 'commands/execute'])('rejects unauthenticated %s before dispatch', async method => {
@@ -129,6 +153,10 @@ describe('native account gateway', () => {
       expect(await response.json()).toMatchObject({ result: { value: { items: [
         { sessionId: 'shared-room', blank: false }, { sessionId: 'alice-solo', blank: true },
       ] } } })
+      expect(f.runtime.diagnostics.record).toHaveBeenCalledWith(expect.objectContaining({
+        event: 'native.session-list.complete',
+        sessionList: expect.objectContaining({ itemsCount: 2, upstreamElapsedMs: expect.any(Number), jsonElapsedMs: expect.any(Number), filterElapsedMs: expect.any(Number), totalElapsedMs: expect.any(Number), status: 200 }),
+      }))
     } finally { await f.gateway.close() }
   })
 
@@ -225,8 +253,180 @@ describe('native account gateway', () => {
     }
   })
 
-  it('filters real WebSocket frames, guards approval responses, and closes a revoked login', async () => {
+  it('aborts a stalled native catalogue through the real HTTP carrier and permits a later manual refresh', async () => {
+    const f = fixture(20)
+    let aborted = 0
+    f.dispatch.mockImplementation(async request => await new Promise<Response>((_resolve, reject) => {
+      request.signal.addEventListener('abort', () => { aborted++; reject(request.signal.reason) }, { once: true })
+    }))
+    const server = createServer((req, res) => { void f.gateway.handle(req, res) })
+    server.listen(0, '127.0.0.1')
+    await once(server, 'listening')
+    const address = server.address()
+    if (address === null || typeof address === 'string') throw new Error('Missing port')
+    const envelope = JSON.stringify({ type: 'client-request', rpcId: 'stalled-list', method: 'session/list', payload: { args: { request: {} } } })
+    const result = new Promise<{ status: number; body: string }>((resolve, reject) => {
+      const request = httpRequest(`http://127.0.0.1:${address.port}/api/session/list`, {
+        method: 'POST', headers: { Cookie: 'chatroom-auth=alice-token', 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(envelope) },
+      }, response => {
+        const chunks: Buffer[] = []
+        response.on('data', chunk => chunks.push(Buffer.from(chunk)))
+        response.on('end', () => resolve({ status: response.statusCode ?? 0, body: Buffer.concat(chunks).toString('utf8') }))
+      })
+      request.on('error', reject)
+      request.end(envelope)
+    })
+    try {
+      await vi.waitFor(() => expect(f.dispatch).toHaveBeenCalledOnce())
+      await expect(result).resolves.toMatchObject({ status: 504, body: JSON.stringify({ error: 'Native session catalogue timed out' }) })
+      expect(aborted).toBe(1)
+      expect(f.runtime.diagnostics.record).toHaveBeenCalledWith(expect.objectContaining({
+        event: 'native.session-list.timeout', error: { kind: 'TimeoutError', httpStatus: 504 },
+      }))
+      f.dispatch.mockResolvedValueOnce(Response.json({ result: { ok: true, value: { items: [{ sessionId: 'alice-solo' }] } } }))
+      await expect(f.gateway.fetch(rpc('session/list'))).resolves.toMatchObject({ status: 200 })
+    } finally {
+      await f.gateway.close()
+      await new Promise<void>((resolve, reject) => server.close(error => error ? reject(error) : resolve()))
+    }
+  })
+
+  it('cancels a late native catalogue body after the deadline instead of retaining it', async () => {
+    const f = fixture(10)
+    let cancelStarted = false
+    f.dispatch.mockImplementation(async () => {
+      await new Promise(resolve => setTimeout(resolve, 20))
+      return new Response(new ReadableStream({ cancel: () => {
+        cancelStarted = true
+        return new Promise<void>(() => undefined)
+      } }), {
+        headers: { 'content-type': 'application/json' },
+      })
+    })
+    try {
+      await expect(f.gateway.fetch(rpc('session/list'))).resolves.toMatchObject({ status: 504 })
+      await vi.waitFor(() => expect(cancelStarted).toBe(true))
+    } finally { await f.gateway.close() }
+  })
+
+  it('returns the HTTP 504 while a non-cooperative catalogue filter remains pending, without leaking its late result', async () => {
+    const f = fixture(10)
+    const allowed = Promise.withResolvers<boolean>()
+    f.dispatch.mockResolvedValue(Response.json({ result: { ok: true, value: { items: [{ sessionId: 'alice-solo' }] } } }))
+    const canAccess = vi.mocked(f.runtime.canAccessNativeSession)
+    canAccess.mockImplementation(async () => await allowed.promise)
+    try {
+      await expect(f.gateway.fetch(rpc('session/list'))).resolves.toMatchObject({ status: 504 })
+      expect(f.runtime.diagnostics.record).toHaveBeenCalledWith(expect.objectContaining({
+        event: 'native.session-list.timeout',
+        sessionList: expect.objectContaining({ itemsCount: 1, deadlineAbortElapsedMs: expect.any(Number), status: 504 }),
+      }))
+      allowed.resolve(true)
+      await new Promise(resolve => setImmediate(resolve))
+    } finally { await f.gateway.close() }
+  })
+
+  it('stops awaiting a non-cooperative catalogue filter when its browser caller cancels', async () => {
+    const f = fixture(1_000)
+    const allowed = Promise.withResolvers<boolean>()
+    const controller = new AbortController()
+    f.dispatch.mockResolvedValue(Response.json({ result: { ok: true, value: { items: [{ sessionId: 'alice-solo' }] } } }))
+    const canAccess = vi.mocked(f.runtime.canAccessNativeSession)
+    canAccess.mockImplementation(async () => await allowed.promise)
+    const pending = f.gateway.fetch(new Request(rpc('session/list'), { signal: controller.signal }))
+    try {
+      await vi.waitFor(() => expect(canAccess).toHaveBeenCalledOnce())
+      controller.abort()
+      await expect(pending).rejects.toMatchObject({ name: 'AbortError' })
+      allowed.resolve(true)
+      await new Promise(resolve => setImmediate(resolve))
+      expect(f.runtime.diagnostics.record).not.toHaveBeenCalledWith(expect.objectContaining({ event: 'native.session-list.timeout' }))
+    } finally { await f.gateway.close() }
+  })
+
+  it('shares only one lazy header scan within a catalogue, and does not share it across identities or requests', async () => {
     const f = fixture()
+    f.dispatch.mockImplementation(async request => {
+      const body = await request.clone().json() as { rpcId: string }
+      return Response.json({ type: 'server-response', rpcId: body.rpcId, result: { ok: true, value: { items: [
+        { sessionId: 'unknown-a' }, { sessionId: 'unknown-b' },
+      ] } } })
+    })
+    const canAccess = vi.mocked(f.runtime.canAccessNativeSession)
+    canAccess.mockImplementation(async (_id: string, identity: { participantId: string }, _visited: unknown, snapshot) => {
+      if (snapshot === undefined) throw new Error('catalogue snapshot missing')
+      await snapshot.headers()
+      return identity.participantId === 'alice'
+    })
+    try {
+      await expect(f.gateway.fetch(rpc('session/list'))).resolves.toMatchObject({ status: 200 })
+      expect(f.headerScan).toHaveBeenCalledOnce()
+      f.account.participantId = 'bob'
+      await expect(f.gateway.fetch(rpc('session/list'))).resolves.toMatchObject({ status: 200 })
+      expect(f.headerScan).toHaveBeenCalledTimes(2)
+      expect(canAccess.mock.calls.at(-1)?.[1]).toMatchObject({ participantId: 'bob' })
+    } finally { await f.gateway.close() }
+  })
+
+  it('seeds catalogue lineage only from the successful native response, never client payload or search', async () => {
+    const f = fixture()
+    const nativeItems = [{ sessionId: 'native-child', parentSessionId: 'shared-room' }]
+    f.dispatch.mockResolvedValue(Response.json({ result: { ok: true, value: { items: nativeItems } } }))
+    try {
+      await f.gateway.fetch(rpc('session/list', { items: [{ sessionId: 'forged-child', parentSessionId: 'shared-room' }] }))
+      expect(f.runtime.createNativeSessionAccessSnapshot).toHaveBeenCalledExactlyOnceWith(nativeItems)
+      vi.mocked(f.runtime.createNativeSessionAccessSnapshot).mockClear()
+      f.dispatch.mockResolvedValue(Response.json({ result: { ok: true, value: { items: nativeItems } } }))
+      await f.gateway.fetch(rpc('session/search', { query: 'hello' }))
+      expect(f.runtime.createNativeSessionAccessSnapshot).not.toHaveBeenCalled()
+    } finally { await f.gateway.close() }
+  })
+
+  it('does not apply the catalogue deadline to native write requests', async () => {
+    const f = fixture(10)
+    f.dispatch.mockImplementation(async request => {
+      await new Promise(resolve => setTimeout(resolve, 20))
+      expect(request.signal.aborted).toBe(false)
+      const body = await request.clone().json() as { rpcId: string }
+      return Response.json({ type: 'server-response', rpcId: body.rpcId, result: { ok: true, value: {} } })
+    })
+    try {
+      await expect(f.gateway.fetch(rpc('session/create', { sessionId: 'alice-solo' }))).resolves.toMatchObject({ status: 200 })
+    } finally { await f.gateway.close() }
+  })
+
+  it('propagates a browser carrier disconnect to a hanging catalogue dispatch', async () => {
+    const f = fixture(1_000)
+    let aborted = 0
+    f.dispatch.mockImplementation(async request => await new Promise<Response>((_resolve, reject) => {
+      request.signal.addEventListener('abort', () => { aborted++; reject(request.signal.reason) }, { once: true })
+    }))
+    const server = createServer((req, res) => { void f.gateway.handle(req, res) })
+    server.listen(0, '127.0.0.1')
+    await once(server, 'listening')
+    const address = server.address()
+    if (address === null || typeof address === 'string') throw new Error('Missing port')
+    const envelope = JSON.stringify({ type: 'client-request', rpcId: 'disconnect-list', method: 'session/list', payload: { args: { request: {} } } })
+    const carrier = httpRequest(`http://127.0.0.1:${address.port}/api/session/list`, {
+      method: 'POST', headers: { Cookie: 'chatroom-auth=alice-token', 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(envelope) },
+    })
+    carrier.on('error', () => { /* Expected after the browser carrier is cancelled. */ })
+    carrier.end(envelope)
+    try {
+      await vi.waitFor(() => expect(f.dispatch).toHaveBeenCalledOnce())
+      carrier.destroy()
+      await vi.waitFor(() => expect(aborted).toBe(1))
+    } finally {
+      carrier.destroy()
+      await f.gateway.close()
+      await new Promise<void>((resolve, reject) => server.close(error => error ? reject(error) : resolve()))
+    }
+  })
+
+  it.each(['super-admin', 'member'])('filters real WebSocket waterfalls for %s and closes a revoked login', async role => {
+    const f = fixture()
+    f.account.role = role
+    const event = role === 'super-admin' ? 'approval/request' : 'user-questions/request'
     const server = createServer((req, res) => { void f.gateway.handle(req, res) })
     server.on('upgrade', (req, socket, head) => { void f.gateway.upgrade(req, socket, head) })
     server.listen(0, '127.0.0.1')
@@ -242,16 +442,19 @@ describe('native account gateway', () => {
       await f.ready.promise
       f.push({ type: 'ready', clientId: 'client-a', host: { home: '/home' } })
       f.push({ type: 'waterfall', event: 'approval/request', eventId: 'foreign', agentId: 'bob-solo', request: {} })
-      f.push({ type: 'waterfall', event: 'approval/request', eventId: 'owned-approval', agentId: 'alice-solo', request: {} })
+      if (role === 'member') f.push({ type: 'waterfall', event: 'approval/request', eventId: 'denied-approval', agentId: 'alice-solo', request: {} })
+      f.push({ type: 'waterfall', event, eventId: 'owned-approval', agentId: 'alice-solo', request: {} })
       await vi.waitFor(() => expect(seen).toHaveLength(2))
       expect(seen[1]).toContain('owned-approval')
       expect(seen.join()).not.toContain('bob-solo')
+      expect(seen.join()).not.toContain('denied-approval')
+      expect((await f.gateway.fetch(rpc('$events/result', { clientId: 'client-a', eventId: 'denied-approval' }))).status).toBe(403)
       const result = { clientId: 'client-a', eventId: 'owned-approval', outcome: { kind: 'result', value: {} } }
       const answers = await Promise.all(Array.from({ length: 16 }, () => f.gateway.fetch(rpc('$events/result', result))))
       expect(answers.map(answer => answer.status).sort()).toEqual([200, ...Array(15).fill(403)])
       expect(f.dispatch).toHaveBeenCalledTimes(1)
       expect((await f.gateway.fetch(rpc('$events/result', result))).status).toBe(403)
-      f.push({ type: 'waterfall', event: 'approval/request', eventId: 'unanswered', agentId: 'alice-solo', request: {} })
+      f.push({ type: 'waterfall', event, eventId: 'unanswered', agentId: 'alice-solo', request: {} })
       await vi.waitFor(() => expect(seen).toHaveLength(3))
       socket.send(JSON.stringify({ type: 'cancel', streamId: 'events' }))
       await f.eventsClosed.promise
@@ -260,7 +463,7 @@ describe('native account gateway', () => {
       expect((await f.gateway.fetch(rpc('$events/result', { ...result, eventId: 'unanswered' }))).status).toBe(403)
       socket.send(JSON.stringify({ type: 'open', streamId: 'events-2', endpoint: '$events', payload: { args: {} } }))
       f.push({ type: 'ready', clientId: 'client-b', host: { home: '/home' } })
-      f.push({ type: 'waterfall', event: 'approval/request', eventId: 'unanswered', agentId: 'alice-solo', request: {} })
+      f.push({ type: 'waterfall', event, eventId: 'unanswered', agentId: 'alice-solo', request: {} })
       await vi.waitFor(() => expect(seen).toHaveLength(5))
       expect((await f.gateway.fetch(rpc('$events/result', { ...result, clientId: 'client-b', eventId: 'unanswered' }))).status).toBe(200)
       f.revoke()

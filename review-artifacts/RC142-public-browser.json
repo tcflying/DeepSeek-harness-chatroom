@@ -1,0 +1,2717 @@
+{
+  "version": "1.5.0-codex.rc1.42",
+  "at": "2026-09-12T04:42:39.504Z",
+  "mode": "public-authenticated",
+  "base": "https://talk.opcvip.net",
+  "roles": [
+    {
+      "role": "member",
+      "rpc": [
+        {
+          "method": "settings/describe",
+          "status": 403
+        },
+        {
+          "method": "credentials/list",
+          "status": 403
+        },
+        {
+          "method": "session/selectModel",
+          "status": 403
+        },
+        {
+          "method": "agentPresets/select",
+          "status": 403
+        },
+        {
+          "method": "commands/execute",
+          "status": 403
+        }
+      ],
+      "errors": [],
+      "roomSelected": true,
+      "geometry": {
+        "320": {
+          "width": 320,
+          "height": 720,
+          "documentWidth": 320,
+          "bodyWidth": 320,
+          "control": "▧ 会话图库",
+          "nativeSidebar": {
+            "viewportWidth": 320,
+            "settingsTextVisible": false,
+            "leftControls": [
+              {
+                "ariaLabel": "打开侧边栏",
+                "text": "",
+                "left": 10,
+                "top": 14,
+                "width": 44,
+                "height": 44
+              },
+              {
+                "ariaLabel": null,
+                "text": "权限与进展验收 20260912",
+                "left": 116,
+                "top": 16,
+                "width": 16,
+                "height": 28
+              },
+              {
+                "ariaLabel": null,
+                "text": "▧ 会话图库",
+                "left": 116,
+                "top": 136,
+                "width": 80,
+                "height": 34
+              },
+              {
+                "ariaLabel": null,
+                "text": "Session 日志",
+                "left": 132,
+                "top": 8,
+                "width": 44,
+                "height": 44
+              },
+              {
+                "ariaLabel": null,
+                "text": "对话",
+                "left": 116,
+                "top": 174,
+                "width": 60,
+                "height": 44
+              },
+              {
+                "ariaLabel": "回复",
+                "text": "↩ 回复",
+                "left": 126,
+                "top": -10374,
+                "width": 30,
+                "height": 30
+              },
+              {
+                "ariaLabel": "更多消息操作",
+                "text": "•••",
+                "left": 126,
+                "top": -10342,
+                "width": 30,
+                "height": 30
+              },
+              {
+                "ariaLabel": "回复",
+                "text": "↩ 回复",
+                "left": 126,
+                "top": -8938,
+                "width": 30,
+                "height": 30
+              },
+              {
+                "ariaLabel": "更多消息操作",
+                "text": "•••",
+                "left": 126,
+                "top": -8906,
+                "width": 30,
+                "height": 30
+              },
+              {
+                "ariaLabel": "回复",
+                "text": "↩ 回复",
+                "left": 126,
+                "top": -8674,
+                "width": 30,
+                "height": 30
+              },
+              {
+                "ariaLabel": "更多消息操作",
+                "text": "•••",
+                "left": 126,
+                "top": -8642,
+                "width": 30,
+                "height": 30
+              },
+              {
+                "ariaLabel": "回复",
+                "text": "↩ 回复",
+                "left": 126,
+                "top": -7661,
+                "width": 30,
+                "height": 30
+              },
+              {
+                "ariaLabel": "更多消息操作",
+                "text": "•••",
+                "left": 126,
+                "top": -7629,
+                "width": 30,
+                "height": 30
+              },
+              {
+                "ariaLabel": "回复",
+                "text": "↩ 回复",
+                "left": 126,
+                "top": -7397,
+                "width": 30,
+                "height": 30
+              },
+              {
+                "ariaLabel": "更多消息操作",
+                "text": "•••",
+                "left": 126,
+                "top": -7365,
+                "width": 30,
+                "height": 30
+              },
+              {
+                "ariaLabel": "回复",
+                "text": "↩ 回复",
+                "left": 126,
+                "top": -1871,
+                "width": 30,
+                "height": 30
+              },
+              {
+                "ariaLabel": "更多消息操作",
+                "text": "•••",
+                "left": 126,
+                "top": -1839,
+                "width": 30,
+                "height": 30
+              },
+              {
+                "ariaLabel": "回复",
+                "text": "↩ 回复",
+                "left": 126,
+                "top": -1607,
+                "width": 30,
+                "height": 30
+              },
+              {
+                "ariaLabel": "更多消息操作",
+                "text": "•••",
+                "left": 126,
+                "top": -1575,
+                "width": 30,
+                "height": 30
+              },
+              {
+                "ariaLabel": "回复",
+                "text": "↩ 回复",
+                "left": 126,
+                "top": 752,
+                "width": 30,
+                "height": 30
+              },
+              {
+                "ariaLabel": "更多消息操作",
+                "text": "•••",
+                "left": 126,
+                "top": 784,
+                "width": 30,
+                "height": 30
+              },
+              {
+                "ariaLabel": "指令",
+                "text": "",
+                "left": 80,
+                "top": 577,
+                "width": 28,
+                "height": 28
+              },
+              {
+                "ariaLabel": "■ 停止",
+                "text": "■ 停止",
+                "left": 80,
+                "top": 625,
+                "width": 32,
+                "height": 44
+              },
+              {
+                "ariaLabel": "＋ 新会话",
+                "text": "＋ 新会话",
+                "left": 114,
+                "top": 625,
+                "width": 32,
+                "height": 44
+              },
+              {
+                "ariaLabel": "发送消息",
+                "text": "",
+                "left": 80,
+                "top": 670,
+                "width": 34,
+                "height": 34
+              }
+            ]
+          },
+          "account": {
+            "left": 116,
+            "right": 195.75,
+            "top": 136,
+            "bottom": 170,
+            "width": 79.75,
+            "height": 34,
+            "viewportWidth": 320,
+            "viewportHeight": 720,
+            "hit": true
+          },
+          "style": {
+            "left": 186,
+            "right": 264,
+            "top": 12,
+            "bottom": 48,
+            "width": 78,
+            "height": 36,
+            "viewportWidth": 320,
+            "viewportHeight": 720,
+            "hit": true
+          }
+        },
+        "390": {
+          "width": 390,
+          "height": 844,
+          "documentWidth": 390,
+          "bodyWidth": 390,
+          "control": "▧ 会话图库",
+          "nativeSidebar": {
+            "viewportWidth": 390,
+            "settingsTextVisible": false,
+            "leftControls": [
+              {
+                "ariaLabel": "打开侧边栏",
+                "text": "",
+                "left": 10,
+                "top": 14,
+                "width": 44,
+                "height": 44
+              },
+              {
+                "ariaLabel": null,
+                "text": "权限与进展验收 20260912",
+                "left": 116,
+                "top": 16,
+                "width": 80,
+                "height": 28
+              },
+              {
+                "ariaLabel": null,
+                "text": "▧ 会话图库",
+                "left": 116,
+                "top": 136,
+                "width": 80,
+                "height": 34
+              },
+              {
+                "ariaLabel": null,
+                "text": "对话",
+                "left": 116,
+                "top": 174,
+                "width": 60,
+                "height": 44
+              },
+              {
+                "ariaLabel": "回复",
+                "text": "↩ 回复",
+                "left": 126,
+                "top": -6454,
+                "width": 30,
+                "height": 30
+              },
+              {
+                "ariaLabel": "复制",
+                "text": "▣ 复制",
+                "left": 158,
+                "top": -6454,
+                "width": 30,
+                "height": 30
+              },
+              {
+                "ariaLabel": "回复",
+                "text": "↩ 回复",
+                "left": 126,
+                "top": -5654,
+                "width": 30,
+                "height": 30
+              },
+              {
+                "ariaLabel": "复制",
+                "text": "▣ 复制",
+                "left": 158,
+                "top": -5654,
+                "width": 30,
+                "height": 30
+              },
+              {
+                "ariaLabel": "回复",
+                "text": "↩ 回复",
+                "left": 126,
+                "top": -5436,
+                "width": 30,
+                "height": 30
+              },
+              {
+                "ariaLabel": "复制",
+                "text": "▣ 复制",
+                "left": 158,
+                "top": -5436,
+                "width": 30,
+                "height": 30
+              },
+              {
+                "ariaLabel": "回复",
+                "text": "↩ 回复",
+                "left": 126,
+                "top": -4847,
+                "width": 30,
+                "height": 30
+              },
+              {
+                "ariaLabel": "复制",
+                "text": "▣ 复制",
+                "left": 158,
+                "top": -4847,
+                "width": 30,
+                "height": 30
+              },
+              {
+                "ariaLabel": "回复",
+                "text": "↩ 回复",
+                "left": 126,
+                "top": -4629,
+                "width": 30,
+                "height": 30
+              },
+              {
+                "ariaLabel": "复制",
+                "text": "▣ 复制",
+                "left": 158,
+                "top": -4629,
+                "width": 30,
+                "height": 30
+              },
+              {
+                "ariaLabel": "回复",
+                "text": "↩ 回复",
+                "left": 126,
+                "top": -1295,
+                "width": 30,
+                "height": 30
+              },
+              {
+                "ariaLabel": "复制",
+                "text": "▣ 复制",
+                "left": 158,
+                "top": -1295,
+                "width": 30,
+                "height": 30
+              },
+              {
+                "ariaLabel": "回复",
+                "text": "↩ 回复",
+                "left": 126,
+                "top": -1077,
+                "width": 30,
+                "height": 30
+              },
+              {
+                "ariaLabel": "复制",
+                "text": "▣ 复制",
+                "left": 158,
+                "top": -1077,
+                "width": 30,
+                "height": 30
+              },
+              {
+                "ariaLabel": "回复",
+                "text": "↩ 回复",
+                "left": 126,
+                "top": 594,
+                "width": 30,
+                "height": 30
+              },
+              {
+                "ariaLabel": "复制",
+                "text": "▣ 复制",
+                "left": 158,
+                "top": 594,
+                "width": 30,
+                "height": 30
+              },
+              {
+                "ariaLabel": "指令",
+                "text": "",
+                "left": 80,
+                "top": 701,
+                "width": 28,
+                "height": 28
+              },
+              {
+                "ariaLabel": "发送表情",
+                "text": "☺表情",
+                "left": 140,
+                "top": 693,
+                "width": 44,
+                "height": 44
+              },
+              {
+                "ariaLabel": "■ 停止",
+                "text": "■ 停止",
+                "left": 80,
+                "top": 749,
+                "width": 32,
+                "height": 44
+              },
+              {
+                "ariaLabel": "＋ 新会话",
+                "text": "＋ 新会话",
+                "left": 114,
+                "top": 749,
+                "width": 32,
+                "height": 44
+              },
+              {
+                "ariaLabel": "⚡ 快速会议",
+                "text": "⚡ 快速会议",
+                "left": 148,
+                "top": 749,
+                "width": 32,
+                "height": 44
+              },
+              {
+                "ariaLabel": "发送消息",
+                "text": "",
+                "left": 80,
+                "top": 794,
+                "width": 34,
+                "height": 34
+              }
+            ]
+          },
+          "account": {
+            "left": 116,
+            "right": 195.75,
+            "top": 136,
+            "bottom": 170,
+            "width": 79.75,
+            "height": 34,
+            "viewportWidth": 390,
+            "viewportHeight": 844,
+            "hit": true
+          },
+          "style": {
+            "left": 256,
+            "right": 334,
+            "top": 12,
+            "bottom": 48,
+            "width": 78,
+            "height": 36,
+            "viewportWidth": 390,
+            "viewportHeight": 844,
+            "hit": true
+          }
+        },
+        "768": {
+          "width": 768,
+          "height": 900,
+          "documentWidth": 768,
+          "bodyWidth": 768,
+          "control": "▧ 会话图库",
+          "nativeSidebar": {
+            "viewportWidth": 768,
+            "settingsTextVisible": false,
+            "leftControls": [
+              {
+                "ariaLabel": "打开侧边栏",
+                "text": "",
+                "left": 10,
+                "top": 14,
+                "width": 44,
+                "height": 44
+              },
+              {
+                "ariaLabel": null,
+                "text": "权限与进展验收 20260912",
+                "left": 116,
+                "top": 16,
+                "width": 180,
+                "height": 28
+              },
+              {
+                "ariaLabel": null,
+                "text": "对话",
+                "left": 116,
+                "top": 96,
+                "width": 60,
+                "height": 44
+              },
+              {
+                "ariaLabel": null,
+                "text": "轨迹",
+                "left": 179,
+                "top": 96,
+                "width": 60,
+                "height": 44
+              },
+              {
+                "ariaLabel": "回复",
+                "text": "↩ 回复",
+                "left": 131,
+                "top": -2810,
+                "width": 46,
+                "height": 22
+              },
+              {
+                "ariaLabel": "复制",
+                "text": "▣ 复制",
+                "left": 179,
+                "top": -2811,
+                "width": 46,
+                "height": 23
+              },
+              {
+                "ariaLabel": "点赞",
+                "text": "👍 点赞",
+                "left": 227,
+                "top": -2810,
+                "width": 52,
+                "height": 22
+              },
+              {
+                "ariaLabel": "分支",
+                "text": "⑂ 分支",
+                "left": 281,
+                "top": -2810,
+                "width": 42,
+                "height": 22
+              },
+              {
+                "ariaLabel": "转发",
+                "text": "↗ 转发",
+                "left": 325,
+                "top": -2810,
+                "width": 48,
+                "height": 22
+              },
+              {
+                "ariaLabel": "回复",
+                "text": "↩ 回复",
+                "left": 131,
+                "top": -2466,
+                "width": 46,
+                "height": 22
+              },
+              {
+                "ariaLabel": "复制",
+                "text": "▣ 复制",
+                "left": 179,
+                "top": -2466,
+                "width": 46,
+                "height": 23
+              },
+              {
+                "ariaLabel": "点赞",
+                "text": "👍 点赞",
+                "left": 227,
+                "top": -2466,
+                "width": 52,
+                "height": 22
+              },
+              {
+                "ariaLabel": "分支",
+                "text": "⑂ 分支",
+                "left": 281,
+                "top": -2466,
+                "width": 42,
+                "height": 22
+              },
+              {
+                "ariaLabel": "转发",
+                "text": "↗ 转发",
+                "left": 325,
+                "top": -2466,
+                "width": 48,
+                "height": 22
+              },
+              {
+                "ariaLabel": "回复",
+                "text": "↩ 回复",
+                "left": 131,
+                "top": -2299,
+                "width": 46,
+                "height": 22
+              },
+              {
+                "ariaLabel": "复制",
+                "text": "▣ 复制",
+                "left": 179,
+                "top": -2299,
+                "width": 46,
+                "height": 23
+              },
+              {
+                "ariaLabel": "点赞",
+                "text": "👍 点赞",
+                "left": 227,
+                "top": -2299,
+                "width": 52,
+                "height": 22
+              },
+              {
+                "ariaLabel": "分支",
+                "text": "⑂ 分支",
+                "left": 281,
+                "top": -2299,
+                "width": 42,
+                "height": 22
+              },
+              {
+                "ariaLabel": "转发",
+                "text": "↗ 转发",
+                "left": 325,
+                "top": -2299,
+                "width": 48,
+                "height": 22
+              },
+              {
+                "ariaLabel": "回复",
+                "text": "↩ 回复",
+                "left": 131,
+                "top": -1954,
+                "width": 46,
+                "height": 22
+              },
+              {
+                "ariaLabel": "复制",
+                "text": "▣ 复制",
+                "left": 179,
+                "top": -1955,
+                "width": 46,
+                "height": 23
+              },
+              {
+                "ariaLabel": "点赞",
+                "text": "👍 点赞",
+                "left": 227,
+                "top": -1954,
+                "width": 52,
+                "height": 22
+              },
+              {
+                "ariaLabel": "分支",
+                "text": "⑂ 分支",
+                "left": 281,
+                "top": -1954,
+                "width": 42,
+                "height": 22
+              },
+              {
+                "ariaLabel": "转发",
+                "text": "↗ 转发",
+                "left": 325,
+                "top": -1954,
+                "width": 48,
+                "height": 22
+              },
+              {
+                "ariaLabel": "回复",
+                "text": "↩ 回复",
+                "left": 131,
+                "top": -1787,
+                "width": 46,
+                "height": 22
+              },
+              {
+                "ariaLabel": "复制",
+                "text": "▣ 复制",
+                "left": 179,
+                "top": -1788,
+                "width": 46,
+                "height": 23
+              },
+              {
+                "ariaLabel": "点赞",
+                "text": "👍 点赞",
+                "left": 227,
+                "top": -1787,
+                "width": 52,
+                "height": 22
+              },
+              {
+                "ariaLabel": "分支",
+                "text": "⑂ 分支",
+                "left": 281,
+                "top": -1787,
+                "width": 42,
+                "height": 22
+              },
+              {
+                "ariaLabel": "转发",
+                "text": "↗ 转发",
+                "left": 325,
+                "top": -1787,
+                "width": 48,
+                "height": 22
+              },
+              {
+                "ariaLabel": "回复",
+                "text": "↩ 回复",
+                "left": 131,
+                "top": -598,
+                "width": 46,
+                "height": 22
+              },
+              {
+                "ariaLabel": "复制",
+                "text": "▣ 复制",
+                "left": 179,
+                "top": -599,
+                "width": 46,
+                "height": 23
+              },
+              {
+                "ariaLabel": "点赞",
+                "text": "👍 点赞",
+                "left": 227,
+                "top": -598,
+                "width": 52,
+                "height": 22
+              },
+              {
+                "ariaLabel": "分支",
+                "text": "⑂ 分支",
+                "left": 281,
+                "top": -598,
+                "width": 42,
+                "height": 22
+              },
+              {
+                "ariaLabel": "转发",
+                "text": "↗ 转发",
+                "left": 325,
+                "top": -598,
+                "width": 48,
+                "height": 22
+              },
+              {
+                "ariaLabel": "回复",
+                "text": "↩ 回复",
+                "left": 131,
+                "top": -431,
+                "width": 46,
+                "height": 22
+              },
+              {
+                "ariaLabel": "复制",
+                "text": "▣ 复制",
+                "left": 179,
+                "top": -432,
+                "width": 46,
+                "height": 23
+              },
+              {
+                "ariaLabel": "点赞",
+                "text": "👍 点赞",
+                "left": 227,
+                "top": -431,
+                "width": 52,
+                "height": 22
+              },
+              {
+                "ariaLabel": "分支",
+                "text": "⑂ 分支",
+                "left": 281,
+                "top": -431,
+                "width": 42,
+                "height": 22
+              },
+              {
+                "ariaLabel": "转发",
+                "text": "↗ 转发",
+                "left": 325,
+                "top": -431,
+                "width": 48,
+                "height": 22
+              },
+              {
+                "ariaLabel": "回复",
+                "text": "↩ 回复",
+                "left": 131,
+                "top": 758,
+                "width": 46,
+                "height": 22
+              },
+              {
+                "ariaLabel": "复制",
+                "text": "▣ 复制",
+                "left": 179,
+                "top": 757,
+                "width": 46,
+                "height": 23
+              },
+              {
+                "ariaLabel": "点赞",
+                "text": "👍 点赞",
+                "left": 227,
+                "top": 758,
+                "width": 52,
+                "height": 22
+              },
+              {
+                "ariaLabel": "分支",
+                "text": "⑂ 分支",
+                "left": 281,
+                "top": 758,
+                "width": 42,
+                "height": 22
+              },
+              {
+                "ariaLabel": "转发",
+                "text": "↗ 转发",
+                "left": 325,
+                "top": 758,
+                "width": 48,
+                "height": 22
+              },
+              {
+                "ariaLabel": "指令",
+                "text": "",
+                "left": 81,
+                "top": 854,
+                "width": 28,
+                "height": 28
+              },
+              {
+                "ariaLabel": "发送表情",
+                "text": "☺表情",
+                "left": 141,
+                "top": 851,
+                "width": 58,
+                "height": 34
+              },
+              {
+                "ariaLabel": "发送图片或文件",
+                "text": "📎附件",
+                "left": 201,
+                "top": 851,
+                "width": 63,
+                "height": 34
+              }
+            ]
+          },
+          "account": {
+            "left": 499.78125,
+            "right": 579.53125,
+            "top": 58,
+            "bottom": 88,
+            "width": 79.75,
+            "height": 30,
+            "viewportWidth": 768,
+            "viewportHeight": 900,
+            "hit": true
+          },
+          "style": {
+            "left": 610,
+            "right": 688,
+            "top": 15,
+            "bottom": 45,
+            "width": 78,
+            "height": 30,
+            "viewportWidth": 768,
+            "viewportHeight": 900,
+            "hit": true
+          }
+        },
+        "native": {
+          "width": 1440,
+          "height": 900,
+          "documentWidth": 1440,
+          "bodyWidth": 1440,
+          "styleControl": {
+            "left": 1284,
+            "right": 1362,
+            "top": 13,
+            "bottom": 43,
+            "width": 78,
+            "height": 30,
+            "viewportWidth": 1440,
+            "viewportHeight": 900,
+            "hit": true
+          }
+        },
+        "qq2007": {
+          "width": 1440,
+          "height": 900,
+          "documentWidth": 1440,
+          "bodyWidth": 1440,
+          "styleControl": {
+            "left": 1284,
+            "right": 1362,
+            "top": 11,
+            "bottom": 41,
+            "width": 78,
+            "height": 30,
+            "viewportWidth": 1440,
+            "viewportHeight": 900,
+            "hit": true
+          }
+        }
+      },
+      "mediaRoom": {
+        "kind": "owned-accessible-room",
+        "contentClaim": "not asserted"
+      },
+      "deepLink": {
+        "requested": true,
+        "requestSent": true,
+        "active": true,
+        "nativeSelected": true,
+        "selectedNativeTitle": true,
+        "timeline": [
+          {
+            "atMs": 5200,
+            "atUtc": "2026-09-12T04:42:50.000Z",
+            "event": "request",
+            "path": "/api/session/list",
+            "method": "POST"
+          },
+          {
+            "atMs": 9723,
+            "atUtc": "2026-09-12T04:42:54.523Z",
+            "event": "response",
+            "path": "/api/session/list",
+            "status": 200
+          },
+          {
+            "atMs": 9750,
+            "atUtc": "2026-09-12T04:42:54.550Z",
+            "event": "requestfinished",
+            "path": "/api/session/list",
+            "status": 200,
+            "timing": {
+              "queueOrBlockedMs": 0,
+              "dnsMs": null,
+              "connectMs": null,
+              "requestMs": 4540,
+              "downloadMs": 26,
+              "responseEndMs": 4566
+            }
+          },
+          {
+            "atMs": 9815,
+            "atUtc": "2026-09-12T04:42:54.615Z",
+            "event": "request",
+            "path": "/rooms/select",
+            "method": "POST"
+          },
+          {
+            "atMs": 9816,
+            "atUtc": "2026-09-12T04:42:54.616Z",
+            "event": "request",
+            "path": "/api/session/list",
+            "method": "POST"
+          },
+          {
+            "atMs": 10178,
+            "atUtc": "2026-09-12T04:42:54.978Z",
+            "event": "response",
+            "path": "/rooms/select",
+            "status": 200
+          },
+          {
+            "atMs": 10178,
+            "atUtc": "2026-09-12T04:42:54.978Z",
+            "event": "requestfinished",
+            "path": "/rooms/select",
+            "status": 200,
+            "timing": {
+              "queueOrBlockedMs": 0,
+              "dnsMs": null,
+              "connectMs": null,
+              "requestMs": 418,
+              "downloadMs": 1,
+              "responseEndMs": 419
+            }
+          }
+        ]
+      },
+      "gallery": {
+        "kind": "empty-owned-room",
+        "multiImagePass": false,
+        "normalEmptyState": true,
+        "responses": [
+          {
+            "status": 200,
+            "expectedRoom": true,
+            "expectedSession": true
+          }
+        ]
+      },
+      "accountModal": true
+    },
+    {
+      "role": "super-admin",
+      "rpc": [],
+      "errors": [],
+      "roomSelected": true,
+      "geometry": {
+        "320": {
+          "width": 320,
+          "height": 720,
+          "documentWidth": 320,
+          "bodyWidth": 320,
+          "control": "▧ 会话图库",
+          "nativeSidebar": {
+            "viewportWidth": 320,
+            "settingsTextVisible": false,
+            "leftControls": [
+              {
+                "ariaLabel": "打开侧边栏",
+                "text": "",
+                "left": 10,
+                "top": 14,
+                "width": 44,
+                "height": 44
+              },
+              {
+                "ariaLabel": null,
+                "text": "全国可飞",
+                "left": 116,
+                "top": 16,
+                "width": 16,
+                "height": 28
+              },
+              {
+                "ariaLabel": null,
+                "text": "群管理",
+                "left": 116,
+                "top": 136,
+                "width": 54,
+                "height": 34
+              },
+              {
+                "ariaLabel": null,
+                "text": "▶ 视频创作",
+                "left": 116,
+                "top": 174,
+                "width": 80,
+                "height": 34
+              },
+              {
+                "ariaLabel": null,
+                "text": "Session 日志",
+                "left": 132,
+                "top": 8,
+                "width": 44,
+                "height": 44
+              },
+              {
+                "ariaLabel": null,
+                "text": "对话",
+                "left": 116,
+                "top": 212,
+                "width": 60,
+                "height": 44
+              },
+              {
+                "ariaLabel": "回复",
+                "text": "↩ 回复",
+                "left": 80,
+                "top": -2303,
+                "width": 30,
+                "height": 30
+              },
+              {
+                "ariaLabel": "复制",
+                "text": "▣ 复制",
+                "left": 112,
+                "top": -2303,
+                "width": 30,
+                "height": 30
+              },
+              {
+                "ariaLabel": "点赞",
+                "text": "👍 点赞",
+                "left": 144,
+                "top": -2303,
+                "width": 30,
+                "height": 30
+              },
+              {
+                "ariaLabel": "更多消息操作",
+                "text": "•••",
+                "left": 80,
+                "top": -2271,
+                "width": 30,
+                "height": 30
+              },
+              {
+                "ariaLabel": "回复",
+                "text": "↩ 回复",
+                "left": 80,
+                "top": -2210,
+                "width": 30,
+                "height": 30
+              },
+              {
+                "ariaLabel": "复制",
+                "text": "▣ 复制",
+                "left": 112,
+                "top": -2210,
+                "width": 30,
+                "height": 30
+              },
+              {
+                "ariaLabel": "点赞",
+                "text": "👍 点赞",
+                "left": 144,
+                "top": -2210,
+                "width": 30,
+                "height": 30
+              },
+              {
+                "ariaLabel": "更多消息操作",
+                "text": "•••",
+                "left": 80,
+                "top": -2178,
+                "width": 30,
+                "height": 30
+              },
+              {
+                "ariaLabel": "回复",
+                "text": "↩ 回复",
+                "left": 126,
+                "top": -1909,
+                "width": 30,
+                "height": 30
+              },
+              {
+                "ariaLabel": "更多消息操作",
+                "text": "•••",
+                "left": 126,
+                "top": -1877,
+                "width": 30,
+                "height": 30
+              },
+              {
+                "ariaLabel": "回复",
+                "text": "↩ 回复",
+                "left": 80,
+                "top": -1799,
+                "width": 30,
+                "height": 30
+              },
+              {
+                "ariaLabel": "复制",
+                "text": "▣ 复制",
+                "left": 112,
+                "top": -1799,
+                "width": 30,
+                "height": 30
+              },
+              {
+                "ariaLabel": "点赞",
+                "text": "👍 点赞",
+                "left": 144,
+                "top": -1799,
+                "width": 30,
+                "height": 30
+              },
+              {
+                "ariaLabel": "更多消息操作",
+                "text": "•••",
+                "left": 80,
+                "top": -1767,
+                "width": 30,
+                "height": 30
+              },
+              {
+                "ariaLabel": "回复",
+                "text": "↩ 回复",
+                "left": 126,
+                "top": -1525,
+                "width": 30,
+                "height": 30
+              },
+              {
+                "ariaLabel": "更多消息操作",
+                "text": "•••",
+                "left": 126,
+                "top": -1493,
+                "width": 30,
+                "height": 30
+              },
+              {
+                "ariaLabel": "回复",
+                "text": "↩ 回复",
+                "left": 80,
+                "top": -1377,
+                "width": 30,
+                "height": 30
+              },
+              {
+                "ariaLabel": "复制",
+                "text": "▣ 复制",
+                "left": 112,
+                "top": -1377,
+                "width": 30,
+                "height": 30
+              },
+              {
+                "ariaLabel": "点赞",
+                "text": "👍 点赞",
+                "left": 144,
+                "top": -1377,
+                "width": 30,
+                "height": 30
+              },
+              {
+                "ariaLabel": "更多消息操作",
+                "text": "•••",
+                "left": 80,
+                "top": -1345,
+                "width": 30,
+                "height": 30
+              },
+              {
+                "ariaLabel": "回复",
+                "text": "↩ 回复",
+                "left": 126,
+                "top": -676,
+                "width": 30,
+                "height": 30
+              },
+              {
+                "ariaLabel": "更多消息操作",
+                "text": "•••",
+                "left": 126,
+                "top": -644,
+                "width": 30,
+                "height": 30
+              },
+              {
+                "ariaLabel": "回复",
+                "text": "↩ 回复",
+                "left": 126,
+                "top": -566,
+                "width": 30,
+                "height": 30
+              },
+              {
+                "ariaLabel": "更多消息操作",
+                "text": "•••",
+                "left": 126,
+                "top": -534,
+                "width": 30,
+                "height": 30
+              },
+              {
+                "ariaLabel": "回复",
+                "text": "↩ 回复",
+                "left": 80,
+                "top": -372,
+                "width": 30,
+                "height": 30
+              },
+              {
+                "ariaLabel": "复制",
+                "text": "▣ 复制",
+                "left": 112,
+                "top": -372,
+                "width": 30,
+                "height": 30
+              },
+              {
+                "ariaLabel": "点赞",
+                "text": "👍 点赞",
+                "left": 144,
+                "top": -372,
+                "width": 30,
+                "height": 30
+              },
+              {
+                "ariaLabel": "更多消息操作",
+                "text": "•••",
+                "left": 80,
+                "top": -340,
+                "width": 30,
+                "height": 30
+              },
+              {
+                "ariaLabel": "回复",
+                "text": "↩ 回复",
+                "left": 126,
+                "top": 471,
+                "width": 30,
+                "height": 30
+              },
+              {
+                "ariaLabel": "更多消息操作",
+                "text": "•••",
+                "left": 126,
+                "top": 503,
+                "width": 30,
+                "height": 30
+              },
+              {
+                "ariaLabel": "回复",
+                "text": "↩ 回复",
+                "left": 80,
+                "top": 699,
+                "width": 30,
+                "height": 30
+              },
+              {
+                "ariaLabel": "复制",
+                "text": "▣ 复制",
+                "left": 112,
+                "top": 699,
+                "width": 30,
+                "height": 30
+              },
+              {
+                "ariaLabel": "点赞",
+                "text": "👍 点赞",
+                "left": 144,
+                "top": 699,
+                "width": 30,
+                "height": 30
+              },
+              {
+                "ariaLabel": "更多消息操作",
+                "text": "•••",
+                "left": 80,
+                "top": 731,
+                "width": 30,
+                "height": 30
+              },
+              {
+                "ariaLabel": "回复",
+                "text": "↩ 回复",
+                "left": 80,
+                "top": 1311,
+                "width": 30,
+                "height": 30
+              },
+              {
+                "ariaLabel": "复制",
+                "text": "▣ 复制",
+                "left": 112,
+                "top": 1311,
+                "width": 30,
+                "height": 30
+              },
+              {
+                "ariaLabel": "点赞",
+                "text": "👍 点赞",
+                "left": 144,
+                "top": 1311,
+                "width": 30,
+                "height": 30
+              },
+              {
+                "ariaLabel": "更多消息操作",
+                "text": "•••",
+                "left": 80,
+                "top": 1343,
+                "width": 30,
+                "height": 30
+              },
+              {
+                "ariaLabel": "执行过程 · 3 项",
+                "text": "⌄执行过程 · 3 项",
+                "left": 80,
+                "top": 1408,
+                "width": 110,
+                "height": 26
+              },
+              {
+                "ariaLabel": "查看大图：生成的图片",
+                "text": "点击查看大图",
+                "left": 80,
+                "top": 1456,
+                "width": 108,
+                "height": 108
+              },
+              {
+                "ariaLabel": "复制",
+                "text": "",
+                "left": 74,
+                "top": 1642,
+                "width": 28,
+                "height": 28
+              },
+              {
+                "ariaLabel": "回复",
+                "text": "↩ 回复",
+                "left": 74,
+                "top": 1686,
+                "width": 30,
+                "height": 30
+              },
+              {
+                "ariaLabel": "复制",
+                "text": "▣ 复制",
+                "left": 106,
+                "top": 1686,
+                "width": 30,
+                "height": 30
+              },
+              {
+                "ariaLabel": "点赞",
+                "text": "👍 点赞",
+                "left": 138,
+                "top": 1686,
+                "width": 30,
+                "height": 30
+              },
+              {
+                "ariaLabel": "好的回答",
+                "text": "",
+                "left": 74,
+                "top": 1724,
+                "width": 28,
+                "height": 28
+              },
+              {
+                "ariaLabel": "有问题的回答",
+                "text": "",
+                "left": 110,
+                "top": 1724,
+                "width": 28,
+                "height": 28
+              },
+              {
+                "ariaLabel": "回复",
+                "text": "↩ 回复",
+                "left": 80,
+                "top": 1866,
+                "width": 30,
+                "height": 30
+              },
+              {
+                "ariaLabel": "复制",
+                "text": "▣ 复制",
+                "left": 112,
+                "top": 1866,
+                "width": 30,
+                "height": 30
+              },
+              {
+                "ariaLabel": "点赞",
+                "text": "👍 点赞",
+                "left": 144,
+                "top": 1866,
+                "width": 30,
+                "height": 30
+              },
+              {
+                "ariaLabel": "更多消息操作",
+                "text": "•••",
+                "left": 80,
+                "top": 1898,
+                "width": 30,
+                "height": 30
+              },
+              {
+                "ariaLabel": "指令",
+                "text": "",
+                "left": 80,
+                "top": 545,
+                "width": 28,
+                "height": 28
+              },
+              {
+                "ariaLabel": "访问模式，当前：完全权限",
+                "text": "完全权限",
+                "left": 124,
+                "top": 545,
+                "width": 44,
+                "height": 28
+              },
+              {
+                "ariaLabel": "■ 停止",
+                "text": "■ 停止",
+                "left": 80,
+                "top": 593,
+                "width": 32,
+                "height": 44
+              },
+              {
+                "ariaLabel": "＋ 新会话",
+                "text": "＋ 新会话",
+                "left": 114,
+                "top": 593,
+                "width": 32,
+                "height": 44
+              },
+              {
+                "ariaLabel": "选择模型，当前 MiniMax-M3，推理等级 High",
+                "text": "MiniMax-M3High",
+                "left": 80,
+                "top": 643,
+                "width": 140,
+                "height": 28
+              }
+            ]
+          },
+          "account": {
+            "left": 174,
+            "right": 253.75,
+            "top": 136,
+            "bottom": 170,
+            "width": 79.75,
+            "height": 34,
+            "viewportWidth": 320,
+            "viewportHeight": 720,
+            "hit": true
+          },
+          "style": {
+            "left": 186,
+            "right": 264,
+            "top": 12,
+            "bottom": 48,
+            "width": 78,
+            "height": 36,
+            "viewportWidth": 320,
+            "viewportHeight": 720,
+            "hit": true
+          }
+        },
+        "390": {
+          "width": 390,
+          "height": 844,
+          "documentWidth": 390,
+          "bodyWidth": 390,
+          "control": "▧ 会话图库",
+          "nativeSidebar": {
+            "viewportWidth": 390,
+            "settingsTextVisible": false,
+            "leftControls": [
+              {
+                "ariaLabel": "打开侧边栏",
+                "text": "",
+                "left": 10,
+                "top": 14,
+                "width": 44,
+                "height": 44
+              },
+              {
+                "ariaLabel": null,
+                "text": "全国可飞",
+                "left": 116,
+                "top": 16,
+                "width": 72,
+                "height": 28
+              },
+              {
+                "ariaLabel": null,
+                "text": "▧ 会话图库",
+                "left": 116,
+                "top": 136,
+                "width": 80,
+                "height": 34
+              },
+              {
+                "ariaLabel": null,
+                "text": "对话",
+                "left": 116,
+                "top": 174,
+                "width": 60,
+                "height": 44
+              },
+              {
+                "ariaLabel": "回复",
+                "text": "↩ 回复",
+                "left": 82,
+                "top": -1775,
+                "width": 30,
+                "height": 30
+              },
+              {
+                "ariaLabel": "复制",
+                "text": "▣ 复制",
+                "left": 114,
+                "top": -1775,
+                "width": 30,
+                "height": 30
+              },
+              {
+                "ariaLabel": "点赞",
+                "text": "👍 点赞",
+                "left": 146,
+                "top": -1775,
+                "width": 30,
+                "height": 30
+              },
+              {
+                "ariaLabel": "分支",
+                "text": "⑂ 分支",
+                "left": 178,
+                "top": -1775,
+                "width": 30,
+                "height": 30
+              },
+              {
+                "ariaLabel": "回复",
+                "text": "↩ 回复",
+                "left": 84,
+                "top": -1682,
+                "width": 30,
+                "height": 30
+              },
+              {
+                "ariaLabel": "复制",
+                "text": "▣ 复制",
+                "left": 116,
+                "top": -1682,
+                "width": 30,
+                "height": 30
+              },
+              {
+                "ariaLabel": "点赞",
+                "text": "👍 点赞",
+                "left": 148,
+                "top": -1682,
+                "width": 30,
+                "height": 30
+              },
+              {
+                "ariaLabel": "回复",
+                "text": "↩ 回复",
+                "left": 126,
+                "top": -1462,
+                "width": 30,
+                "height": 30
+              },
+              {
+                "ariaLabel": "复制",
+                "text": "▣ 复制",
+                "left": 158,
+                "top": -1462,
+                "width": 30,
+                "height": 30
+              },
+              {
+                "ariaLabel": "回复",
+                "text": "↩ 回复",
+                "left": 82,
+                "top": -1354,
+                "width": 30,
+                "height": 30
+              },
+              {
+                "ariaLabel": "复制",
+                "text": "▣ 复制",
+                "left": 114,
+                "top": -1354,
+                "width": 30,
+                "height": 30
+              },
+              {
+                "ariaLabel": "点赞",
+                "text": "👍 点赞",
+                "left": 146,
+                "top": -1354,
+                "width": 30,
+                "height": 30
+              },
+              {
+                "ariaLabel": "分支",
+                "text": "⑂ 分支",
+                "left": 178,
+                "top": -1354,
+                "width": 30,
+                "height": 30
+              },
+              {
+                "ariaLabel": "回复",
+                "text": "↩ 回复",
+                "left": 126,
+                "top": -1135,
+                "width": 30,
+                "height": 30
+              },
+              {
+                "ariaLabel": "复制",
+                "text": "▣ 复制",
+                "left": 158,
+                "top": -1135,
+                "width": 30,
+                "height": 30
+              },
+              {
+                "ariaLabel": "回复",
+                "text": "↩ 回复",
+                "left": 82,
+                "top": -989,
+                "width": 30,
+                "height": 30
+              },
+              {
+                "ariaLabel": "复制",
+                "text": "▣ 复制",
+                "left": 114,
+                "top": -989,
+                "width": 30,
+                "height": 30
+              },
+              {
+                "ariaLabel": "点赞",
+                "text": "👍 点赞",
+                "left": 146,
+                "top": -989,
+                "width": 30,
+                "height": 30
+              },
+              {
+                "ariaLabel": "分支",
+                "text": "⑂ 分支",
+                "left": 178,
+                "top": -989,
+                "width": 30,
+                "height": 30
+              },
+              {
+                "ariaLabel": "查看大图：水墨擎天柱",
+                "text": "点击查看大图",
+                "left": 126,
+                "top": -589,
+                "width": 108,
+                "height": 108
+              },
+              {
+                "ariaLabel": "回复",
+                "text": "↩ 回复",
+                "left": 126,
+                "top": -475,
+                "width": 30,
+                "height": 30
+              },
+              {
+                "ariaLabel": "复制",
+                "text": "▣ 复制",
+                "left": 158,
+                "top": -475,
+                "width": 30,
+                "height": 30
+              },
+              {
+                "ariaLabel": "回复",
+                "text": "↩ 回复",
+                "left": 126,
+                "top": -367,
+                "width": 30,
+                "height": 30
+              },
+              {
+                "ariaLabel": "复制",
+                "text": "▣ 复制",
+                "left": 158,
+                "top": -367,
+                "width": 30,
+                "height": 30
+              },
+              {
+                "ariaLabel": "回复",
+                "text": "↩ 回复",
+                "left": 82,
+                "top": -197,
+                "width": 30,
+                "height": 30
+              },
+              {
+                "ariaLabel": "复制",
+                "text": "▣ 复制",
+                "left": 114,
+                "top": -197,
+                "width": 30,
+                "height": 30
+              },
+              {
+                "ariaLabel": "点赞",
+                "text": "👍 点赞",
+                "left": 146,
+                "top": -197,
+                "width": 30,
+                "height": 30
+              },
+              {
+                "ariaLabel": "分支",
+                "text": "⑂ 分支",
+                "left": 178,
+                "top": -197,
+                "width": 30,
+                "height": 30
+              },
+              {
+                "ariaLabel": "回复",
+                "text": "↩ 回复",
+                "left": 126,
+                "top": 473,
+                "width": 30,
+                "height": 30
+              },
+              {
+                "ariaLabel": "复制",
+                "text": "▣ 复制",
+                "left": 158,
+                "top": 473,
+                "width": 30,
+                "height": 30
+              },
+              {
+                "ariaLabel": "回复",
+                "text": "↩ 回复",
+                "left": 82,
+                "top": 660,
+                "width": 30,
+                "height": 30
+              },
+              {
+                "ariaLabel": "复制",
+                "text": "▣ 复制",
+                "left": 114,
+                "top": 660,
+                "width": 30,
+                "height": 30
+              },
+              {
+                "ariaLabel": "点赞",
+                "text": "👍 点赞",
+                "left": 146,
+                "top": 660,
+                "width": 30,
+                "height": 30
+              },
+              {
+                "ariaLabel": "分支",
+                "text": "⑂ 分支",
+                "left": 178,
+                "top": 660,
+                "width": 30,
+                "height": 30
+              },
+              {
+                "ariaLabel": "回复",
+                "text": "↩ 回复",
+                "left": 82,
+                "top": 1094,
+                "width": 30,
+                "height": 30
+              },
+              {
+                "ariaLabel": "复制",
+                "text": "▣ 复制",
+                "left": 114,
+                "top": 1094,
+                "width": 30,
+                "height": 30
+              },
+              {
+                "ariaLabel": "点赞",
+                "text": "👍 点赞",
+                "left": 146,
+                "top": 1094,
+                "width": 30,
+                "height": 30
+              },
+              {
+                "ariaLabel": "分支",
+                "text": "⑂ 分支",
+                "left": 178,
+                "top": 1094,
+                "width": 30,
+                "height": 30
+              },
+              {
+                "ariaLabel": "执行过程 · 3 项",
+                "text": "⌄执行过程 · 3 项",
+                "left": 80,
+                "top": 1189,
+                "width": 110,
+                "height": 26
+              },
+              {
+                "ariaLabel": "查看大图：生成的图片",
+                "text": "点击查看大图",
+                "left": 80,
+                "top": 1237,
+                "width": 108,
+                "height": 108
+              },
+              {
+                "ariaLabel": "复制",
+                "text": "",
+                "left": 74,
+                "top": 1424,
+                "width": 28,
+                "height": 28
+              },
+              {
+                "ariaLabel": "回复",
+                "text": "↩ 回复",
+                "left": 74,
+                "top": 1468,
+                "width": 30,
+                "height": 30
+              },
+              {
+                "ariaLabel": "复制",
+                "text": "▣ 复制",
+                "left": 106,
+                "top": 1468,
+                "width": 30,
+                "height": 30
+              },
+              {
+                "ariaLabel": "点赞",
+                "text": "👍 点赞",
+                "left": 138,
+                "top": 1468,
+                "width": 30,
+                "height": 30
+              },
+              {
+                "ariaLabel": "分支",
+                "text": "⑂ 分支",
+                "left": 170,
+                "top": 1468,
+                "width": 30,
+                "height": 30
+              },
+              {
+                "ariaLabel": "好的回答",
+                "text": "",
+                "left": 74,
+                "top": 1506,
+                "width": 28,
+                "height": 28
+              },
+              {
+                "ariaLabel": "有问题的回答",
+                "text": "",
+                "left": 110,
+                "top": 1506,
+                "width": 28,
+                "height": 28
+              },
+              {
+                "ariaLabel": "在新对话中分支",
+                "text": "",
+                "left": 146,
+                "top": 1506,
+                "width": 28,
+                "height": 28
+              },
+              {
+                "ariaLabel": "回复",
+                "text": "↩ 回复",
+                "left": 82,
+                "top": 1609,
+                "width": 30,
+                "height": 30
+              },
+              {
+                "ariaLabel": "复制",
+                "text": "▣ 复制",
+                "left": 114,
+                "top": 1609,
+                "width": 30,
+                "height": 30
+              },
+              {
+                "ariaLabel": "点赞",
+                "text": "👍 点赞",
+                "left": 146,
+                "top": 1609,
+                "width": 30,
+                "height": 30
+              },
+              {
+                "ariaLabel": "分支",
+                "text": "⑂ 分支",
+                "left": 178,
+                "top": 1609,
+                "width": 30,
+                "height": 30
+              },
+              {
+                "ariaLabel": "指令",
+                "text": "",
+                "left": 80,
+                "top": 669,
+                "width": 28,
+                "height": 28
+              },
+              {
+                "ariaLabel": "访问模式，当前：完全权限",
+                "text": "完全权限",
+                "left": 124,
+                "top": 669,
+                "width": 44,
+                "height": 28
+              },
+              {
+                "ariaLabel": "■ 停止",
+                "text": "■ 停止",
+                "left": 80,
+                "top": 717,
+                "width": 32,
+                "height": 44
+              },
+              {
+                "ariaLabel": "＋ 新会话",
+                "text": "＋ 新会话",
+                "left": 114,
+                "top": 717,
+                "width": 32,
+                "height": 44
+              },
+              {
+                "ariaLabel": "⚡ 快速会议",
+                "text": "⚡ 快速会议",
+                "left": 148,
+                "top": 717,
+                "width": 32,
+                "height": 44
+              },
+              {
+                "ariaLabel": "选择模型，当前 MiniMax-M3，推理等级 High",
+                "text": "MiniMax-M3High",
+                "left": 80,
+                "top": 767,
+                "width": 210,
+                "height": 28
+              }
+            ]
+          },
+          "account": {
+            "left": 116,
+            "right": 195.75,
+            "top": 136,
+            "bottom": 170,
+            "width": 79.75,
+            "height": 34,
+            "viewportWidth": 390,
+            "viewportHeight": 844,
+            "hit": true
+          },
+          "style": {
+            "left": 256,
+            "right": 334,
+            "top": 12,
+            "bottom": 48,
+            "width": 78,
+            "height": 36,
+            "viewportWidth": 390,
+            "viewportHeight": 844,
+            "hit": true
+          }
+        },
+        "768": {
+          "width": 768,
+          "height": 900,
+          "documentWidth": 768,
+          "bodyWidth": 768,
+          "control": "▧ 会话图库",
+          "nativeSidebar": {
+            "viewportWidth": 768,
+            "settingsTextVisible": false,
+            "leftControls": [
+              {
+                "ariaLabel": "打开侧边栏",
+                "text": "",
+                "left": 10,
+                "top": 14,
+                "width": 44,
+                "height": 44
+              },
+              {
+                "ariaLabel": null,
+                "text": "全国可飞",
+                "left": 116,
+                "top": 16,
+                "width": 72,
+                "height": 28
+              },
+              {
+                "ariaLabel": null,
+                "text": "对话",
+                "left": 116,
+                "top": 96,
+                "width": 60,
+                "height": 44
+              },
+              {
+                "ariaLabel": null,
+                "text": "轨迹",
+                "left": 179,
+                "top": 96,
+                "width": 60,
+                "height": 44
+              },
+              {
+                "ariaLabel": "回复",
+                "text": "↩ 回复",
+                "left": 131,
+                "top": -1600,
+                "width": 46,
+                "height": 22
+              },
+              {
+                "ariaLabel": "复制",
+                "text": "▣ 复制",
+                "left": 179,
+                "top": -1600,
+                "width": 46,
+                "height": 23
+              },
+              {
+                "ariaLabel": "点赞",
+                "text": "👍 点赞",
+                "left": 227,
+                "top": -1600,
+                "width": 52,
+                "height": 22
+              },
+              {
+                "ariaLabel": "分支",
+                "text": "⑂ 分支",
+                "left": 281,
+                "top": -1600,
+                "width": 42,
+                "height": 22
+              },
+              {
+                "ariaLabel": "转发",
+                "text": "↗ 转发",
+                "left": 325,
+                "top": -1600,
+                "width": 48,
+                "height": 22
+              },
+              {
+                "ariaLabel": "回复",
+                "text": "↩ 回复",
+                "left": 131,
+                "top": -1339,
+                "width": 46,
+                "height": 22
+              },
+              {
+                "ariaLabel": "复制",
+                "text": "▣ 复制",
+                "left": 179,
+                "top": -1339,
+                "width": 46,
+                "height": 23
+              },
+              {
+                "ariaLabel": "点赞",
+                "text": "👍 点赞",
+                "left": 227,
+                "top": -1339,
+                "width": 52,
+                "height": 22
+              },
+              {
+                "ariaLabel": "分支",
+                "text": "⑂ 分支",
+                "left": 281,
+                "top": -1339,
+                "width": 42,
+                "height": 22
+              },
+              {
+                "ariaLabel": "转发",
+                "text": "↗ 转发",
+                "left": 325,
+                "top": -1339,
+                "width": 48,
+                "height": 22
+              },
+              {
+                "ariaLabel": "查看大图：水墨擎天柱",
+                "text": "点击查看大图",
+                "left": 131,
+                "top": -988,
+                "width": 108,
+                "height": 108
+              },
+              {
+                "ariaLabel": "回复",
+                "text": "↩ 回复",
+                "left": 131,
+                "top": -873,
+                "width": 46,
+                "height": 22
+              },
+              {
+                "ariaLabel": "复制",
+                "text": "▣ 复制",
+                "left": 179,
+                "top": -874,
+                "width": 46,
+                "height": 23
+              },
+              {
+                "ariaLabel": "点赞",
+                "text": "👍 点赞",
+                "left": 227,
+                "top": -873,
+                "width": 52,
+                "height": 22
+              },
+              {
+                "ariaLabel": "分支",
+                "text": "⑂ 分支",
+                "left": 281,
+                "top": -873,
+                "width": 42,
+                "height": 22
+              },
+              {
+                "ariaLabel": "转发",
+                "text": "↗ 转发",
+                "left": 325,
+                "top": -873,
+                "width": 48,
+                "height": 22
+              },
+              {
+                "ariaLabel": "回复",
+                "text": "↩ 回复",
+                "left": 131,
+                "top": -772,
+                "width": 46,
+                "height": 22
+              },
+              {
+                "ariaLabel": "复制",
+                "text": "▣ 复制",
+                "left": 179,
+                "top": -773,
+                "width": 46,
+                "height": 23
+              },
+              {
+                "ariaLabel": "点赞",
+                "text": "👍 点赞",
+                "left": 227,
+                "top": -772,
+                "width": 52,
+                "height": 22
+              },
+              {
+                "ariaLabel": "分支",
+                "text": "⑂ 分支",
+                "left": 281,
+                "top": -772,
+                "width": 42,
+                "height": 22
+              },
+              {
+                "ariaLabel": "转发",
+                "text": "↗ 转发",
+                "left": 325,
+                "top": -772,
+                "width": 48,
+                "height": 22
+              },
+              {
+                "ariaLabel": "查看大图：水墨路飞",
+                "text": "点击查看大图",
+                "left": 131,
+                "top": -371,
+                "width": 108,
+                "height": 108
+              },
+              {
+                "ariaLabel": "回复",
+                "text": "↩ 回复",
+                "left": 131,
+                "top": -256,
+                "width": 46,
+                "height": 22
+              },
+              {
+                "ariaLabel": "复制",
+                "text": "▣ 复制",
+                "left": 179,
+                "top": -257,
+                "width": 46,
+                "height": 23
+              },
+              {
+                "ariaLabel": "点赞",
+                "text": "👍 点赞",
+                "left": 227,
+                "top": -256,
+                "width": 52,
+                "height": 22
+              },
+              {
+                "ariaLabel": "分支",
+                "text": "⑂ 分支",
+                "left": 281,
+                "top": -256,
+                "width": 42,
+                "height": 22
+              },
+              {
+                "ariaLabel": "转发",
+                "text": "↗ 转发",
+                "left": 325,
+                "top": -256,
+                "width": 48,
+                "height": 22
+              },
+              {
+                "ariaLabel": "执行过程 · 3 项",
+                "text": "⌄执行过程 · 3 项",
+                "left": 81,
+                "top": 276,
+                "width": 110,
+                "height": 26
+              },
+              {
+                "ariaLabel": "查看大图：生成的图片",
+                "text": "点击查看大图",
+                "left": 81,
+                "top": 324,
+                "width": 196,
+                "height": 264
+              },
+              {
+                "ariaLabel": "复制",
+                "text": "",
+                "left": 75,
+                "top": 659,
+                "width": 27,
+                "height": 28
+              },
+              {
+                "ariaLabel": "回复",
+                "text": "↩ 回复",
+                "left": 110,
+                "top": 666,
+                "width": 46,
+                "height": 22
+              },
+              {
+                "ariaLabel": "复制",
+                "text": "▣ 复制",
+                "left": 158,
+                "top": 665,
+                "width": 46,
+                "height": 23
+              },
+              {
+                "ariaLabel": "点赞",
+                "text": "👍 点赞",
+                "left": 206,
+                "top": 666,
+                "width": 52,
+                "height": 22
+              },
+              {
+                "ariaLabel": "分支",
+                "text": "⑂ 分支",
+                "left": 260,
+                "top": 666,
+                "width": 42,
+                "height": 22
+              },
+              {
+                "ariaLabel": "转发",
+                "text": "↗ 转发",
+                "left": 304,
+                "top": 666,
+                "width": 48,
+                "height": 22
+              },
+              {
+                "ariaLabel": "更多消息操作",
+                "text": "•••",
+                "left": 354,
+                "top": 667,
+                "width": 24,
+                "height": 20
+              },
+              {
+                "ariaLabel": "指令",
+                "text": "",
+                "left": 81,
+                "top": 775,
+                "width": 28,
+                "height": 28
+              },
+              {
+                "ariaLabel": "访问模式，当前：完全权限",
+                "text": "完全权限",
+                "left": 125,
+                "top": 775,
+                "width": 100,
+                "height": 28
+              },
+              {
+                "ariaLabel": "发送表情",
+                "text": "☺表情",
+                "left": 241,
+                "top": 772,
+                "width": 58,
+                "height": 34
+              },
+              {
+                "ariaLabel": "发送图片或文件",
+                "text": "📎附件",
+                "left": 301,
+                "top": 772,
+                "width": 63,
+                "height": 34
+              },
+              {
+                "ariaLabel": "■ 停止",
+                "text": "■ 停止",
+                "left": 296,
+                "top": 818,
+                "width": 51,
+                "height": 36
+              }
+            ]
+          },
+          "account": {
+            "left": 532.046875,
+            "right": 611.796875,
+            "top": 58,
+            "bottom": 88,
+            "width": 79.75,
+            "height": 30,
+            "viewportWidth": 768,
+            "viewportHeight": 900,
+            "hit": true
+          },
+          "style": {
+            "left": 610,
+            "right": 688,
+            "top": 15,
+            "bottom": 45,
+            "width": 78,
+            "height": 30,
+            "viewportWidth": 768,
+            "viewportHeight": 900,
+            "hit": true
+          }
+        },
+        "native": {
+          "width": 1440,
+          "height": 900,
+          "documentWidth": 1440,
+          "bodyWidth": 1440,
+          "styleControl": {
+            "left": 1284,
+            "right": 1362,
+            "top": 13,
+            "bottom": 43,
+            "width": 78,
+            "height": 30,
+            "viewportWidth": 1440,
+            "viewportHeight": 900,
+            "hit": true
+          }
+        },
+        "qq2007": {
+          "width": 1440,
+          "height": 900,
+          "documentWidth": 1440,
+          "bodyWidth": 1440,
+          "styleControl": {
+            "left": 1284,
+            "right": 1362,
+            "top": 11,
+            "bottom": 41,
+            "width": 78,
+            "height": 30,
+            "viewportWidth": 1440,
+            "viewportHeight": 900,
+            "hit": true
+          }
+        }
+      },
+      "mediaRoom": {
+        "kind": "national-fly",
+        "preflightItems": 3
+      },
+      "deepLink": {
+        "requested": true,
+        "requestSent": true,
+        "active": true,
+        "nativeSelected": true,
+        "selectedNativeTitle": true,
+        "timeline": [
+          {
+            "atMs": 6061,
+            "atUtc": "2026-09-12T04:43:09.104Z",
+            "event": "request",
+            "path": "/api/session/list",
+            "method": "POST"
+          },
+          {
+            "atMs": 14632,
+            "atUtc": "2026-09-12T04:43:17.675Z",
+            "event": "response",
+            "path": "/api/session/list",
+            "status": 200
+          },
+          {
+            "atMs": 14633,
+            "atUtc": "2026-09-12T04:43:17.676Z",
+            "event": "requestfinished",
+            "path": "/api/session/list",
+            "status": 200,
+            "timing": {
+              "queueOrBlockedMs": 0,
+              "dnsMs": null,
+              "connectMs": null,
+              "requestMs": 8591,
+              "downloadMs": 2,
+              "responseEndMs": 8593
+            }
+          },
+          {
+            "atMs": 14726,
+            "atUtc": "2026-09-12T04:43:17.769Z",
+            "event": "request",
+            "path": "/rooms/select",
+            "method": "POST"
+          },
+          {
+            "atMs": 14726,
+            "atUtc": "2026-09-12T04:43:17.769Z",
+            "event": "request",
+            "path": "/api/session/list",
+            "method": "POST"
+          },
+          {
+            "atMs": 15102,
+            "atUtc": "2026-09-12T04:43:18.145Z",
+            "event": "response",
+            "path": "/rooms/select",
+            "status": 200
+          },
+          {
+            "atMs": 15104,
+            "atUtc": "2026-09-12T04:43:18.147Z",
+            "event": "requestfinished",
+            "path": "/rooms/select",
+            "status": 200,
+            "timing": {
+              "queueOrBlockedMs": 0,
+              "dnsMs": null,
+              "connectMs": null,
+              "requestMs": 466,
+              "downloadMs": 1,
+              "responseEndMs": 468
+            }
+          }
+        ],
+        "galleryRequestMatchedTarget": true
+      },
+      "stages": {
+        "qqNarrow320": {
+          "passed": false,
+          "error": "AssertionError [ERR_ASSERTION]: QQ narrow long human bubble cap is too small: 162"
+        },
+        "gallery": {
+          "passed": true
+        },
+        "viewports": {
+          "passed": true
+        },
+        "files-AI 成员": {
+          "passed": false,
+          "error": "AssertionError [ERR_ASSERTION]: real native workbench Files tab/button is unavailable"
+        },
+        "files-群管理": {
+          "passed": false,
+          "error": "AssertionError [ERR_ASSERTION]: real native workbench Files tab/button is unavailable"
+        },
+        "reconnect": {
+          "passed": true
+        },
+        "pageErrors": {
+          "passed": true
+        }
+      },
+      "hostNarrowGeometry": {
+        "qq": {
+          "conversation": {
+            "left": 56,
+            "right": 320,
+            "width": 264,
+            "height": 720,
+            "scrollWidth": 264,
+            "clientWidth": 264
+          },
+          "tools": {
+            "left": 74,
+            "right": 288,
+            "width": 214,
+            "height": 38,
+            "scrollWidth": 214,
+            "clientWidth": 214
+          },
+          "actions": {
+            "left": 74,
+            "right": 288,
+            "width": 214,
+            "height": 30,
+            "scrollWidth": 214,
+            "clientWidth": 214
+          },
+          "longBubble": {
+            "width": 162,
+            "right": 242,
+            "scrollWidth": 162,
+            "clientWidth": 162
+          }
+        },
+        "failure": "AssertionError [ERR_ASSERTION]: QQ narrow long human bubble cap is too small: 162"
+      },
+      "gallery": {
+        "thumbnails": 3,
+        "original": {
+          "naturalWidth": 1024,
+          "naturalHeight": 1536
+        },
+        "previousNext": true,
+        "closed": true,
+        "dialogOwnedInflightAfterClose": 0,
+        "dialogOwnedStartedAfterClose": 0
+      },
+      "reconnect": {
+        "oneClick": true,
+        "sessionListRequests": 2,
+        "roomStillSelected": true,
+        "before": {
+          "native": "connected",
+          "room": "online",
+          "notifications": "online"
+        },
+        "after": {
+          "native": "connected",
+          "room": "online",
+          "notifications": "online"
+        }
+      }
+    }
+  ],
+  "screenshots": [
+    "RC142-public-member-gallery-empty.png",
+    "RC142-public-member-account.png",
+    "RC142-public-super-admin-qq-narrow-failure.png",
+    "RC142-public-super-admin-gallery.png"
+  ],
+  "passed": false,
+  "anonymousGallery": 401,
+  "error": "Error: super-admin/qqNarrow320: AssertionError [ERR_ASSERTION]: QQ narrow long human bubble cap is too small: 162\nsuper-admin/files-AI 成员: AssertionError [ERR_ASSERTION]: real native workbench Files tab/button is unavailable\nsuper-admin/files-群管理: AssertionError [ERR_ASSERTION]: real native workbench Files tab/button is unavailable"
+}

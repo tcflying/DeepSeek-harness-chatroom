@@ -1,0 +1,19 @@
+﻿{
+    "startOutput":  "Service \u0027dsh-chatroom-origin\u0027 started successfully.",
+    "cutover":  true,
+    "at":  "2026-09-11T09:00:36.4933261Z",
+    "installOutput":  "Service \u0027dsh-chatroom-origin\u0027 installed successfully.",
+    "health":  {
+                   "ready":  true,
+                   "pid":  42372,
+                   "upstreamActive":  2,
+                   "requests":  0,
+                   "disconnected":  0,
+                   "upstreamErrors":  0,
+                   "websocketOpened":  2,
+                   "websocketClosed":  0
+               },
+    "status":  "Service status for \u0027dsh-chatroom-origin\u0027: Running",
+    "sourceSha256":  "368B22F30A1C6F1F97A83C7DFAAA250C9BC322ADA51112F0E99D5DF2BF7DCC79",
+    "installed":  true
+}

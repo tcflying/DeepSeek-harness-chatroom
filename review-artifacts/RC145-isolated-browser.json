@@ -1,0 +1,17 @@
+{
+  "version": "1.5.0-codex.rc1.45",
+  "at": "2026-09-12T07:23:53.149Z",
+  "mode": "isolated-guest",
+  "base": "http://127.0.0.1:3186",
+  "roles": [
+    {
+      "role": "guest",
+      "rpc": [],
+      "errors": [],
+      "geometry": {}
+    }
+  ],
+  "screenshots": [],
+  "passed": false,
+  "error": "AssertionError [ERR_ASSERTION]: served client does not contain the exact immutable candidate asset"
+}

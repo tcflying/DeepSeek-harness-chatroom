@@ -1,0 +1,18 @@
+{
+  "version": "1.5.0-codex.rc1.47",
+  "passed": false,
+  "phase": "after-production-activation",
+  "originalTab": {
+    "id": "1",
+    "providerTabId": "browser-use:42b72c62-969b-44be-a34a-66d7800fe28b",
+    "url": "https://talk.opcvip.net/",
+    "title": "DeepSeek Harness",
+    "discovered": true
+  },
+  "read": "originalTab.ax.write()",
+  "timeoutMs": 20000,
+  "error": "js execution timed out; kernel reset, rerun your request",
+  "draft": "Not edited, submitted, cleared or assumed empty",
+  "refreshOrNavigation": false,
+  "attribution": "Discovery works but original-page control does not return. This does not establish that the production site is down. No supported shared-runtime repair is confirmed."
+}

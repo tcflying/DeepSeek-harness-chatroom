@@ -1,0 +1,41 @@
+{
+  "at": "2026-09-11T10:54:37.039Z",
+  "base": "http://127.0.0.1:3186",
+  "rooms": [
+    {
+      "roomId": "c51b2fd4-1656-4e4f-9968-4f02517709b7",
+      "sessionId": "chatroom-v1-c51b2fd4-1656-4e4f-9968-4f02517709b7",
+      "count": 2,
+      "more": false
+    }
+  ],
+  "images": [
+    {
+      "roomId": "c51b2fd4-1656-4e4f-9968-4f02517709b7",
+      "sessionId": "chatroom-v1-c51b2fd4-1656-4e4f-9968-4f02517709b7",
+      "imageId": "838d3187-4f4e-4e4d-a162-f327d068261a",
+      "fileId": "838d3187-4f4e-4e4d-a162-f327d068261a",
+      "preview": false,
+      "bytes": 821191,
+      "format": "png",
+      "width": 1278,
+      "height": 1230
+    },
+    {
+      "roomId": "c51b2fd4-1656-4e4f-9968-4f02517709b7",
+      "sessionId": "chatroom-v1-c51b2fd4-1656-4e4f-9968-4f02517709b7",
+      "imageId": "838d3187-4f4e-4e4d-a162-f327d068261a",
+      "fileId": "838d3187-4f4e-4e4d-a162-f327d068261a",
+      "preview": true,
+      "bytes": 2222,
+      "format": "webp",
+      "width": 332,
+      "height": 320
+    }
+  ],
+  "negatives": {
+    "foreignSession": 422,
+    "anonymousImage": 401,
+    "anonymousGallery": 401
+  }
+}

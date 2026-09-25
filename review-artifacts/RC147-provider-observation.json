@@ -1,0 +1,67 @@
+{
+  "artifact": "RC147 OpenCodex provider observation",
+  "observedAt": "2026-09-12T08:51:31.253Z",
+  "scope": {
+    "readOnly": true,
+    "noServiceOrProxyMutation": true,
+    "noRestart": true,
+    "noCredentialMessageOrCommandLineRead": true,
+    "redaction": "Only process/service metadata and allowlisted diagnostic categories, times, and counts are retained."
+  },
+  "observer": {
+    "at": "2026-09-12T08:41:39.974Z",
+    "previousAt": "2026-09-12T08:09:39.226Z",
+    "gapSeconds": 1921,
+    "evidenceHealthy": true,
+    "newProviderFailureCountSincePreviousObserver": 6,
+    "services": {
+      "local": { "status": 200, "elapsedMs": 23 },
+      "public": { "status": 200, "elapsedMs": 3642 },
+      "opencodex": { "status": 200, "healthy": true, "pid": 86488, "uptimeSeconds": 66, "elapsedMs": 17 },
+      "originBridge": { "status": 200, "elapsedMs": 18, "upstreamActive": 11, "upstreamErrors": 179 }
+    }
+  },
+  "processAndServiceMetadata": {
+    "previousObservedPid": 90920,
+    "current": {
+      "pid": 86488,
+      "process": "bun",
+      "startedLocal": "2026-09-12T16:40:33.939+08:00",
+      "listening": { "address": "127.0.0.1", "port": 10100 },
+      "executableScope": "local OpenCodex workspace runtime"
+    },
+    "parent": {
+      "process": "powershell",
+      "startedLocal": "2026-09-12T16:40:05.505+08:00",
+      "relation": "The parent existed 28.434 seconds before the current bun process."
+    },
+    "serviceEvidence": {
+      "servyStatus": "NotInstalled",
+      "matchingWindowsService": false,
+      "matchingScmEventsBetween1639And1643Local": 0
+    }
+  },
+  "sameTimeWindowJournal": {
+    "start": "2026-09-12T08:39:00.000Z",
+    "end": "2026-09-12T08:43:00.000Z",
+    "events": 6,
+    "failureEvents": 2,
+    "byType": [
+      { "event": "provider.probe", "kind": "Error", "code": "ECONNREFUSED", "count": 1, "at": "2026-09-12T08:40:31.821Z", "elapsedMs": 8 },
+      { "event": "provider.probe", "kind": "TimeoutError", "count": 1, "at": "2026-09-12T08:40:50.863Z", "elapsedMs": 4000 }
+    ],
+    "nativeFailures": 0,
+    "clientRuntimeFailures": 0,
+    "timingRelation": "The refusal is 2.118 seconds before the current PID start; the timeout is 16.924 seconds after it."
+  },
+  "supportedAttribution": [
+    "The OpenCodex listener changed from the previous observed PID 90920 to PID 86488 before the 08:41Z observer snapshot.",
+    "At the narrow window boundary, a short provider refusal preceded the new PID, followed by one four-second provider timeout after its start.",
+    "The current listener and all observer health endpoints were healthy at the observer snapshot."
+  ],
+  "unsupportedAttribution": [
+    "No registered service or SCM event identifies the PID replacement as intentional maintenance, crash recovery, or a specific other task; parent command line and task content were intentionally not inspected.",
+    "The post-start timeout is insufficient to classify a persistent outage or a process crash.",
+    "The window has no client runtime failure. Provider/process evidence must not be treated as the cause of the page/IAB freeze."
+  ]
+}

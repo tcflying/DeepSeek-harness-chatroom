@@ -1,0 +1,14 @@
+{
+  "version": "1.5.0-codex.rc1.52",
+  "browser": "Codex In-app Browser",
+  "url": "https://talk.opcvip.net/",
+  "observedAt": "2026-09-13T18:07:13.813Z",
+  "viewport": {"width":926,"height":952},
+  "collapsedSidebar": true,
+  "reconnect": {"x":5.599999904632568,"y":800,"width":44,"height":44,"fullyInViewport":true,"centerHit":true,"semanticClickPerformed":true},
+  "afterClick": {"native":"connected","catalogue":"ready","room":"online","notifications":"online"},
+  "mobile": {"at":"2026-09-13T18:17:23.773Z","viewportWidth":390,"viewportHeight":844,"documentWidth":390,"bodyWidth":390,"screenshotVisuallyChecked":true,"viewportOverrideReset":true},
+  "unexpectedObservation": "The empty start surface later showed a newly named blank group. This receipt does not attribute that transition to reconnect or assert no concurrent navigation.",
+  "claim": "Collapsed-rail button geometry and one actual reconnect verified in IAB; not a permanent uptime guarantee or complete media/member acceptance.",
+  "passed": true
+}

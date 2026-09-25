@@ -1,0 +1,81 @@
+{
+  "version": "1.5.0-codex.rc1.50",
+  "at": "2026-09-12T18:54:10.254Z",
+  "deployed": true,
+  "service": "Service status for 'dsh-chatroom': Running",
+  "listeners": [
+    {
+      "LocalPort": 3185,
+      "OwningProcess": 42372
+    },
+    {
+      "LocalPort": 3181,
+      "OwningProcess": 45580
+    }
+  ],
+  "phases": [
+    {
+      "version": 1,
+      "at": "2026-09-12T18:52:40.931Z",
+      "pid": 45580,
+      "event": "runtime.stop"
+    },
+    {
+      "version": 1,
+      "at": "2026-09-12T18:53:24.018Z",
+      "pid": 45580,
+      "event": "runtime.start"
+    }
+  ],
+  "surfaces": [
+    {
+      "base": "http://127.0.0.1:3181",
+      "at": "2026-09-12T18:54:08.279Z",
+      "health": {
+        "ready": true,
+        "diagnostics": {
+          "enabled": true,
+          "healthy": true,
+          "dropped": 0
+        }
+      },
+      "fullClientPayloadEqual": true,
+      "servedSha256": "dede8c346b3495905123fb6879ae9af6d39693ad39dac58a787be307724cc9ef",
+      "candidateSha256": "528d9da157b436cef723ba44302f8e5d9b44d4f12cd91d305f8be330e472d92b",
+      "normalization": "terminal Host source-map wrapper and CRLF only"
+    },
+    {
+      "base": "https://talk.opcvip.net",
+      "at": "2026-09-12T18:54:10.253Z",
+      "health": {
+        "ready": true,
+        "diagnostics": {
+          "enabled": true,
+          "healthy": true,
+          "dropped": 0
+        }
+      },
+      "fullClientPayloadEqual": true,
+      "servedSha256": "dede8c346b3495905123fb6879ae9af6d39693ad39dac58a787be307724cc9ef",
+      "candidateSha256": "528d9da157b436cef723ba44302f8e5d9b44d4f12cd91d305f8be330e472d92b",
+      "normalization": "terminal Host source-map wrapper and CRLF only"
+    }
+  ],
+  "acceptance": {
+    "fullCiPassed": false,
+    "directFunctionalPassed": true,
+    "browserCleanupPassed": false,
+    "releaseDecision": "Scoped mobile z-index-only repair; current typecheck/unit497/build plus4 direct-browser regression cases; retained Vitest bootstrap and driver teardown failures are not passes. Live deployed UI is checked separately."
+  },
+  "hostAndBridgeNotRestarted": true,
+  "overlay": {
+    "rollback": "C:/Users/datoo/.dsh/chatroom-server/profiles/web/cordis.patch.rc150-prepublish.bak",
+    "onlyReleasePathChanged": true,
+    "beforeSha256": "1841e5ee851c10c89efecfb79d1ca425e2d2ac75f03a86400d68b58f9560e5d2",
+    "afterSha256": "c4a935003e33aa4b2f54eafc74f0482ddee038ae5c8c422e8f958d39262d2ee0"
+  },
+  "boundaries": [
+    "Plugin-only mobile layers; no core, other-plugin file, permissions, credentials or network change",
+    "CI/package/publication are not a full public/IAB acceptance claim; individual failed receipts remain retained"
+  ]
+}

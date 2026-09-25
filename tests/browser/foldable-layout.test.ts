@@ -36,9 +36,9 @@ function renderAccountInHost(): HTMLDivElement {
     <nav><div>设置</div><div><button>通用设置</button><button>模型</button><button>Agent 预设</button><button>群聊与账号</button></div></nav>
     <div><header><button aria-label="关闭">关闭</button></header><div class="fixture-options"><div data-slot="settings.section"></div></div></div></div>`
   const container = required<HTMLDivElement>('[data-slot="settings.section"]')
-  const room = { auth: { enabled:true, authenticated:true, canManageSettings:false, account: {
+  const room = { phase: 'ready', auth: { enabled:true, authenticated:true, canManageSettings:false, account: {
     participantId:'layout-member', username:'layout-member', displayName:'折叠屏布局验收成员',
-    role:'member', status:'active', passwordManaged:false,
+    role:'super-admin', status:'active', passwordManaged:false,
   } }, manageableRooms:[{ id:'layout-room', title:'多人协作与折叠屏专项验证房间' }], agentProfilesRoomId:'layout-room',
     agentProfiles:{ canManage:true, profiles:[], models:[{ provider:'layout', model:'example-model', label:'布局模型 · 仅测试', reasoningEfforts:['high'] }] },
     wecomAuthorization:{ enabled:false, status:'unauthorized' } } as unknown as ChatroomView
@@ -71,7 +71,7 @@ describe('phone and foldable plugin layout', () => {
     const logout = [...settings.querySelectorAll('button')].find(button => button.textContent === '退出登录')!
     logout.scrollIntoView({ block:'nearest' })
     expect(logout.getBoundingClientRect().bottom).toBeLessThanOrEqual(panelBox.bottom + 1)
-    expect(settings.querySelector('[aria-label="系统管理"]')).toBeNull()
+    expect(settings.querySelector('[aria-label="系统管理"]')).not.toBeNull()
     expect(parseFloat(getComputedStyle(required('.dsh-chatroom-account-card .dsh-chatroom-panel-status')).paddingTop)).toBeLessThanOrEqual(8)
   })
 

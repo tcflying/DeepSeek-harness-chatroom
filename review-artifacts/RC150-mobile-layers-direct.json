@@ -1,0 +1,103 @@
+{
+  "version": "1.5.0-codex.rc1.50",
+  "at": "2026-09-12T18:50:09.806Z",
+  "sourceSha256": "a6a031e983553dbfb3dc980cd6ccf4897730fa47a57b681bc2692f46e35e8e4f",
+  "scope": "Fresh headless fixture without Vitest/Vite; real CSS except unused brand artwork interpolation; no network, user profile or app state",
+  "rows": [
+    {
+      "skin": "default",
+      "width": 390,
+      "collapse": {
+        "hit": true,
+        "width": 44,
+        "height": 44,
+        "hitClass": "collapse"
+      },
+      "backdrop": {
+        "hit": true,
+        "width": 110,
+        "height": 844,
+        "hitClass": "dsh-chatroom-sidebar-backdrop"
+      },
+      "settings": {
+        "hit": true,
+        "width": 80,
+        "height": 44,
+        "hitClass": "setting-action"
+      },
+      "unmounted": true
+    },
+    {
+      "skin": "default",
+      "width": 768,
+      "collapse": {
+        "hit": true,
+        "width": 44,
+        "height": 44,
+        "hitClass": "collapse"
+      },
+      "backdrop": {
+        "hit": true,
+        "width": 488,
+        "height": 844,
+        "hitClass": "dsh-chatroom-sidebar-backdrop"
+      },
+      "settings": {
+        "hit": true,
+        "width": 80,
+        "height": 44,
+        "hitClass": "setting-action"
+      },
+      "unmounted": true
+    },
+    {
+      "skin": "qq2007",
+      "width": 390,
+      "collapse": {
+        "hit": true,
+        "width": 44,
+        "height": 44,
+        "hitClass": "collapse"
+      },
+      "backdrop": {
+        "hit": true,
+        "width": 110,
+        "height": 844,
+        "hitClass": "dsh-chatroom-sidebar-backdrop"
+      },
+      "settings": {
+        "hit": true,
+        "width": 80,
+        "height": 44,
+        "hitClass": "setting-action"
+      },
+      "unmounted": true
+    },
+    {
+      "skin": "qq2007",
+      "width": 768,
+      "collapse": {
+        "hit": true,
+        "width": 44,
+        "height": 44,
+        "hitClass": "collapse"
+      },
+      "backdrop": {
+        "hit": true,
+        "width": 488,
+        "height": 844,
+        "hitClass": "dsh-chatroom-sidebar-backdrop"
+      },
+      "settings": {
+        "hit": true,
+        "width": 80,
+        "height": 44,
+        "hitClass": "setting-action"
+      },
+      "unmounted": true
+    }
+  ],
+  "functionalPassed": true,
+  "passed": false,
+  "cleanupError": "Error: browser close exceeded15s"
+}

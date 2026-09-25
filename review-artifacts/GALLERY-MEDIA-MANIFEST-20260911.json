@@ -1,0 +1,149 @@
+{
+  "at": "2026-09-11T11:04:03.432Z",
+  "version": "1.5.0-codex.rc1.22",
+  "pinnedHost": "0.1.2-rc.1",
+  "bundles": [
+    {
+      "name": "dist/index.js",
+      "sha256": "77815eb40a58b1d29b77d34ec5db1b59b69703be4e14ab69ab5f1bd7e8c53d21",
+      "bytes": 504053
+    },
+    {
+      "name": "dist/client.js",
+      "sha256": "d2c2b0c90f7ed770e8a49435250e59b4ad43316e020d5b0a371a30f196ccd948",
+      "bytes": 1113323
+    }
+  ],
+  "health": {
+    "ready": true,
+    "diagnostics": {
+      "enabled": true,
+      "healthy": true,
+      "dropped": 0
+    }
+  },
+  "clientUrl": "/plugins/??deepseek-harness-chatroom/client.js&rev=5a8b572e2c01d238-49",
+  "servedClientSha256": "622477dd89f878661c57ff0161a2b94571b0d2dab45e25916c8f66864b06b208",
+  "publicClient": {
+    "status": 200,
+    "sha256": "622477dd89f878661c57ff0161a2b94571b0d2dab45e25916c8f66864b06b208",
+    "matchesOrigin": true
+  },
+  "thumbnails": [
+    {
+      "name": "19c0b66c99cd574fd3d0d9fbbd2e25cf1e7db64bbdcac07d9e5ab5829d91a2da.webp",
+      "bytes": 18194
+    },
+    {
+      "name": "60a370c94b83488e4c18ddd7ad3b7ff176a8f72c9bcda0e146e20462ae667559.webp",
+      "bytes": 2116
+    },
+    {
+      "name": "8c1be1c06a4663372fc165f4e844e4c629bc987d128ae1f52096330378b0df59.webp",
+      "bytes": 16592
+    },
+    {
+      "name": "9b1108176ec8a89560eef41c9a6560661213098721e951edbd7a46eda0de8ec8.webp",
+      "bytes": 21874
+    },
+    {
+      "name": "eced728820e1465ab84160751b589a358a697935fd7864a4f557ee223c5b12bf.webp",
+      "bytes": 16192
+    }
+  ],
+  "publicGallery": {
+    "at": "2026-09-11T10:37:14.456Z",
+    "base": "https://talk.opcvip.net",
+    "rooms": [
+      {
+        "roomId": "29f58452-d88b-4495-9aee-03028b49df15",
+        "sessionId": "chatroom-v1-29f58452-d88b-4495-9aee-03028b49df15",
+        "count": 5,
+        "more": false
+      }
+    ],
+    "images": [
+      {
+        "roomId": "29f58452-d88b-4495-9aee-03028b49df15",
+        "sessionId": "chatroom-v1-29f58452-d88b-4495-9aee-03028b49df15",
+        "imageId": "2f0179c0-ddae-480b-8d7f-b8661f992ee2",
+        "fileId": "2f0179c0-ddae-480b-8d7f-b8661f992ee2",
+        "preview": false,
+        "bytes": 837408,
+        "format": "png",
+        "width": 1254,
+        "height": 1254
+      },
+      {
+        "roomId": "29f58452-d88b-4495-9aee-03028b49df15",
+        "sessionId": "chatroom-v1-29f58452-d88b-4495-9aee-03028b49df15",
+        "imageId": "2f0179c0-ddae-480b-8d7f-b8661f992ee2",
+        "fileId": "2f0179c0-ddae-480b-8d7f-b8661f992ee2",
+        "preview": true,
+        "bytes": 2116,
+        "format": "webp",
+        "width": 320,
+        "height": 320
+      }
+    ],
+    "negatives": {
+      "foreignSession": 422,
+      "anonymousImage": 401,
+      "anonymousGallery": 401,
+      "nonAdminVideo": 403
+    }
+  },
+  "actualImageEdits": [
+    {
+      "name": "GPT框选验收",
+      "provider": "oc-gpt6-low",
+      "model": "gpt-6-astra",
+      "fileId": "dc047014-230d-4934-ba89-079b6f1b39f4",
+      "artifact": "/G:/codex-project/dsh-chatroom-next/review-artifacts/EDIT-1789123153357-0.png",
+      "bytes": 1074428,
+      "width": 1254,
+      "height": 1254,
+      "sha256": "be592e591825d2e2c7511a32df326036ab9d14d02b569d5d184d8a0f8ac27a3a",
+      "elapsedMs": 60045
+    },
+    {
+      "name": "M3框选验收",
+      "provider": "minimax-cn",
+      "model": "MiniMax-M3",
+      "fileId": "b819c409-ddc5-42fc-8ffd-5e21b9b3c40c",
+      "artifact": "/G:/codex-project/dsh-chatroom-next/review-artifacts/EDIT-1789123153357-1.png",
+      "bytes": 1105093,
+      "width": 1254,
+      "height": 1254,
+      "sha256": "e3f4bfa022a67a26f8de957f9be0b08f89ab2e195c12d8d755b12662181061c2",
+      "elapsedMs": 94871
+    }
+  ],
+  "existingVideo": {
+    "video": [
+      {
+        "currentTime": 15.083333,
+        "duration": 15.083333,
+        "height": 1344,
+        "paused": true,
+        "readyState": 4,
+        "src": "/plugins/deepseek-harness-chatroom/api/files/b1fb85fa-9a9a-4d48-857b-821a695799c1",
+        "width": 768
+      }
+    ],
+    "at": "2026-09-11T10:43:08.117Z"
+  },
+  "tests": {
+    "unit": 372,
+    "unitFiles": 42,
+    "chromium": 55,
+    "chromiumFiles": 13
+  },
+  "boundaries": [
+    "No new paid video submitted. Existing H3 imported, saved and played.",
+    "Rectangular mask is a model constraint, not pixel-exact outside preservation.",
+    "45-second WAN probes are not indefinite endurance.",
+    "Historical 13:34 initiating trigger remains unknown.",
+    "Later host migration belongs to the separate upgrade task and needs fresh compatibility acceptance."
+  ]
+}

@@ -28,6 +28,9 @@ import { ChatroomExternalCardView } from './ChatroomExternalCard.js'
 import { ChatroomContextResetDivider } from './ChatroomComposer.js'
 import { ChatroomDocumentLinkCards, ChatroomLinkedText, chatroomTextLinks } from './ChatroomLinkedText.js'
 import { reconcileNativeMessageGroups } from './message-grouping.js'
+import { RecoverableImage } from './RecoverableImage.js'
+import { LazyVideo } from './VideoStudio.js'
+import { projectImageLinks } from './image-links.js'
 import { ChatroomMessageFrame } from './ChatroomMessageFrame.js'
 
 type ParticipantNode = ChatNode<'user' | 'steering'>
@@ -69,6 +72,7 @@ export function projectChatroomMessage(
   readonly participantId?: string
   readonly reply?: ChatroomReplyReference
   readonly files: readonly ChatroomFileReference[]
+  readonly images: readonly { url: string; alt: string }[]
   readonly cards: readonly ChatroomExternalCard[]
   readonly forward?: ChatroomForwardBundle
   readonly text: string
@@ -83,6 +87,7 @@ export function projectChatroomMessage(
   let reply: ChatroomReplyReference | undefined
   let forward: ChatroomForwardBundle | undefined
   const files: ChatroomFileReference[] = []
+  const images: { url: string; alt: string }[] = []
   const cards: ChatroomExternalCard[] = []
   const texts: string[] = []
   const content: Array<(typeof node.data.content)[number]> = []
@@ -119,6 +124,11 @@ export function projectChatroomMessage(
     cards.push(...cardProjection.cards)
     const fileProjection = projectFileText(visibleText)
     visibleText = fileProjection.text
+    // Named AI replies are native user nodes (plain text). The authenticated file
+    // card below owns previews; suppress only a matching, redundant image link.
+    const imageProjection = projectImageLinks(visibleText, fileProjection.files)
+    visibleText = imageProjection.text
+    images.push(...imageProjection.images)
     files.push(...fileProjection.files)
     if (visibleText.trim() !== '') texts.push(visibleText.trim())
     if (visibleText.trim() !== '') content.push(visibleText === block.text ? block : { ...block, text: visibleText })
@@ -139,6 +149,7 @@ export function projectChatroomMessage(
     avatarId: avatarId ?? fallbackAvatarId(identity?.participantId ?? 'participant'),
     ...(participantId === undefined ? {} : { participantId }),
     files,
+    images,
     cards,
     text: texts.join('\n'),
     ...(displayName === undefined ? {} : { displayName }),
@@ -164,7 +175,10 @@ export const ChatroomUserMessageNodeView = memo(function ChatroomUserMessageNode
   if (sessionTarget === undefined) {
     return <NativeView {...props} />
   }
-  const projectionBase = projectChatroomMessage(props.node, room.identity)
+  const projectionBase = projectChatroomMessage(props.node, room.identity, [
+    ...room.members,
+    ...(room.agentProfiles?.profiles ?? []).filter(p => p.roomId === sessionTarget.room.id).map(p => ({ participantId: `chatroom-agent-${p.id}`, avatarId: p.avatarId ?? fallbackAvatarId(`chatroom-agent-${p.id}`) })),
+  ])
   const projection = {
     ...projectionBase,
     ...(room.members.find(member => member.participantId === projectionBase.participantId)?.avatarUrl === undefined
@@ -172,10 +186,10 @@ export const ChatroomUserMessageNodeView = memo(function ChatroomUserMessageNode
       : { avatarUrl: room.members.find(member => member.participantId === projectionBase.participantId)?.avatarUrl }),
   }
   const linkedText = chatroomTextLinks(projection.text).length > 0
-  const nativeNode = linkedText ? participantNodeWithoutText(projection.node) : projection.node
+  const nativeNode = linkedText || projection.participantId?.startsWith('chatroom-agent-') ? participantNodeWithoutText(projection.node) : projection.node
   const native = nativeNode.data.content.length === 0
     ? undefined
-    : <NativeView {...props} node={nativeNode as ChatNode<'user'>} />
+    : <NativeView {...props} node={{ ...nativeNode, data: { ...nativeNode.data, content: nativeNode.data.content.filter(block => block.type !== 'image') } } as ChatNode<'user'>} />
   const activeRoom = sessionTarget.room
   const message = messageTarget(String(props.sessionId), props.node, projection)
   const reply = replyTarget(message)
@@ -212,7 +226,10 @@ export const ChatroomSteeringMessageNodeView = memo(function ChatroomSteeringMes
   if (sessionTarget === undefined) {
     return <NativeView {...props} />
   }
-  const projectionBase = projectChatroomMessage(props.node, room.identity)
+  const projectionBase = projectChatroomMessage(props.node, room.identity, [
+    ...room.members,
+    ...(room.agentProfiles?.profiles ?? []).filter(p => p.roomId === sessionTarget.room.id).map(p => ({ participantId: `chatroom-agent-${p.id}`, avatarId: p.avatarId ?? fallbackAvatarId(`chatroom-agent-${p.id}`) })),
+  ])
   const projection = {
     ...projectionBase,
     ...(room.members.find(member => member.participantId === projectionBase.participantId)?.avatarUrl === undefined
@@ -220,7 +237,7 @@ export const ChatroomSteeringMessageNodeView = memo(function ChatroomSteeringMes
       : { avatarUrl: room.members.find(member => member.participantId === projectionBase.participantId)?.avatarUrl }),
   }
   const linkedText = chatroomTextLinks(projection.text).length > 0
-  const nativeNode = linkedText ? participantNodeWithoutText(projection.node) : projection.node
+  const nativeNode = linkedText || projection.participantId?.startsWith('chatroom-agent-') ? participantNodeWithoutText(projection.node) : projection.node
   const native = nativeNode.data.content.length === 0
     ? undefined
     : <NativeView {...props} node={nativeNode as ChatNode<'steering'>} />
@@ -285,9 +302,18 @@ function ParticipantMessage({
     body={tools.recalled
       ? <div className="dsh-chatroom-recalled-message">消息已撤回</div>
       : <>
-          {linkedText && <ChatroomLinkedText className="dsh-chatroom-human-bubble" text={projection.text} />}
+          {projection.participantId?.startsWith('chatroom-agent-')
+            ? projection.text !== '' && <div className="dsh-chatroom-human-bubble"><ChatroomMarkdown text={projection.text} /></div>
+            : linkedText && <ChatroomLinkedText className="dsh-chatroom-human-bubble" text={projection.text} />}
           {native !== undefined && <div className="dsh-chatroom-native-message">{native}</div>}
-          {projection.files.map(file => <FileCard file={file} key={file.id} />)}
+          {projection.node.data.content.flatMap(block => {
+            if (block.type !== 'image') return []
+            const ref = { ...block.attachment, attachmentId: String(block.attachment.attachmentId) }
+            const href = imageHref(tools.roomId, tools.message, ref)
+            return href ? [<RecoverableImage key={href} url={href} alt={ref.name ?? '上传的图片'} roomId={tools.roomId} sessionId={tools.message.sourceSessionId} />] : []
+          })}
+          {projection.files.map(file => <FileCard file={file} key={file.id} roomId={tools.roomId} sessionId={tools.message.sourceSessionId} />)}
+          {projection.images.map(image => <RecoverableImage key={image.url} url={image.url} alt={image.alt} roomId={tools.roomId} sessionId={tools.message.sourceSessionId} />)}
           {projection.cards.map((card, index) => <ChatroomExternalCardView card={card} key={`${card.kind}:${card.title}:${index}`} />)}
           <ChatroomDocumentLinkCards text={projection.text} existingUrls={projection.cards.flatMap(card => card.url === undefined ? [] : [card.url])} />
           {projection.forward !== undefined && <ForwardCard forward={projection.forward} />}
@@ -303,11 +329,17 @@ function participantNodeWithoutText(node: ParticipantNode): ParticipantNode {
   } as ParticipantNode
 }
 
-function FileCard({ file }: { file: ChatroomFileReference }): JSX.Element {
+export function FileCard({ file, roomId, sessionId }: { file: ChatroomFileReference; roomId?: string | undefined; sessionId?: string | undefined }): JSX.Element {
+  const url = `${CHATROOM_API_PREFIX}/files/${encodeURIComponent(file.id)}`
+  const preview = ['image/png', 'image/jpeg', 'image/webp', 'image/gif'].includes(file.mediaType)
   return (
+    <div className="dsh-chatroom-image-file" style={{ maxWidth: '100%', minWidth: 0 }}>
+    {preview && <RecoverableImage url={url} alt={file.name.startsWith('generated-') ? '生成的图片' : file.name} roomId={roomId} sessionId={sessionId} />}
+    {file.mediaType === 'video/mp4' && <LazyVideo url={url} />}
+    <details className="dsh-chatroom-file-details"><summary>文件详情 · {formatFileSize(file.bytes)}</summary>
     <a
       className="dsh-chatroom-file-card"
-      href={`${CHATROOM_API_PREFIX}/files/${encodeURIComponent(file.id)}`}
+      href={url}
       download={file.name}
     >
       <span className="dsh-chatroom-file-icon" aria-hidden>📎</span>
@@ -317,6 +349,8 @@ function FileCard({ file }: { file: ChatroomFileReference }): JSX.Element {
       </span>
       <span aria-hidden>↓</span>
     </a>
+    </details>
+    </div>
   )
 }
 
@@ -337,7 +371,7 @@ function ForwardCard({ forward, depth = 0 }: { forward: ChatroomForwardBundle; d
               const href = imageHref(forward.sourceRoomId, item, part.image)
               return href === undefined
                 ? <span className="dsh-chatroom-forward-image-error" key={`${part.image.attachmentId}:${index}`}>图片来源不可用</span>
-                : <img className="dsh-chatroom-forward-image" key={`${part.image.attachmentId}:${index}`} src={href} alt={part.image.name ?? '转发图片'} />
+                : <RecoverableImage key={`${part.image.attachmentId}:${index}`} url={href} alt={part.image.name ?? '转发图片'} />
             })}
             {item.forward !== undefined && depth < 1 && <ForwardCard forward={item.forward} depth={depth + 1} />}
             {item.reactions !== undefined && item.reactions.length > 0 && <div className="dsh-chatroom-forward-reactions">

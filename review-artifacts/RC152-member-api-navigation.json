@@ -1,0 +1,15 @@
+{
+  "at": "2026-09-13T18:10:48.517Z",
+  "scope": "Existing member login and fixed authorized acceptance room. No messages, model calls, settings writes, or private content in output.",
+  "passed": true,
+  "readbacks": {
+    "role": "member",
+    "targetInAuthorizedRooms": true,
+    "nativeItemCount": 36,
+    "targetInNativeCatalogue": true,
+    "nativeBlank": false,
+    "selectedIdMatches": true,
+    "selectedSessionMatches": true
+  },
+  "completedAt": "2026-09-13T18:10:51.950Z"
+}

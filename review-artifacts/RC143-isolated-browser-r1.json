@@ -1,0 +1,14 @@
+{
+  "version": "1.5.0-codex.rc1.43",
+  "mode": "isolated-guest",
+  "passed": false,
+  "failurePhase": "Playwright teardown",
+  "evidence": {
+    "settingsScreenshot": "RC143-isolated-settings-r1.png",
+    "runnerLogs": [
+      "RC143-isolated.stdout.log",
+      "RC143-isolated.stderr.log"
+    ],
+    "observation": "The isolated runner reached the settings screenshot, then its Playwright child remained alive beyond the bounded acceptance window. Only that runner child was terminated; port 3186 had no listener afterwards."
+  }
+}

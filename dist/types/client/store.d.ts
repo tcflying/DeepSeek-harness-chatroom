@@ -1,9 +1,11 @@
 import type { HostObservable } from '@deepseek-ai/dsh-client-ui-slots';
-import type { ChatroomAutomationOverview, ChatroomAdminOverview, ChatroomAuthState, ChatroomDirectConversation, ChatroomDirectMessage, ChatroomDirectPeer, ChatroomForwardItem, ChatroomIdentity, ChatroomInfo, ChatroomMember, ChatroomNotification, ChatroomAgentProfilesView, ChatroomPendingMessage, ChatroomPromptContentPart, ChatroomPromptRequest, ChatroomPromptResponse, ChatroomReaction, ChatroomRecall, ChatroomReplyReference, ChatroomRoomInviteCandidate, ChatroomSearchResult, ChatroomThread, ChatroomThreadMessage, ChatroomThreadPreview, ChatroomThreadPromptRequest, ChatroomThreadRoot, ChatroomWecomAuthorizationState } from '../types.js';
+import type { ChatroomAutomationOverview, ChatroomAdminOverview, ChatroomAuthState, ChatroomDirectConversation, ChatroomDirectMessage, ChatroomDirectPeer, ChatroomForwardItem, ChatroomIdentity, ChatroomInfo, ChatroomMember, ChatroomModelProgress, ChatroomNotification, ChatroomAgentProfilesView, ChatroomPendingMessage, ChatroomPromptContentPart, ChatroomPromptRequest, ChatroomPromptResponse, ChatroomReaction, ChatroomRecall, ChatroomReplyReference, ChatroomRoomInviteCandidate, ChatroomSearchResult, ChatroomThread, ChatroomThreadMessage, ChatroomThreadPreview, ChatroomThreadPromptRequest, ChatroomThreadRoot, ChatroomWecomAuthorizationState } from '../types.js';
 import type { ChatroomReactionEmoji } from '../reactions.js';
+import type { ClientRuntimeFailureReporter } from './runtime-diagnostics.js';
 export type ChatroomPhase = 'loading' | 'auth-required' | 'identity-required' | 'ready' | 'error';
 export type ChatroomConnection = 'offline' | 'connecting' | 'online';
 export type ChatroomNewSessionMode = 'choose' | 'group' | 'solo';
+export type ChatroomManageableRoomsStatus = 'idle' | 'loading' | 'ready' | 'error';
 /** Pick an unambiguous visible @ token for one account in the new-Group directory. */
 export declare function newGroupMentionName(peer: ChatroomDirectPeer, peers: readonly ChatroomDirectPeer[]): string;
 /** Browser-owned file waiting to be merged into the next room submission. */
@@ -36,10 +38,12 @@ export type ChatroomAgentTarget = {
 };
 /** Browser identity, room directory, selection, and presence around native Harness Sessions. */
 export interface ChatroomView {
+    readonly modelProgress?: readonly ChatroomModelProgress[];
     readonly branchFrame?: ChatroomBranchFrame | undefined;
     readonly open: boolean;
     readonly phase: ChatroomPhase;
     readonly connection: ChatroomConnection;
+    readonly notificationConnection?: ChatroomConnection;
     readonly rooms: readonly ChatroomInfo[];
     readonly room: ChatroomInfo | undefined;
     readonly roomEnsureSessionId: string | undefined;
@@ -57,6 +61,8 @@ export interface ChatroomView {
     readonly agentProfiles: ChatroomAgentProfilesView | undefined;
     readonly agentProfilesRoomId: string | undefined;
     readonly manageableRooms: readonly ChatroomInfo[];
+    readonly manageableRoomsStatus?: ChatroomManageableRoomsStatus;
+    readonly manageableRoomsError?: string | undefined;
     readonly agentBusy: boolean;
     readonly agentError: string | undefined;
     readonly managementBusy?: boolean;
@@ -114,9 +120,11 @@ export interface ChatroomView {
 /** React-free owner of room identity, directory, presence, and native Session navigation. */
 export declare class ChatroomClientStore implements HostObservable<ChatroomView> {
     private readonly openSession;
+    private readonly reportRuntimeFailure?;
     private readonly nativeOwnershipLookups;
     private readonly nativeSessionAccess;
     private readonly agentProfileLoads;
+    private manageableRoomsLoad;
     private sessionGeneration;
     private agentBusyGeneration;
     private agentBusyRoomId;
@@ -124,29 +132,44 @@ export declare class ChatroomClientStore implements HostObservable<ChatroomView>
     private readonly listeners;
     private eventSource;
     private notificationSource;
+    private roomWatch;
+    private notificationWatch;
+    private readRetryTimer;
+    private readRetryDelay;
     private pendingOpenRoomId;
     private identityPromptedRoomId;
     private stopped;
     private compositionRevision;
     private pendingFileSequence;
     private searchRevision;
+    private roomNavigationRevision;
+    private directRevision;
+    private directDirectoryRevision;
+    private threadRevision;
     private originalTitle;
     private readonly handleVisibilityChange;
     private activeNativeSession;
+    private readonly activatingSessionIds;
     private roomEnsure;
     private readonly pendingAutoTriggerWrites;
     private pendingQuickMeetingTarget;
     private beginSessionGeneration;
     private isCurrentSessionGeneration;
+    private isCurrentManageableRoomsTarget;
+    private ownsManageableRoomsLoad;
+    private cancelManageableRoomsLoad;
     private isCurrentAgentProfileTarget;
     private selectAgentProfileTarget;
     private beginAgentBusy;
     private finishAgentBusy;
     private invalidateAgentBusy;
     private invalidateActiveRoomAgentBusy;
-    constructor(openSession?: (sessionId: string) => boolean, branchFrame?: ChatroomBranchFrame);
+    constructor(openSession?: (sessionId: string) => boolean, branchFrame?: ChatroomBranchFrame, reportRuntimeFailure?: ClientRuntimeFailureReporter | undefined);
     /** Current immutable room projection. */
     getSnapshot: () => ChatroomView;
+    private reconnectPending;
+    /** Revalidate the cookie and replace both read-only streams; never replay mutations. */
+    reconnect: () => Promise<void>;
     /** Resolve room metadata for any native Session in the shared directory. */
     roomForSession(sessionId: string): ChatroomInfo | undefined;
     /** Resolve whether one native Session submits to a room or one branch. */
@@ -268,9 +291,10 @@ export declare class ChatroomClientStore implements HostObservable<ChatroomView>
     /** Warm the room AI participant roster once (used by the @ mention menu). */
     ensureAgentProfiles: (roomId?: string) => Promise<void>;
     /** Load the room directory the signed-in identity may manage AI participants in. */
-    loadManageableRooms: () => Promise<void>;
+    loadManageableRooms: (signal?: AbortSignal) => Promise<void>;
     /** Create or update one room AI participant with its own model routing. */
     saveAgentProfile: (input: {
+        readonly avatarId?: import("../avatars.js").ChatroomAvatarId;
         readonly profileId?: string;
         readonly name: string;
         readonly role: string;
@@ -353,7 +377,7 @@ export declare class ChatroomClientStore implements HostObservable<ChatroomView>
     /** Create a default Enterprise WeChat meeting and publish its card to a direct conversation. */
     quickDirectMeeting: (directConversationId: string) => Promise<boolean>;
     /** Refresh authorization for the current platform account. */
-    loadWecomAuthorization: () => Promise<ChatroomWecomAuthorizationState | undefined>;
+    loadWecomAuthorization: (signal?: AbortSignal) => Promise<ChatroomWecomAuthorizationState | undefined>;
     /** Start the current account's Enterprise WeChat QR authorization. */
     startWecomAuthorization: () => Promise<boolean>;
     /** Remove the current account's Enterprise WeChat authorization. */
@@ -388,6 +412,10 @@ export declare class ChatroomClientStore implements HostObservable<ChatroomView>
     private selectAndOpen;
     private compositionFor;
     private loadSession;
+    private clearReadRetry;
+    /** EventSource retries CONNECTING itself, but a 404/MIME failure can permanently CLOSE it. */
+    private retryClosedRead;
+    private resetReadRetryBackoff;
     private openEvents;
     private openNotifications;
     private closeEvents;

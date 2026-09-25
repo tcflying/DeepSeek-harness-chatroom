@@ -1,0 +1,70 @@
+{
+  "version": "1.5.0-codex.rc1.27",
+  "at": "2026-09-11T15:31:28.660Z",
+  "surface": "independent-browser-public-host",
+  "roles": [
+    {
+      "role": "member",
+      "canManageSettings": false,
+      "api": [
+        {
+          "method": "settings/describe",
+          "status": 403
+        },
+        {
+          "method": "credentials/list",
+          "status": 403
+        },
+        {
+          "method": "session/selectModel",
+          "status": 403
+        },
+        {
+          "method": "agentPresets/select",
+          "status": 403
+        },
+        {
+          "method": "commands/execute",
+          "status": 403
+        }
+      ],
+      "errors": [],
+      "settingsAbsent": true,
+      "personalDialog": true,
+      "mobile": {
+        "width": 366,
+        "right": 378,
+        "scroll": 364
+      }
+    },
+    {
+      "role": "super-admin",
+      "canManageSettings": true,
+      "api": [
+        {
+          "method": "settings/describe",
+          "status": 200
+        },
+        {
+          "method": "credentials/list",
+          "status": 404
+        }
+      ],
+      "errors": [],
+      "settingsAvailable": true
+    }
+  ],
+  "passed": true,
+  "clients": [
+    {
+      "host": "http://127.0.0.1:3181",
+      "sha256": "fb27e48c00ce08da6292df9e9e2edadf73942ea4dc1eeff2437b551e2e9be1b5",
+      "bytes": 1125057
+    },
+    {
+      "host": "https://talk.opcvip.net",
+      "sha256": "fb27e48c00ce08da6292df9e9e2edadf73942ea4dc1eeff2437b551e2e9be1b5",
+      "bytes": 1125057
+    }
+  ]
+}

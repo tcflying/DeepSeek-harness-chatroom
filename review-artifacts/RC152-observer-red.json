@@ -1,0 +1,12 @@
+{
+  "at": "2026-09-13T18:20:11Z",
+  "command": "node node_modules/vitest/vitest.mjs run tests/observer.test.ts",
+  "exitCode": 1,
+  "tests": {"passed":6,"failed":2},
+  "regressions": [
+    "An hour-old backlog of 3 short closes was reported as current flapping.",
+    "First observation omitted 3 real recent closes and counted an invalid timestamp instead."
+  ],
+  "earlierFailure": "Before the PID guard, absent current/prior bridge PID caused TypeError reading previousBridge.upstreamErrors.",
+  "source": "Actual terminal regression output; not production fault attribution."
+}

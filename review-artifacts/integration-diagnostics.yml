@@ -1,0 +1,3 @@
+- insert:
+    - id: integration-diagnostics
+      name: file:///G:/codex-project/dsh-chatroom-next/review-artifacts/integration-diagnostics/index.mjs

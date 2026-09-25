@@ -1,0 +1,73 @@
+{
+  "artifact": "RC146 OpenCodex provider observation",
+  "observedAt": "2026-09-12T08:10:34.734Z",
+  "window": {
+    "start": "2026-09-12T07:50:00.000Z",
+    "end": "2026-09-12T08:10:00.000Z",
+    "timezoneNote": "All journal timestamps are UTC; local process times are UTC+08:00."
+  },
+  "scope": {
+    "readOnly": true,
+    "noServiceOrProxyMutation": true,
+    "noRestart": true,
+    "noCredentialOrMessageRead": true,
+    "noOtherTaskSessionInspection": true,
+    "redaction": "Only process/service metadata and allowlisted diagnostic categories/times are retained."
+  },
+  "freshObserver": {
+    "at": "2026-09-12T08:09:39.226Z",
+    "localHealth": { "status": 200, "elapsedMs": 30 },
+    "publicHealth": { "status": 200, "elapsedMs": 739 },
+    "opencodex": { "status": 200, "healthy": true, "pid": 90920, "elapsedMs": 2067 },
+    "originBridge": { "status": 200, "elapsedMs": 12, "upstreamActive": 15, "upstreamErrors": 179 },
+    "newProviderFailureCountSincePreviousObserver": 16
+  },
+  "openCodexLifecycle": {
+    "previousObservedPid": 68140,
+    "current": {
+      "pid": 90920,
+      "process": "bun",
+      "listening": { "address": "127.0.0.1", "port": 10100 },
+      "startedLocal": "2026-09-12T15:58:02.607+08:00",
+      "executableScope": "local OpenCodex workspace runtime"
+    },
+    "parent": {
+      "process": "powershell",
+      "startedLocal": "2026-09-12T15:57:35.130+08:00",
+      "relation": "The parent existed 27.477 seconds before the current bun process."
+    },
+    "serviceEvidence": {
+      "servyStatus": "NotInstalled",
+      "matchingWindowsService": false,
+      "matchingScmEventsBetween1550And1610Local": 0
+    }
+  },
+  "providerProbeFailuresInWindow": {
+    "count": 3,
+    "byType": [
+      { "kind": "TimeoutError", "code": null, "count": 2, "elapsedMsRange": [4010, 4012] },
+      { "kind": "Error", "code": "ECONNREFUSED", "count": 1, "elapsedMsRange": [3, 3] }
+    ],
+    "timestamps": [
+      { "at": "2026-09-12T07:52:30.565Z", "kind": "TimeoutError", "elapsedMs": 4010 },
+      { "at": "2026-09-12T07:57:51.546Z", "kind": "Error", "code": "ECONNREFUSED", "elapsedMs": 3 },
+      { "at": "2026-09-12T07:58:25.761Z", "kind": "TimeoutError", "elapsedMs": 4012 }
+    ],
+    "timingRelation": "The refusal precedes the current process start by about 11.1 seconds; the final timeout occurs about 23.2 seconds after start."
+  },
+  "otherJournalSignalsInWindow": {
+    "events": 92,
+    "nativeLifecycle": { "open": 5, "close": 4, "failure": 0 },
+    "clientRuntimeFailures": 0
+  },
+  "supportedAttribution": [
+    "The prior OpenCodex PID was replaced before the fresh observer run, and the current process was launched from a local PowerShell parent rather than a registered Windows or Servy service.",
+    "The 07:57:51Z provider refusal is a real short upstream-unavailability observation immediately before the present process started.",
+    "The current OpenCodex health endpoint, local chatroom health endpoint, public chatroom health endpoint, and bridge health endpoint were healthy at 08:09Z."
+  ],
+  "unsupportedAttribution": [
+    "The available metadata cannot determine whether the PID replacement was an intentional local maintenance relaunch, a crash recovery, or another process-management action; parent command line and unrelated task state were not read.",
+    "The two post-start provider timeouts show availability remained imperfect briefly after the new PID, but do not establish a process crash or a persistent current outage.",
+    "No shared browser runtime evidence exists in this window. These provider/process observations must not be treated as the cause of the page/IAB freeze."
+  ]
+}

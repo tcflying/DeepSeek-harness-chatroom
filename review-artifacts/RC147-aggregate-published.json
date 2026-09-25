@@ -1,0 +1,87 @@
+{
+  "version": "1.5.0-codex.rc1.47",
+  "at": "2026-09-12T11:54:22.565Z",
+  "passed": false,
+  "checks": {
+    "candidateAndImmutable": {
+      "passed": true,
+      "evidence": {
+        "dist/index.js": "16de14365c5d11a23f6a93e0f539351b30f436888b7f1d8b6d8752b00807c24a",
+        "dist/client.js": "34ed7229ac17360ea8a7a483dedba6fb7beff5c5af8bb2535cfebc5e20962ceb",
+        "dist/index.js.map": "380e03f6ed09eb2fb8656582ee7349226490522cf397d11f59e8a82e669a0824",
+        "dist/client.js.map": "bf3ae17365b04eb2e099a8e227deed2ac2cede8f454057e83b75cadfcd547dbc"
+      }
+    },
+    "effectiveOverlay": {
+      "passed": true,
+      "evidence": {
+        "version": "1.5.0-codex.rc1.47",
+        "overlaySha256": "310f6f0362207577f4c06fa56d43d29a106e452ab826061b50bca9b0452f664f"
+      }
+    },
+    "sourceMaps": {
+      "passed": true,
+      "evidence": {
+        "dist/client.js.map": 59,
+        "dist/index.js.map": 32
+      }
+    },
+    "servedExactClient": {
+      "passed": true,
+      "evidence": {
+        "candidateSha256": "34ed7229ac17360ea8a7a483dedba6fb7beff5c5af8bb2535cfebc5e20962ceb",
+        "servedSha256": "fbcd4d292fddf8fc3c98171bedb4b5e21ad2390fe2dcbceb67ea4c1e9b1bb6ae",
+        "embeddedAt": -1,
+        "samePayload": true,
+        "payloadSha256": "e38740337695280820a6f16ef2add44bd2825dbf9d574c9b9b7c002c4d2e95e9",
+        "normalization": "Only terminal Host semicolon/sourceMappingURL wrapper and CRLF; full remaining payload equality"
+      }
+    },
+    "health": {
+      "passed": true,
+      "evidence": {
+        "ready": true,
+        "diagnostics": {
+          "enabled": true,
+          "healthy": true,
+          "dropped": 0
+        }
+      }
+    },
+    "ci": {
+      "passed": true,
+      "evidence": {
+        "log": "RC147-check-ci-r2.log",
+        "closedAt": "2026-09-12T08:56:52.672Z",
+        "summaries": [
+          {
+            "files": 56,
+            "tests": 497
+          },
+          {
+            "files": 16,
+            "tests": 93
+          }
+        ]
+      }
+    },
+    "isolated": {
+      "passed": true,
+      "evidence": {
+        "file": "RC147-isolated-browser.json"
+      }
+    },
+    "public": {
+      "passed": false,
+      "error": "Expected values to be strictly equal:\n\nfalse !== true\n"
+    },
+    "iab": {
+      "passed": false,
+      "error": "Expected values to be strictly equal:\n\nfalse !== true\n"
+    },
+    "reconnect": {
+      "passed": false,
+      "error": "Expected values to be strictly equal:\n\nfalse !== true\n"
+    }
+  }
+}

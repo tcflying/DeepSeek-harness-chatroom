@@ -1,0 +1,16 @@
+{
+  "version": "1.5.0-codex.rc1.48",
+  "at": "2026-09-12T18:12:37.539Z",
+  "mode": "public-super-admin-320-narrow-geometry-probe",
+  "scope": [
+    "fresh headless context",
+    "one existing super-admin login",
+    "one authorized-room deep-link",
+    "browser-local QQ style only",
+    "contentless geometry/computed-style observation",
+    "no gallery, message, input, upload, AI request, role change, or setting mutation",
+    "TEMPORARY candidate responsive CSS in this owned page; not proof of a deployed bundle"
+  ],
+  "passed": false,
+  "error": "TypeError: Cannot set properties of undefined (setting 'candidateCssSha256')"
+}
