@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { CHATROOM_API_PREFIX } from '../routes.js'
 import type { ChatroomExternalCard, ChatroomMeetingSummary } from '../types.js'
+import { usePageVisible } from './media-lifecycle.js'
 
 /** Native card presentation for Enterprise WeChat meetings and documents. */
 export function ChatroomExternalCardView({ card }: { card: ChatroomExternalCard }): JSX.Element {
@@ -30,8 +31,9 @@ function documentProviderLabel(value: string | undefined): string {
 
 function MeetingCard({ card }: { card: Extract<ChatroomExternalCard, { kind: 'meeting' }> }): JSX.Element {
   const [meeting, setMeeting] = useState<ChatroomMeetingSummary | undefined>()
+  const visible = usePageVisible()
   useEffect(() => {
-    setMeeting(undefined)
+    if (!visible) return
     const endpoint = card.id !== undefined
       ? `${CHATROOM_API_PREFIX}/meetings/${encodeURIComponent(card.id)}`
       : card.url !== undefined
@@ -39,12 +41,14 @@ function MeetingCard({ card }: { card: Extract<ChatroomExternalCard, { kind: 'me
         : undefined
     if (endpoint === undefined) return
     let active = true
+    const controller = new AbortController()
     let timer: number | undefined
     const refresh = async (): Promise<void> => {
       let complete = false
       try {
         const response = await fetch(endpoint, {
           credentials: 'same-origin',
+          signal: controller.signal,
           headers: { Accept: 'application/json' },
         })
         if (!response.ok) return
@@ -60,9 +64,10 @@ function MeetingCard({ card }: { card: Extract<ChatroomExternalCard, { kind: 'me
     void refresh()
     return () => {
       active = false
+      controller.abort()
       if (timer !== undefined) window.clearTimeout(timer)
     }
-  }, [card.id, card.url])
+  }, [card.id, card.url, visible])
   const status = meeting?.status ?? card.status
   const summaryStatus = meeting?.summaryStatus
   return (

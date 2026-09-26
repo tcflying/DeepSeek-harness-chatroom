@@ -24,11 +24,11 @@ describe('official Enterprise WeChat CLI adapter', () => {
     const ready = join(root, 'ready')
     await writeFile(cli, `import { writeFileSync } from 'node:fs';\nprocess.on('SIGTERM', () => {});\nwriteFileSync(${JSON.stringify(ready)}, 'ready');\nsetInterval(() => {}, 1000);\n`)
     const client = new WecomCliClient({ wecomEnabled: true, wecomCliPath: cli, wecomCliConfigDirectory: root, wecomCliTimeoutMs: 10_000 } as Config)
-    const running = expect(client.invoke('calendar', [], 'list', {})).rejects.toBeInstanceOf(WecomCliError)
+    const running = client.invoke('calendar', [], 'list', {})
     try {
       await vi.waitFor(async () => expect(await readFile(ready, 'utf8')).toBe('ready'))
       await client.stop()
-      await running
+      await expect(running).rejects.toBeInstanceOf(WecomCliError)
       await expect(client.invoke('calendar', [], 'list', {})).rejects.toThrow('已取消')
     } finally { await client.stop(); await rm(root, { recursive: true, force: true }) }
   })
@@ -104,25 +104,39 @@ describe('official Enterprise WeChat CLI adapter', () => {
       dataDirectory: root,
     } as Config)
 
-    await expect(manager.authorizationState('alice-id')).resolves.toMatchObject({ status: 'authorized', qrAvailable: false })
-    await expect(manager.authorizationState('bob-id')).resolves.toMatchObject({ status: 'unauthorized', qrAvailable: false })
-    await expect(manager.legacyClient().authStatus()).resolves.toBe('authorized')
-    await expect(manager.disconnectAuthorization('bob-id')).resolves.toMatchObject({ status: 'unauthorized', qrAvailable: false })
-    await expect(readFile(join(alice, 'credentials.enc'), 'utf8')).resolves.toBe('alice credentials')
-    await expect(readFile(join(shared, 'credentials.enc'), 'utf8')).resolves.toBe('former shared credentials')
-    await expect(manager.disconnectAuthorization('alice-id')).resolves.toMatchObject({ status: 'unauthorized', qrAvailable: false })
-    await expect(readFile(join(alice, 'credentials.enc'), 'utf8')).rejects.toMatchObject({ code: 'ENOENT' })
-    await manager.stop()
+    let restarted: WecomCliManager | undefined
+    try {
+      const [aliceState, legacyStatus] = await Promise.all([
+        manager.authorizationState('alice-id'),
+        manager.legacyClient().authStatus(),
+      ])
+      expect(aliceState).toMatchObject({ status: 'authorized', qrAvailable: false })
+      expect(legacyStatus).toBe('authorized')
+      await expect(manager.authorizationState('bob-id')).resolves.toMatchObject({ status: 'unauthorized', qrAvailable: false })
+      await expect(manager.disconnectAuthorization('bob-id')).resolves.toMatchObject({ status: 'unauthorized', qrAvailable: false })
+      await expect(readFile(join(alice, 'credentials.enc'), 'utf8')).resolves.toBe('alice credentials')
+      await expect(manager.disconnectAuthorization('alice-id')).resolves.toMatchObject({ status: 'unauthorized', qrAvailable: false })
+      await expect(readFile(join(alice, 'credentials.enc'), 'utf8')).rejects.toMatchObject({ code: 'ENOENT' })
+      await expect(readFile(join(shared, 'credentials.enc'), 'utf8')).resolves.toBe('former shared credentials')
+      await manager.stop()
 
-    const restarted = new WecomCliManager({
-      wecomEnabled: true,
-      wecomCliPath: fileURLToPath(new URL('fixtures/fake-wecom-cli.mjs', import.meta.url)),
-      wecomCliConfigDirectory: '',
-      wecomCliTimeoutMs: 5_000,
-      dataDirectory: root,
-    } as Config)
-    await expect(restarted.authorizationState('alice-id')).resolves.toMatchObject({ status: 'unauthorized' })
-    await expect(restarted.legacyClient().authStatus()).resolves.toBe('authorized')
+      restarted = new WecomCliManager({
+        wecomEnabled: true,
+        wecomCliPath: fileURLToPath(new URL('fixtures/fake-wecom-cli.mjs', import.meta.url)),
+        wecomCliConfigDirectory: '',
+        wecomCliTimeoutMs: 5_000,
+        dataDirectory: root,
+      } as Config)
+      const [restartedAlice, restartedLegacy] = await Promise.all([
+        restarted.authorizationState('alice-id'),
+        restarted.legacyClient().authStatus(),
+      ])
+      expect(restartedAlice).toMatchObject({ status: 'unauthorized' })
+      expect(restartedLegacy).toBe('authorized')
+    } finally {
+      await Promise.allSettled([manager.stop(), restarted?.stop()])
+      await rm(root, { recursive: true, force: true })
+    }
   })
 
   it('keeps simultaneous QR authorization files inside their owning account directories', async () => {

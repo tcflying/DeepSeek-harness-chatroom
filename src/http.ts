@@ -7,12 +7,22 @@ import { renderAuthPage } from './auth-page.js'
 import type { Config } from './config.js'
 import { cookieValue, expiredSessionCookie, sessionCookie } from './cookies.js'
 import { matchChatroomApi } from './routes.js'
-import { ChatroomInputError, ChatroomRuntime } from './room.js'
+import { ChatroomInputError, ChatroomRuntime, type RoomSelectionObserver, type RoomSelectionStage, type RoomSelectionStageEvent } from './room.js'
 import { WecomCliError } from './wecom.js'
 import { isChatroomReactionEmoji } from './reactions.js'
+import { ThumbnailCache } from './thumbnails.js'
+import { resolveArchiveRoot } from './archive.js'
+import { join } from 'node:path'
+import { randomUUID } from 'node:crypto'
+import { VideoJobs, type VideoInput } from './video-jobs.js'
+import { diagnosticError } from './diagnostics.js'
+import { sanitizeRangeErrorEvidence } from './runtime-failure-evidence.js'
+import { mediaByteRange } from './media.js'
+import { startSseResponse } from './sse.js'
 import type {
   ChatroomErrorResponse,
   ChatroomAccount,
+  ChatroomIdentity,
   ChatroomAgentProfilesView,
   ChatroomAutomationOverview,
   ChatroomManageableRoomsResponse,
@@ -36,16 +46,30 @@ import type {
 
 /** HTTP/SSE adapter for the browser client. */
 export class ChatroomHttpController {
+  private readonly thumbnails: ThumbnailCache
+  private readonly videos: VideoJobs | undefined
   private readonly log
   private readonly configurationApi
+  private readonly streams = new Set<ReturnType<typeof startSseResponse>>()
+  private readonly clientReportTimes = new Map<string, { at: number; count: number }>()
 
   constructor(
     ctx: Context,
     private readonly runtime: ChatroomRuntime,
     private readonly config: Config,
   ) {
+    this.thumbnails = new ThumbnailCache(config.dataDirectory === ':memory:' ? undefined
+      : join(resolveArchiveRoot(config.dataDirectory ?? ''), 'thumbnails', 'v1'))
+    this.videos = config.miniMaxCodePath ? new VideoJobs(join(resolveArchiveRoot(config.dataDirectory ?? ''), 'video-jobs'), config.miniMaxCodePath, runtime.diagnostics) : undefined
     this.log = ctx.logger('deepseek-harness-chatroom')
     this.configurationApi = ctx.connection.createSharedFetchHandler('/api')
+  }
+
+  /** Dispatch one request under a registered chatroom API prefix. */
+  async stop(): Promise<void> {
+    for (const close of this.streams) close('plugin-stop')
+    this.streams.clear()
+    await this.videos?.stop()
   }
 
   /** Dispatch one request under a registered chatroom API prefix. */
@@ -58,7 +82,7 @@ export class ChatroomHttpController {
         return
       }
       if (route.endpoint === '/health' && request.method === 'GET') {
-        json(response, this.runtime.isReady ? 200 : 503, { ready: this.runtime.isReady })
+        json(response, this.runtime.isReady ? 200 : 503, { ready: this.runtime.isReady, diagnostics: this.runtime.diagnostics.status })
         return
       }
       if (!this.runtime.isReady) {
@@ -68,6 +92,31 @@ export class ChatroomHttpController {
       if (route.endpoint === '/session') {
         await this.handleSession(request, response, route.prefix)
         return
+      }
+      if (route.endpoint === '/connection/diagnostic' && request.method === 'POST') {
+        assertSameOrigin(request)
+        const identity = await this.requireIdentity(request, response)
+        if (identity === undefined) return
+        const body = await readJson(request, 2048) as Record<string, unknown>
+        const now = Date.now(), prior = this.clientReportTimes.get(identity.participantId)
+        const limit = prior && now - prior.at < 60_000 ? prior : { at: now, count: 0 }
+        if (limit.count >= 30) { json(response, 429, { error: '诊断上报过于频繁。' }); return }
+        if (this.clientReportTimes.size > 256) this.clientReportTimes.clear()
+        limit.count++; this.clientReportTimes.set(identity.participantId, limit)
+  const runtimeSource = clientRuntimeSource(body.runtimeSource)
+  const runtimeErrorKind = clientRuntimeErrorKind(body.runtimeErrorKind)
+  if (runtimeSource !== undefined && runtimeErrorKind !== undefined) {
+  const rangeError = runtimeErrorKind === 'RangeError' ? sanitizeRangeErrorEvidence(body.runtimeRangeError) : undefined
+  this.runtime.diagnostics.record({ event: 'client.runtime.failure', clientRuntime: { source: runtimeSource,
+    ...(rangeError === undefined ? {} : { rangeError }) },
+  error: { kind: runtimeErrorKind } })
+        } else this.runtime.diagnostics.record({ event: 'client.connection', connectionState: {
+          native: typeof body.native === 'string' ? body.native : '',
+          room: typeof body.room === 'string' ? body.room : '',
+          notifications: typeof body.notifications === 'string' ? body.notifications : '',
+          visible: body.visible === true, online: body.online === true,
+        } })
+        json(response, 200, { ok: true }); return
       }
       if (route.endpoint.startsWith('/auth/')) {
         await this.handleAuthentication(request, response, route.prefix, route.endpoint, url)
@@ -95,6 +144,29 @@ export class ChatroomHttpController {
       }
       if (route.endpoint === '/search') {
         await this.handleSearch(request, response, url.searchParams)
+        return
+      }
+      if (route.endpoint === '/media/image-source') {
+        if (request.method !== 'POST') { methodNotAllowed(response, 'POST'); return }
+        const identity = await this.requireIdentity(request, response)
+        if (!identity) return
+        assertSameOrigin(request)
+        const body = await readJson(request, 4096)
+        const fileId = await this.runtime.materializeGalleryImage(fieldString(body, 'roomId'), fieldString(body, 'sessionId'), identity, fieldString(body, 'imageId'))
+        json(response, 200, { fileId }); return
+      }
+      if (route.endpoint === '/media/gallery') {
+        if (request.method !== 'GET') { methodNotAllowed(response, 'GET'); return }
+        const identity = await this.requireIdentity(request, response)
+        if (!identity) return
+        const offset = Number(url.searchParams.get('offset') ?? 0)
+        if (!Number.isSafeInteger(offset) || offset < 0) throw new ChatroomInputError('图库游标无效。')
+        const result = await this.runtime.gallery(url.searchParams.get('roomId') ?? '', url.searchParams.get('sessionId') ?? '', identity, offset)
+        json(response, 200, result)
+        return
+      }
+      if (route.endpoint === '/media/videos') {
+        await this.handleVideos(request, response, url)
         return
       }
       if (route.endpoint === '/rooms') {
@@ -673,16 +745,49 @@ export class ChatroomHttpController {
   }
 
   private async handleRoomSelection(request: IncomingMessage, response: ServerResponse): Promise<void> {
-    if (request.method !== 'POST') {
-      methodNotAllowed(response, 'POST')
-      return
+    const started = Date.now()
+    const operationId = randomUUID()
+    let terminal = false
+    let peerClosedBeforeResponse = false
+    let runtimeException = false
+    const record = (stage: RoomSelectionStage, outcome: RoomSelectionStageEvent['outcome'], closed = false) => {
+      try {
+        this.runtime.diagnostics.record({ event: 'room.select.stage', operationId, roomSelection: {
+          stage, outcome, elapsedMs: Date.now() - started, ...(closed ? { closed: true } : {}),
+        } })
+      } catch { /* diagnostics must not alter room selection */ }
     }
-    assertSameOrigin(request)
-    const identity = await this.requireIdentity(request, response)
-    if (identity === undefined) return
-    const body = await readJson(request, smallRequestLimit(this.config))
-    const room = await this.runtime.selectRoom(fieldString(body, 'roomId'), identity)
-    json(response, 200, { room } satisfies ChatroomRoomResponse)
+    const observe: RoomSelectionObserver = event => {
+      if (event.stage === 'exception' && event.outcome === 'failure') runtimeException = true
+      // Runtime timing starts after authentication; journal every stage from one HTTP request clock.
+      record(event.stage, event.outcome)
+    }
+    const peerClosed = () => {
+      peerClosedBeforeResponse = true
+      if (!terminal) record('response', 'failure', true)
+    }
+    response.once('close', peerClosed)
+    try {
+      if (request.method !== 'POST') {
+        methodNotAllowed(response, 'POST')
+        terminal = true
+        return
+      }
+      assertSameOrigin(request)
+      record('authentication', 'start')
+      const identity = await this.requireIdentity(request, response)
+      if (identity === undefined) { record('authentication', 'failure'); terminal = true; return }
+      record('authentication', 'complete')
+      const body = await readJson(request, smallRequestLimit(this.config))
+      const room = await this.runtime.selectRoom(fieldString(body, 'roomId'), identity, observe)
+      if (peerClosedBeforeResponse || response.destroyed || response.writableEnded) return
+      json(response, 200, { room } satisfies ChatroomRoomResponse)
+      terminal = true
+      record('response', 'complete')
+    } catch (error) {
+      if (!runtimeException) record('exception', 'failure')
+      throw error
+    } finally { response.off('close', peerClosed) }
   }
 
   private async handleRoomManagement(request: IncomingMessage, response: ServerResponse): Promise<void> {
@@ -799,6 +904,7 @@ export class ChatroomHttpController {
     const input = {
       name: fieldString(body, 'name'),
       role: fieldString(body, 'role'),
+      ...(body.avatarId === undefined ? {} : { avatarId: fieldString(body, 'avatarId') as import('./avatars.js').ChatroomAvatarId }),
       ...(typeof instructions === 'string' ? { instructions } : {}),
       provider: fieldString(body, 'provider'),
       model: fieldString(body, 'model'),
@@ -951,7 +1057,6 @@ export class ChatroomHttpController {
     if (identity === undefined) return
     const canManage = !this.config.authEnabled
       || ('role' in identity && identity.role === 'super-admin')
-      || this.config.settingsAdminParticipantIds.includes(identity.participantId)
     if (request.method === 'GET') {
       json(response, 200, await this.runtime.automationOverview(canManage) satisfies ChatroomAutomationOverview)
       return
@@ -1122,14 +1227,86 @@ export class ChatroomHttpController {
     if (identity === undefined) return
     if (fileId === '' || fileId.includes('/')) throw new ChatroomInputError('文件编号无效。')
     const file = this.runtime.file(fileId, identity)
+    const preview = new URL(request.url ?? '/', 'http://chatroom.local').searchParams.get('preview')
+    if (preview === 'thumbnail') {
+      if (!['image/png', 'image/jpeg', 'image/webp', 'image/gif'].includes(file.ref.mediaType)) {
+        json(response, 415, { error: '此文件不支持缩略图。' }); return
+      }
+      const started = Date.now()
+      try {
+        const thumbnail = await this.thumbnails.get(fileId, file.data)
+        if (response.destroyed) return
+        response.writeHead(200, { 'Content-Type': 'image/webp', 'Content-Length': thumbnail.length,
+          'Content-Disposition': 'inline', 'Cache-Control': 'private, no-cache', 'X-Content-Type-Options': 'nosniff' })
+        response.end(thumbnail)
+        this.runtime.diagnostics.record({ event: 'media.preview', operationId: fileId, bytes: thumbnail.length, elapsedMs: Date.now() - started, outcome: 'success' })
+      } catch (error) {
+        this.runtime.diagnostics.record({ event: 'media.failure', operationId: fileId, elapsedMs: Date.now() - started, error: diagnosticError(error) })
+        response.setHeader('Retry-After', '2')
+        json(response, 503, { error: '缩略图暂时不可用，请重试或下载原图。' })
+      }
+      return
+    }
+    if (file.ref.mediaType === 'video/mp4' && request.headers.range) {
+      const range = mediaByteRange(request.headers.range, file.data.byteLength)
+      if (!range) { response.writeHead(416, { 'Content-Range': `bytes */${file.data.byteLength}` }); response.end(); return }
+      response.writeHead(206, { 'Content-Type': 'video/mp4', 'Content-Length': range.end - range.start + 1,
+        'Content-Range': `bytes ${range.start}-${range.end}/${file.data.byteLength}`, 'Accept-Ranges': 'bytes', 'Cache-Control': 'private, no-store', 'X-Content-Type-Options': 'nosniff' })
+      response.end(file.data.subarray(range.start, range.end + 1)); return
+    }
     response.writeHead(200, {
       'Content-Type': file.ref.mediaType,
       'Content-Length': file.data.byteLength,
       'Content-Disposition': `attachment; filename*=UTF-8''${encodeURIComponent(file.ref.name)}`,
       'Cache-Control': 'private, no-store',
       'X-Content-Type-Options': 'nosniff',
+      ...(file.ref.mediaType === 'video/mp4' ? { 'Accept-Ranges': 'bytes' } : {}),
     })
     response.end(file.data)
+  }
+
+  private async handleVideos(request: IncomingMessage, response: ServerResponse, url: URL): Promise<void> {
+    const account = await this.requireAccount(request, response)
+    if (!account) return
+    if (account.role !== 'super-admin') { json(response, 403, { error: '当前仅平台管理员可使用本机 MiniMax 额度。' }); return }
+    if (!this.videos) { json(response, 409, { error: '本部署未配置 MiniMax Code 视频连接器。' }); return }
+    if (!['GET', 'POST'].includes(request.method ?? '')) { methodNotAllowed(response, 'GET, POST'); return }
+    const body = request.method === 'POST' ? (assertSameOrigin(request), await readJson(request, 32768)) : undefined
+    const roomId = body ? fieldString(body, 'roomId') : url.searchParams.get('roomId') ?? ''
+    const sessionId = body ? fieldString(body, 'sessionId') : url.searchParams.get('sessionId') ?? ''
+    await this.runtime.assertMediaSession(roomId, sessionId, account)
+    if (request.method === 'GET') {
+      const id = url.searchParams.get('id')
+      if (!id) { json(response, 200, { jobs: await this.videos.list(roomId, sessionId, account.participantId) }); return }
+      const controller = new AbortController()
+      const close = () => controller.abort()
+      response.once('close', close)
+      try {
+        const job = await this.videos.refresh(roomId, sessionId, account.participantId, id,
+          (job, data) => this.runtime.saveVideoResult(roomId, sessionId, account, job.id, data),
+          AbortSignal.any([controller.signal, AbortSignal.timeout(120_000)]))
+        if (!response.destroyed) json(response, 200, { job })
+      } finally { response.off('close', close) }
+      return
+    }
+    const input = body as unknown as VideoInput
+    if (body && body.action === 'import') {
+      try { json(response, 200, { job: await this.videos.importExisting(roomId, sessionId, account.participantId, fieldString(body, 'model'), fieldString(body, 'taskId')) }) }
+      catch (error) { throw new ChatroomInputError(error instanceof Error ? error.message : '读取已有任务失败。') }
+      return
+    }
+    let source: { data: Uint8Array; mediaType: string } | undefined
+    if (input.sourceFileId) {
+      const gallery = await this.runtime.gallery(roomId, sessionId, account)
+      // The room-file endpoint checks membership; the explicit id must also occur in this session.
+      let items = [...gallery.items], next = gallery.next
+      while (next !== undefined) { const page = await this.runtime.gallery(roomId, sessionId, account, next); items.push(...page.items); next = page.next }
+      if (!items.some(item => item.fileId === input.sourceFileId)) throw new ChatroomInputError('原图不属于当前会话。')
+      const file = this.runtime.file(input.sourceFileId, account)
+      source = { data: file.data, mediaType: file.ref.mediaType }
+    }
+    try { json(response, 202, { job: await this.videos.submit(roomId, sessionId, account.participantId, input, source) }) }
+    catch (error) { throw new ChatroomInputError(error instanceof Error ? error.message : '视频提交失败。') }
   }
 
   private async handleImage(request: IncomingMessage, response: ServerResponse, encoded: string): Promise<void> {
@@ -1137,7 +1314,8 @@ export class ChatroomHttpController {
       methodNotAllowed(response, 'GET')
       return
     }
-    if (await this.requireIdentity(request, response) === undefined) return
+    const identity = await this.requireIdentity(request, response)
+    if (identity === undefined) return
     let value: unknown
     try {
       value = JSON.parse(decodeURIComponent(encoded))
@@ -1145,17 +1323,26 @@ export class ChatroomHttpController {
       throw new ChatroomInputError('图片引用无效。')
     }
     const image = forwardImageRequest(value)
+    this.runtime.assertRoomAccess(image.sourceRoomId, identity)
     const stored = await this.runtime.image(
       image.sourceRoomId,
       image.sourceSessionId,
       image.sourceSeq,
       image.image,
     )
+    this.runtime.assertRoomAccess(image.sourceRoomId, identity)
+    if (new URL(request.url ?? '/', 'http://chatroom.local').searchParams.get('preview') === 'thumbnail') {
+      const thumbnail = await this.thumbnails.get(image.image.attachmentId, stored.data)
+      if (response.destroyed) return
+      response.writeHead(200, { 'Content-Type': 'image/webp', 'Content-Length': thumbnail.length, 'Cache-Control': 'private, no-cache', 'X-Content-Type-Options': 'nosniff' })
+      response.end(thumbnail)
+      return
+    }
     response.writeHead(200, {
       'Content-Type': stored.ref.mediaType,
       'Content-Length': stored.data.byteLength,
       'Content-Disposition': `inline; filename*=UTF-8''${encodeURIComponent(stored.ref.name ?? 'image')}`,
-      'Cache-Control': 'private, max-age=3600',
+      'Cache-Control': 'private, no-cache',
       'X-Content-Type-Options': 'nosniff',
     })
     response.end(stored.data)
@@ -1171,73 +1358,40 @@ export class ChatroomHttpController {
     const roomId = search.get('roomId')
     if (roomId === null || roomId === '') throw new ChatroomInputError('缺少共享会话编号。')
     await this.runtime.selectRoom(roomId, identity)
-    response.writeHead(200, {
-      'Content-Type': 'text/event-stream; charset=utf-8',
-      'Cache-Control': 'no-cache, no-transform',
-      Connection: 'keep-alive',
-      'X-Accel-Buffering': 'no',
-    })
-    const unsubscribe = this.runtime.subscribe(roomId, identity, response)
-    const heartbeat = setInterval(() => {
-      if (!response.destroyed && !response.writableEnded) response.write(': heartbeat\n\n')
-    }, this.config.sseHeartbeatMs)
-    const revalidate = this.config.authMode === 'dsh-auth-only'
-      ? setInterval(() => {
-        void this.requestAccount(request).then(account => {
-          if (account !== undefined || response.destroyed || response.writableEnded) return
-          clearInterval(revalidate)
-          clearInterval(heartbeat)
-          unsubscribe()
-          response.end()
-        }).catch(() => {
-          clearInterval(revalidate)
-          clearInterval(heartbeat)
-          unsubscribe()
-          response.end()
-        })
-      }, (this.config.authDshAuthRevalidateSeconds ?? 60) * 1_000)
-      : undefined
-    request.once('close', () => {
-      clearInterval(heartbeat)
-      if (revalidate !== undefined) clearInterval(revalidate)
-      unsubscribe()
-    })
+    this.openStream(request, response, 'room', identity, isCurrentSession =>
+      this.runtime.subscribe(roomId, identity, response, isCurrentSession))
   }
 
   private async handleNotifications(request: IncomingMessage, response: ServerResponse): Promise<void> {
     const identity = await this.requireIdentity(request, response)
     if (identity === undefined) return
-    response.writeHead(200, {
-      'Content-Type': 'text/event-stream; charset=utf-8',
-      'Cache-Control': 'no-cache, no-transform',
-      Connection: 'keep-alive',
-      'X-Accel-Buffering': 'no',
+    this.openStream(request, response, 'notifications', identity, isCurrentSession =>
+      this.runtime.subscribeNotifications(identity, response, isCurrentSession))
+  }
+
+  private openStream(
+    request: IncomingMessage,
+    response: ServerResponse,
+    stream: 'room' | 'notifications',
+    identity: ChatroomAccount | ChatroomIdentity,
+    subscribe: (isCurrentSession: () => boolean) => () => void,
+  ): void {
+    if (request.aborted || response.destroyed || response.writableEnded) return
+    let close: ReturnType<typeof startSseResponse> | undefined
+    // Per-event checks must stay local: the periodic revalidation below remains the sole dsh-auth network call.
+    const isCurrentSession = () => !this.config.authEnabled ||
+      this.runtime.auth.account(this.authToken(request))?.participantId === identity.participantId
+    close = startSseResponse({ request, response, stream, subscribe: () => subscribe(isCurrentSession),
+      intervalMs: this.config.sseHeartbeatMs, journal: this.runtime.diagnostics,
+      ...(this.config.authEnabled ? { revalidate: {
+        intervalMs: this.config.authMode === 'dsh-auth-only'
+          ? (this.config.authDshAuthRevalidateSeconds ?? 60) * 1000
+          : this.config.sseHeartbeatMs,
+        check: async () => (await this.requestAccount(request)) !== undefined,
+      } } : {}),
+      onClose: () => { if (close) this.streams.delete(close) },
     })
-    const unsubscribe = this.runtime.subscribeNotifications(identity, response)
-    const heartbeat = setInterval(() => {
-      if (!response.destroyed && !response.writableEnded) response.write(': heartbeat\n\n')
-    }, this.config.sseHeartbeatMs)
-    const revalidate = this.config.authMode === 'dsh-auth-only'
-      ? setInterval(() => {
-        void this.requestAccount(request).then(account => {
-          if (account !== undefined || response.destroyed || response.writableEnded) return
-          clearInterval(revalidate)
-          clearInterval(heartbeat)
-          unsubscribe()
-          response.end()
-        }).catch(() => {
-          clearInterval(revalidate)
-          clearInterval(heartbeat)
-          unsubscribe()
-          response.end()
-        })
-      }, (this.config.authDshAuthRevalidateSeconds ?? 60) * 1_000)
-      : undefined
-    request.once('close', () => {
-      clearInterval(heartbeat)
-      if (revalidate !== undefined) clearInterval(revalidate)
-      unsubscribe()
-    })
+    this.streams.add(close)
   }
 
   private async handleConfiguration(
@@ -1257,7 +1411,7 @@ export class ChatroomHttpController {
     const identity = await this.requireIdentity(request, response)
     if (identity === undefined) return
     const account = this.config.authEnabled ? await this.requestAccount(request, response) : undefined
-    if (account?.role !== 'super-admin' && !canManageRemoteSettings(this.config, identity.participantId)) {
+    if (this.config.authEnabled ? account?.role !== 'super-admin' : !canManageRemoteSettings(this.config, identity.participantId)) {
       json(response, 403, { error: '当前聊天室身份没有模型设置管理权限。' } satisfies ChatroomErrorResponse)
       return
     }
@@ -1454,6 +1608,15 @@ function fieldString(body: Record<string, unknown>, field: string): string {
   const value = body[field]
   if (typeof value !== 'string') throw new ChatroomInputError(`字段 ${field} 必须是字符串。`)
   return value
+}
+
+function clientRuntimeSource(value: unknown): 'window-error' | 'unhandled-rejection' | 'room-selection' | undefined {
+  return value === 'window-error' || value === 'unhandled-rejection' || value === 'room-selection' ? value : undefined
+}
+
+function clientRuntimeErrorKind(value: unknown): 'AbortError' | 'TimeoutError' | 'TypeError' | 'SyntaxError' | 'RangeError' | 'Error' | undefined {
+  return value === 'AbortError' || value === 'TimeoutError' || value === 'TypeError' || value === 'SyntaxError'
+    || value === 'RangeError' || value === 'Error' ? value : undefined
 }
 
 function optionalFieldString(body: Record<string, unknown>, field: string): string | undefined {

@@ -1,7 +1,145 @@
 // src/config.ts
 import { isAbsolute } from "path";
 import z from "@deepseek-ai/schemastery";
+
+// src/image-generation.ts
+import { createUserMessage } from "@deepseek-ai/dsh-llm";
+import { defineTool } from "@deepseek-ai/dsh-tools";
+function parseImageSelection(value) {
+  const selection = JSON.parse(value);
+  if (!selection || !["x", "y", "width", "height"].every((key) => typeof selection[key] === "number" && Number.isFinite(selection[key])) || selection.x < 0 || selection.y < 0 || selection.width <= 0 || selection.height <= 0 || selection.x + selection.width > 1.000001 || selection.y + selection.height > 1.000001) throw new Error("\u6539\u56FE\u9009\u533A\u65E0\u6548\uFF0C\u5FC5\u987B\u4F4D\u4E8E\u539F\u56FE\u5185\u3002");
+  return selection;
+}
+async function imageEditReferences(source, selectionJson) {
+  const { default: sharp2 } = await import("sharp");
+  const data = await sharp2(source.data, { failOn: "error", limitInputPixels: 16777216 }).rotate().png().toBuffer();
+  if (data.length > 15 * 1024 * 1024) throw new Error("\u6539\u56FE\u539F\u56FE\u8FC7\u5927\u3002");
+  const images = [{ image_url: `data:image/png;base64,${data.toString("base64")}` }];
+  if (!selectionJson) return { images };
+  const selection = parseImageSelection(selectionJson);
+  const { width, height } = await sharp2(data).metadata();
+  if (!width || !height) throw new Error("\u65E0\u6CD5\u8BFB\u53D6\u539F\u56FE\u5C3A\u5BF8\u3002");
+  const mask = Buffer.alloc(width * height * 4, 255);
+  const left = Math.floor(selection.x * width), top = Math.floor(selection.y * height);
+  const right = Math.min(width, Math.ceil((selection.x + selection.width) * width));
+  const bottom = Math.min(height, Math.ceil((selection.y + selection.height) * height));
+  for (let y = top; y < bottom; y++) for (let x = left; x < right; x++) mask[(y * width + x) * 4 + 3] = 0;
+  const encoded = await sharp2(mask, { raw: { width, height, channels: 4 } }).png().toBuffer();
+  return { images, mask: { image_url: `data:image/png;base64,${encoded.toString("base64")}` } };
+}
+function imageGenerationEndpoint(baseUrl) {
+  const url = new URL(baseUrl);
+  if (url.protocol !== "http:" || !["127.0.0.1", "[::1]", "localhost"].includes(url.hostname) || url.username || url.password || url.search || url.hash || url.pathname.replace(/\/$/u, "") !== "/v1") {
+    throw new Error("\u751F\u56FE\u63A5\u53E3\u5FC5\u987B\u662F\u7BA1\u7406\u5458\u914D\u7F6E\u7684\u672C\u673A OpenCodex /v1 \u5730\u5740\u3002");
+  }
+  return `${url.origin}/v1/images/generations`;
+}
+async function generateImage(input, options, signal, request = fetch) {
+  signal?.throwIfAborted();
+  const prompt = input.prompt.trim();
+  if (!prompt || prompt.length > 16e3) throw new Error("\u56FE\u7247\u63CF\u8FF0\u5FC5\u987B\u4E3A 1\u201316000 \u4E2A\u5B57\u7B26\u3002");
+  const deadline = AbortSignal.any([AbortSignal.timeout(options.timeoutMs), ...signal ? [signal] : []]);
+  if (input.sourceFileId && !options.source) throw new Error("\u6539\u56FE\u7F3A\u5C11\u5DF2\u6388\u6743\u539F\u56FE\uFF0C\u672A\u63D0\u4EA4\u751F\u6210\u3002");
+  if (input.selectionJson && !options.source) throw new Error("\u9009\u533A\u4E0D\u80FD\u7528\u4E8E\u6CA1\u6709\u539F\u56FE\u7684\u751F\u6210\u8BF7\u6C42\u3002");
+  const references = options.source ? await imageEditReferences(options.source, input.selectionJson) : {};
+  deadline.throwIfAborted();
+  const endpoint = imageGenerationEndpoint(options.baseUrl).replace(/generations$/u, options.source ? "edits" : "generations");
+  const response = await request(endpoint, {
+    method: "POST",
+    redirect: "error",
+    headers: { "Content-Type": "application/json", Authorization: "Bearer OC_LOCAL_PLACEHOLDER" },
+    body: JSON.stringify({ model: options.model, prompt, n: 1, output_format: "png", size: input.size ?? "auto", quality: input.quality ?? "medium", ...references }),
+    signal: deadline
+  });
+  if (!response.ok) {
+    await response.body?.cancel();
+    throw Object.assign(new Error(`OpenCodex \u751F\u56FE\u5931\u8D25\uFF08HTTP ${response.status}\uFF09\uFF1B\u672A\u81EA\u52A8\u91CD\u8BD5\u3002`), { status: response.status });
+  }
+  const limit = Math.ceil(options.maxBytes / 3) * 4 + 65536;
+  const reader = response.body?.getReader();
+  if (!reader) throw new Error("\u751F\u56FE\u63A5\u53E3\u6CA1\u6709\u8FD4\u56DE\u56FE\u7247\u6570\u636E\u3002");
+  const chunks = [];
+  let bytes = 0;
+  try {
+    for (; ; ) {
+      deadline.throwIfAborted();
+      const next = await reader.read();
+      if (next.done) break;
+      bytes += next.value.byteLength;
+      if (bytes > limit) throw new Error("\u751F\u56FE\u54CD\u5E94\u8D85\u8FC7\u6587\u4EF6\u5927\u5C0F\u4E0A\u9650\u3002");
+      chunks.push(next.value);
+    }
+  } finally {
+    await reader.cancel().catch(() => void 0);
+  }
+  const payload = JSON.parse(Buffer.concat(chunks).toString("utf8"));
+  const encoded = payload.data?.[0]?.b64_json;
+  if (typeof encoded !== "string" || !encoded || encoded.length % 4 !== 0 || !/^[A-Za-z0-9+/]*={0,2}$/u.test(encoded)) {
+    throw new Error("\u751F\u56FE\u63A5\u53E3\u6CA1\u6709\u8FD4\u56DE\u6709\u6548\u7684\u56FE\u7247\u6570\u636E\u3002");
+  }
+  const data = Buffer.from(encoded, "base64");
+  if (data.toString("base64") !== encoded) throw new Error("\u751F\u56FE\u63A5\u53E3\u8FD4\u56DE\u7684\u56FE\u7247\u7F16\u7801\u65E0\u6548\u3002");
+  if (data.byteLength > options.maxBytes) throw new Error("\u751F\u6210\u56FE\u7247\u8D85\u8FC7\u6587\u4EF6\u5927\u5C0F\u4E0A\u9650\u3002");
+  if (!data.subarray(0, 8).equals(Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]))) throw new Error("\u751F\u56FE\u63A5\u53E3\u8FD4\u56DE\u7684\u4E0D\u662F PNG \u56FE\u7247\u6570\u636E\u3002");
+  const { default: sharp2 } = await import("sharp");
+  const image = sharp2(data, { failOn: "error", limitInputPixels: 16777216 });
+  const metadata = await image.metadata();
+  if (metadata.format !== "png" || !metadata.width || !metadata.height || (metadata.pages ?? 1) !== 1) throw new Error("\u751F\u6210\u56FE\u7247\u683C\u5F0F\u65E0\u6CD5\u8BC6\u522B\u3002");
+  await image.stats();
+  deadline.throwIfAborted();
+  return { data, mediaType: "image/png" };
+}
+function registerImageEditTool(ctx, generate) {
+  return ctx.tools.register(defineTool({
+    name: "chatroom_edit_image",
+    description: "Edit an existing authorized room image through OpenCodex. Available to GPT and MiniMax M3. Use the actual source file id from the original file marker, never guess it or substitute text-to-image. Optional selectionJson defines a normalized rectangle x,y,width,height in [0,1]. Keep the rest of the image as described. Never retry an uncertain paid call automatically.",
+    parameters: {
+      prompt: { type: "string", required: true },
+      sourceFileId: { type: "string", required: true },
+      selectionJson: { type: "string", description: 'Optional JSON rectangle {"x":0.1,"y":0.2,"width":0.3,"height":0.4}, relative to the original image.' },
+      quality: { type: "string", enum: ["low", "medium", "high"] }
+    },
+    output: { schema: { type: "object", additionalProperties: false, properties: { content: { type: "string", required: true } } }, render: (_args, value) => [{ type: "text", text: value.content }] },
+    async execute(args, exec) {
+      const content = await generate(args, exec.signal);
+      exec.deferContext(createUserMessage({ content: [{ type: "text", text: `Image edit succeeded. Return exactly this real preview and file marker, do not generate again:
+${content}` }], source: { kind: "plugin", plugin: "deepseek-harness-chatroom", form: "notice", summary: "Deliver edited image" } }));
+      return { content };
+    },
+    presentCall: () => ({ card: "generic", title: "\u6846\u9009\u6539\u56FE \xB7 OpenCodex", kind: "other" })
+  }));
+}
+function registerImageGenerationTool(ctx, generate) {
+  return ctx.tools.register(defineTool({
+    name: "chatroom_generate_image",
+    description: "Generate a real image using the configured OpenCodex OpenAI image engine and return its authenticated chat preview/download. Available to every chat model, including GPT and MiniMax M3. Use this tool for requests to draw or generate images; do not substitute shell code, prose, or invented files. One image per call. Do not automatically retry a failed or cancelled call.",
+    parameters: {
+      prompt: { type: "string", required: true, description: "Complete description of the requested image." },
+      size: { type: "string", enum: ["auto", "1024x1024", "1024x1536", "1536x1024"] },
+      quality: { type: "string", enum: ["low", "medium", "high"] }
+    },
+    output: {
+      schema: { type: "object", additionalProperties: false, properties: { content: { type: "string", required: true } } },
+      render: (_args, value) => [{ type: "text", text: value.content }]
+    },
+    async execute(args, exec) {
+      const content = await generate(args, exec.signal);
+      exec.deferContext(createUserMessage({
+        content: [{ type: "text", text: `The image was generated and stored successfully. Include the following preview and download in your next assistant response exactly, including invisible metadata. Do not call chatroom_action or any other tool, invent another URL, or regenerate the same image:
+${content}` }],
+        source: { kind: "plugin", plugin: "deepseek-harness-chatroom", form: "notice", summary: "Deliver generated image" }
+      }));
+      return { content };
+    },
+    presentCall: () => ({ card: "generic", title: "\u751F\u6210\u56FE\u7247 \xB7 OpenCodex", kind: "other" })
+  }));
+}
+
+// src/config.ts
 var Config = z.object({
+  imageGenerationBaseUrl: z.string().default(""),
+  imageGenerationModel: z.string().min(1).max(128).default("gpt-image-2.5-flare"),
+  miniMaxCodePath: z.string().default(""),
   dataDirectory: z.string().default(""),
   roomId: z.string().min(1).max(64).pattern(/^[a-z0-9][a-z0-9_-]*$/u).default("lobby"),
   roomTitle: z.string().min(1).max(80).default("AI \u804A\u5929\u5BA4"),
@@ -48,6 +186,7 @@ var Config = z.object({
   wecomMeetingPollIntervalMs: z.number().step(1).min(1e4).max(6e5).default(3e4)
 });
 function validateConfig(config) {
+  if (config.imageGenerationBaseUrl) imageGenerationEndpoint(config.imageGenerationBaseUrl);
   if (config.dataDirectory !== void 0 && config.dataDirectory !== "" && config.dataDirectory !== ":memory:" && !isAbsolute(config.dataDirectory)) {
     throw new Error(`chatroom: dataDirectory must be absolute or :memory:, got ${JSON.stringify(config.dataDirectory)}`);
   }
@@ -145,23 +284,29 @@ import {
 import * as oidc from "openid-client";
 
 // src/avatars.ts
-var CHATROOM_AVATARS = [
-  { id: "whale", emoji: "\u{1F433}", label: "\u9CB8\u9C7C" },
-  { id: "panda", emoji: "\u{1F43C}", label: "\u718A\u732B" },
-  { id: "fox", emoji: "\u{1F98A}", label: "\u72D0\u72F8" },
-  { id: "cat", emoji: "\u{1F431}", label: "\u732B\u54AA" },
-  { id: "dog", emoji: "\u{1F436}", label: "\u72D7\u72D7" },
-  { id: "rabbit", emoji: "\u{1F430}", label: "\u5154\u5B50" },
-  { id: "octopus", emoji: "\u{1F419}", label: "\u7AE0\u9C7C" },
-  { id: "unicorn", emoji: "\u{1F984}", label: "\u72EC\u89D2\u517D" }
-];
+var CHATROOM_AVATARS = Array.from({ length: 100 }, (_, index) => ({
+  id: `qq-${index + 1}`,
+  label: `QQ 2007 \u7ECF\u5178\u5934\u50CF ${String(index + 1).padStart(3, "0")}`,
+  imageIndex: index
+}));
+var LEGACY_AVATARS = {
+  whale: "qq-1",
+  panda: "qq-2",
+  fox: "qq-3",
+  cat: "qq-4",
+  dog: "qq-5",
+  rabbit: "qq-6",
+  octopus: "qq-7",
+  unicorn: "qq-8"
+};
 function isChatroomAvatarId(value) {
-  return typeof value === "string" && CHATROOM_AVATARS.some((avatar) => avatar.id === value);
+  return typeof value === "string" && (Object.hasOwn(LEGACY_AVATARS, value) || CHATROOM_AVATARS.some((avatar) => avatar.id === value));
 }
 function fallbackAvatarId(seed) {
   let hash = 0;
   for (const character of seed) hash = hash * 31 + character.codePointAt(0) >>> 0;
-  return CHATROOM_AVATARS[hash % CHATROOM_AVATARS.length].id;
+  const legacyDefaults = Object.values(LEGACY_AVATARS);
+  return legacyDefaults[hash % legacyDefaults.length];
 }
 
 // src/auth.ts
@@ -239,7 +384,7 @@ var ChatroomAuth = class {
       if (link.providerId !== "dsh-auth") continue;
       const account = this.accounts.get(link.userId);
       if (account === void 0) continue;
-      const role = account.role === "super-admin" || (this.config.authDshAuthSuperAdminSubjects ?? []).includes(link.subject) ? "super-admin" : "member";
+      const role = (this.config.authDshAuthSuperAdminSubjects ?? []).includes(link.subject) ? "super-admin" : "member";
       const avatarUrl = account.avatarUrl;
       if (account.externalProviderId === "dsh-auth" && account.externalSubject === link.subject && account.role === role && account.avatarUrl === avatarUrl) continue;
       const { avatarUrl: _oldAvatarUrl, ...withoutAvatar } = account;
@@ -305,7 +450,7 @@ var ChatroomAuth = class {
     return {
       enabled,
       authenticated: !enabled || account !== void 0,
-      canManageSettings: !enabled || account?.status === "active" && (account.role === "super-admin" || this.config.settingsAdminParticipantIds.includes(account.participantId)),
+      canManageSettings: !enabled || account?.status === "active" && account.role === "super-admin",
       authMode: this.config.authMode ?? "local",
       ...account === void 0 ? {} : { account },
       providers,
@@ -318,6 +463,10 @@ var ChatroomAuth = class {
   isSuperAdmin(participantId) {
     const account = this.accounts.get(participantId);
     return account?.status === "active" && account.role === "super-admin";
+  }
+  /** Synchronous local liveness check for established streams; never revalidates an upstream dsh-auth session. */
+  isActiveAccount(participantId) {
+    return this.accounts.get(participantId)?.status === "active";
   }
   /** Enabled external sign-in choices shown on the login form. */
   providers() {
@@ -405,8 +554,7 @@ var ChatroomAuth = class {
       verified.username,
       verified.displayName ?? verified.username,
       true,
-      verified.picture,
-      verified.legacy && verified.roles.split(",").map((value) => value.trim()).includes("admin")
+      verified.picture
     );
     return {
       token: await this.issueSession(account.id),
@@ -427,8 +575,7 @@ var ChatroomAuth = class {
       verified.username,
       verified.displayName ?? verified.username,
       true,
-      verified.picture,
-      verified.legacy && verified.roles.split(",").map((value) => value.trim()).includes("admin")
+      verified.picture
     );
     return publicAccount(refreshed);
   }
@@ -647,24 +794,23 @@ var ChatroomAuth = class {
     await this.accounts.put(id, account);
     return account;
   }
-  async externalAccount(providerId, subject, suggestedUsername, suggestedDisplayName, autoCreate, picture, legacySuperAdmin = false) {
+  async externalAccount(providerId, subject, suggestedUsername, suggestedDisplayName, autoCreate, picture) {
     return await this.serializeAccounts(async () => this.resolveExternalAccount(
       providerId,
       subject,
       suggestedUsername,
       suggestedDisplayName,
       autoCreate,
-      picture,
-      legacySuperAdmin
+      picture
     ));
   }
-  async resolveExternalAccount(providerId, subject, suggestedUsername, suggestedDisplayName, autoCreate, picture, legacySuperAdmin = false) {
+  async resolveExternalAccount(providerId, subject, suggestedUsername, suggestedDisplayName, autoCreate, picture) {
     const key = externalKey(providerId, subject);
     const linked = this.externalAccounts.get(key);
     if (linked !== void 0) {
       const account2 = this.accounts.get(linked.userId);
       if (account2 === void 0 || account2.status !== "active") throw new ChatroomAuthError("\u8BE5\u4F01\u4E1A\u8D26\u53F7\u5DF2\u505C\u7528\u3002");
-      const updated = this.externalProfile(account2, providerId, subject, suggestedUsername, suggestedDisplayName, picture, legacySuperAdmin);
+      const updated = this.externalProfile(account2, providerId, subject, suggestedUsername, suggestedDisplayName, picture);
       await this.accounts.put(account2.id, updated);
       return updated;
     }
@@ -688,7 +834,7 @@ var ChatroomAuth = class {
       ...avatarUrl === void 0 ? {} : { avatarUrl },
       externalProviderId: providerId,
       externalSubject: subject,
-      role: providerId === "dsh-auth" && (legacySuperAdmin || (this.config.authDshAuthSuperAdminSubjects ?? []).includes(subject)) ? "super-admin" : "member",
+      role: providerId === "dsh-auth" && (this.config.authDshAuthSuperAdminSubjects ?? []).includes(subject) ? "super-admin" : "member",
       status: "active",
       createdAt: now,
       updatedAt: now,
@@ -698,12 +844,12 @@ var ChatroomAuth = class {
     await this.externalAccounts.put(key, { providerId, subject, userId: id, createdAt: now });
     return account;
   }
-  externalProfile(account, providerId, subject, suggestedUsername, suggestedDisplayName, picture, legacySuperAdmin = false) {
+  externalProfile(account, providerId, subject, suggestedUsername, suggestedDisplayName, picture) {
     const username = normalizeUsername(suggestedUsername);
     const existing = this.findUsername(username.key);
     const next = existing === void 0 || existing.id === account.id ? username : { value: account.username, key: account.usernameKey };
     const avatarUrl = this.externalAvatarUrl(username.value, picture);
-    const role = providerId === "dsh-auth" ? legacySuperAdmin || (this.config.authDshAuthSuperAdminSubjects ?? []).includes(subject) ? "super-admin" : "member" : account.role;
+    const role = providerId === "dsh-auth" ? (this.config.authDshAuthSuperAdminSubjects ?? []).includes(subject) ? "super-admin" : "member" : account.role;
     const { avatarUrl: _oldAvatarUrl, ...withoutAvatar } = account;
     return {
       ...withoutAvatar,
@@ -989,7 +1135,7 @@ async function verifyPassword(password, encoded) {
   return timingSafeEqual(actual, expected);
 }
 function scrypt(password, salt) {
-  return new Promise((resolve4, reject) => {
+  return new Promise((resolve5, reject) => {
     deriveScrypt(password, salt, 32, {
       N: SCRYPT_N,
       r: SCRYPT_R,
@@ -997,7 +1143,7 @@ function scrypt(password, salt) {
       maxmem: 64 * 1024 * 1024
     }, (error, derived) => {
       if (error !== null) reject(error);
-      else resolve4(derived);
+      else resolve5(derived);
     });
   });
 }
@@ -1161,29 +1307,357 @@ function matchChatroomApi(pathname) {
 
 // src/room.ts
 import { parseSessionReferenceText } from "@deepseek-ai/dsh-session-reference";
+
+// src/persistence-compat.ts
+async function listSessionHeaders(persistence) {
+  return (await persistence.list()).map((item) => "header" in item ? item.header : item);
+}
+async function inspectSession(persistence, id) {
+  if (typeof persistence.inspect === "function") return persistence.inspect(id);
+  if (typeof persistence.open !== "function") throw new Error("Unsupported session persistence reader");
+  const handle = await persistence.open(id, "read");
+  try {
+    return { meta: handle.header, events: (await handle.read()).events };
+  } finally {
+    await handle.close();
+  }
+}
+
+// src/room.ts
 import { createHash as createHash4, randomBytes as randomBytes2, randomUUID as randomUUID3 } from "crypto";
+
+// src/diagnostics.ts
+import { appendFile, mkdir, rename, rm, stat } from "fs/promises";
+import { homedir } from "os";
+import { join, resolve } from "path";
+
+// src/runtime-failure-evidence.ts
+var MAX_FRAMES = 12;
+var MAX_RAW_FRAMES = 64;
+var MAX_FRAME_CHARS = 128;
+var MAX_FUNCTION_NAME_CHARS = 64;
+var MAX_COORDINATE = 1e8;
+var SAFE_FUNCTIONS = /* @__PURE__ */ new Set([
+  "syncSession",
+  "reconcileSession",
+  "reconcile",
+  "emit",
+  "projectList",
+  "setDrag",
+  "resolveNativeOwnership",
+  "closeEvents",
+  "activateSession",
+  "set",
+  "apply",
+  "currentSession",
+  "select",
+  "clearSelection",
+  "refreshList"
+]);
+function sanitizeRangeErrorEvidence(value) {
+  try {
+    if (value === null || typeof value !== "object" || Array.isArray(value)) return void 0;
+    const record = value;
+    const signature = record.signature;
+    if (signature !== "stack-overflow" && signature !== "other" && signature !== "unknown") return void 0;
+    if (signature !== "stack-overflow") return { signature };
+    const rawFrames = record.frames;
+    if (!Array.isArray(rawFrames)) return { signature };
+    const frames = [];
+    const limit = Math.min(safeArrayLength(rawFrames), MAX_RAW_FRAMES);
+    for (let index = 0; index < limit; index++) {
+      let frame;
+      try {
+        frame = rawFrames[index];
+      } catch {
+        continue;
+      }
+      const sanitized = sanitizeFrame(frame);
+      if (sanitized !== void 0) frames.push(sanitized);
+      if (frames.length === MAX_FRAMES) break;
+    }
+    return frames.length === 0 ? { signature } : { signature, frames };
+  } catch {
+    return void 0;
+  }
+}
+function sanitizeFrame(value) {
+  if (typeof value !== "string") return void 0;
+  const match = /^([A-Za-z_$][A-Za-z0-9_$.]*|anonymous):(\d+):(\d+)$/u.exec(value.slice(0, MAX_FRAME_CHARS));
+  return match === null ? void 0 : makeFrame(match[1], match[2], match[3]);
+}
+function makeFrame(rawName, line, column) {
+  if (line === void 0 || column === void 0) return void 0;
+  const lineNumber = Number(line), columnNumber = Number(column);
+  if (!Number.isSafeInteger(lineNumber) || !Number.isSafeInteger(columnNumber) || lineNumber < 0 || columnNumber < 0 || lineNumber > MAX_COORDINATE || columnNumber > MAX_COORDINATE) return void 0;
+  const tail = rawName === void 0 || rawName.length > MAX_FUNCTION_NAME_CHARS ? void 0 : rawName.split(".").at(-1);
+  const name2 = tail !== void 0 && SAFE_FUNCTIONS.has(tail) ? tail : "anonymous";
+  return `${name2}:${lineNumber}:${columnNumber}`;
+}
+function safeArrayLength(value) {
+  try {
+    const length = value.length;
+    return Number.isSafeInteger(length) && length >= 0 ? length : 0;
+  } catch {
+    return 0;
+  }
+}
+
+// src/diagnostics.ts
+function diagnosticError(error) {
+  const names = /* @__PURE__ */ new Set(["AbortError", "TimeoutError", "TypeError", "SyntaxError", "RangeError", "Error"]);
+  let current = error;
+  let kind = "Error";
+  let code;
+  let httpStatus;
+  for (let depth = 0; depth < 5 && typeof current === "object" && current !== null; depth++) {
+    const value = current;
+    if (typeof value.name === "string" && names.has(value.name)) kind = value.name;
+    if (typeof value.code === "string" && /^(?:E[A-Z0-9_]{2,36}|UND_ERR_[A-Z_]{1,32}|TRANSPORT|RATE_LIMIT|HTTP_ERROR)$/u.test(value.code)) code = value.code;
+    if (typeof value.status === "number" && Number.isInteger(value.status) && value.status >= 100 && value.status <= 599) httpStatus = value.status;
+    current = value.cause;
+  }
+  return { kind, ...code ? { code } : {}, ...httpStatus ? { httpStatus } : {} };
+}
+async function* diagnosticStream(source, journal, sessionId) {
+  const started = Date.now();
+  try {
+    yield* source;
+  } catch (error) {
+    journal.record({ event: "llm.failure", sessionId, elapsedMs: Date.now() - started, error: diagnosticError(error) });
+    throw error;
+  }
+}
+var DiagnosticJournal = class {
+  constructor(directory = "", limit = 2 * 1024 * 1024) {
+    this.limit = limit;
+    this.directory = directory === ":memory:" ? void 0 : join(directory || resolve(process.env.DSH_HOME?.trim() || join(homedir(), ".dsh"), "chatroom"), "diagnostics");
+  }
+  limit;
+  queue = Promise.resolve();
+  pending = 0;
+  healthy = true;
+  dropped = 0;
+  directory;
+  get status() {
+    return { enabled: this.directory !== void 0, healthy: this.healthy, dropped: this.dropped };
+  }
+  record(record) {
+    if (!this.directory) return;
+    if (this.pending >= 256) {
+      this.dropped++;
+      this.healthy = false;
+      return;
+    }
+    const safe = {
+      version: 1,
+      at: (/* @__PURE__ */ new Date()).toISOString(),
+      pid: process.pid,
+      event: record.event,
+      operationId: record.operationId?.slice(0, 80),
+      sessionId: record.sessionId?.slice(0, 256),
+      elapsedMs: record.elapsedMs,
+      bytes: record.bytes,
+      providerPid: record.providerPid,
+      healthy: record.healthy,
+      stream: ["room", "notifications"].includes(record.stream ?? "") ? record.stream : void 0,
+      heartbeatCount: record.heartbeatCount,
+      connectionState: record.connectionState === void 0 ? void 0 : {
+        native: ["connected", "connecting", "disconnected"].includes(record.connectionState.native) ? record.connectionState.native : "unknown",
+        room: ["online", "connecting", "offline"].includes(record.connectionState.room) ? record.connectionState.room : "unknown",
+        notifications: ["online", "connecting", "offline"].includes(record.connectionState.notifications) ? record.connectionState.notifications : "unknown",
+        visible: record.connectionState.visible === true,
+        online: record.connectionState.online === true
+      },
+      reason: ["peer-end", "socket-error", "transport-close", "plugin-stop", "auth-failed"].includes(record.reason ?? "") ? record.reason : void 0,
+      outcome: ["success", "error", "cancelled", "completed", "aborted", "interrupted"].includes(record.outcome ?? "") ? record.outcome : void 0,
+      error: record.error === void 0 ? void 0 : diagnosticError({ name: record.error.kind, code: record.error.code, status: record.error.httpStatus }),
+      clientRuntime: record.event !== "client.runtime.failure" || record.clientRuntime === void 0 ? void 0 : {
+        source: ["window-error", "unhandled-rejection", "room-selection"].includes(record.clientRuntime.source) ? record.clientRuntime.source : void 0,
+        ...record.error?.kind === "RangeError" && record.clientRuntime.rangeError !== void 0 ? { rangeError: sanitizeRangeErrorEvidence(record.clientRuntime.rangeError) } : {}
+      },
+      roomSelection: record.event !== "room.select.stage" || record.roomSelection === void 0 ? void 0 : {
+        stage: ["enter", "authentication", "ensure", "cached", "header", "inspect", "resume", "attach", "response", "exception"].includes(record.roomSelection.stage) ? record.roomSelection.stage : void 0,
+        outcome: ["start", "complete", "failure"].includes(record.roomSelection.outcome) ? record.roomSelection.outcome : void 0,
+        elapsedMs: safeElapsed(record.roomSelection.elapsedMs),
+        closed: record.roomSelection.closed === true ? true : void 0
+      },
+      sessionList: !["native.session-list.timeout", "native.session-list.complete"].includes(record.event) || record.sessionList === void 0 ? void 0 : {
+        upstreamElapsedMs: safeElapsed(record.sessionList.upstreamElapsedMs),
+        jsonElapsedMs: safeElapsed(record.sessionList.jsonElapsedMs),
+        filterElapsedMs: safeElapsed(record.sessionList.filterElapsedMs),
+        itemsCount: safeCount(record.sessionList.itemsCount),
+        deadlineAbortElapsedMs: safeElapsed(record.sessionList.deadlineAbortElapsedMs),
+        totalElapsedMs: safeElapsed(record.sessionList.totalElapsedMs),
+        status: safeHttpStatus(record.sessionList.status)
+      }
+    };
+    this.pending++;
+    this.queue = this.queue.then(async () => {
+      const file = join(this.directory, "events.jsonl");
+      await mkdir(this.directory, { recursive: true });
+      const size = await stat(file).then((s) => s.size, (e) => {
+        if (e.code === "ENOENT") return 0;
+        throw e;
+      });
+      if (size >= this.limit) {
+        await rm(`${file}.3`, { force: true });
+        for (let index = 2; index >= 0; index--) {
+          await rename(index ? `${file}.${index}` : file, `${file}.${index + 1}`).catch((e) => {
+            if (e.code !== "ENOENT") throw e;
+          });
+        }
+      }
+      await appendFile(file, `${JSON.stringify(safe)}
+`, { mode: 384 });
+    }).catch(() => {
+      this.healthy = false;
+      this.dropped++;
+    }).finally(() => {
+      this.pending--;
+    });
+  }
+  flush() {
+    return this.queue;
+  }
+};
+function safeElapsed(value) {
+  return typeof value === "number" && Number.isFinite(value) && value >= 0 && value <= 864e5 ? Math.round(value) : void 0;
+}
+function safeCount(value) {
+  return typeof value === "number" && Number.isSafeInteger(value) && value >= 0 && value <= 1e5 ? value : void 0;
+}
+function safeHttpStatus(value) {
+  return typeof value === "number" && Number.isInteger(value) && value >= 100 && value <= 599 ? value : void 0;
+}
+function startProviderProbe(baseUrl, journal, request = fetch) {
+  const controller = new AbortController();
+  let stopped = false;
+  let timer;
+  let last = "";
+  let lastWritten = 0;
+  const probe = async () => {
+    const started = Date.now();
+    let record;
+    try {
+      const response = await request(new URL("/healthz", baseUrl), { redirect: "error", signal: AbortSignal.any([controller.signal, AbortSignal.timeout(4e3)]) });
+      const value = await response.json();
+      const healthy = response.ok && value.status === "ok" && value.service === "opencodex";
+      record = {
+        event: "provider.probe",
+        healthy,
+        elapsedMs: Date.now() - started,
+        ...typeof value.pid === "number" && Number.isSafeInteger(value.pid) ? { providerPid: value.pid } : {},
+        ...!response.ok ? { error: diagnosticError({ status: response.status }) } : {}
+      };
+    } catch (error) {
+      record = { event: "provider.probe", healthy: false, elapsedMs: Date.now() - started, error: diagnosticError(error) };
+    }
+    if (stopped) return;
+    const key = JSON.stringify([record.healthy, record.providerPid, record.error]);
+    if (key !== last || Date.now() - lastWritten >= 6e4) {
+      journal.record(record);
+      last = key;
+      lastWritten = Date.now();
+    }
+    timer = setTimeout(() => {
+      void probe();
+    }, 15e3);
+    timer.unref?.();
+  };
+  void probe();
+  return () => {
+    stopped = true;
+    controller.abort();
+    if (timer) clearTimeout(timer);
+  };
+}
+
+// src/progress.ts
+function projectModelProgress(previous, event, identity) {
+  if (!["turn/start", "turn/end", "step/start", "assistant/chunk", "tool/call", "tool/result"].includes(event.type)) return void 0;
+  if (previous && event.seq <= previous.value.seq) return void 0;
+  const now = event.time;
+  const value = previous?.value ?? {
+    ...identity,
+    seq: event.seq,
+    status: "waiting",
+    text: "\u7B49\u5F85\u6A21\u578B\u54CD\u5E94\u2026",
+    startedAt: now,
+    updatedAt: now
+  };
+  let status = value.status;
+  let text = value.text;
+  let block = previous?.block ?? "";
+  let line = previous?.line ?? "";
+  let startedAt = value.startedAt;
+  if (event.type === "turn/start") {
+    status = "waiting";
+    text = "\u7B49\u5F85\u6A21\u578B\u54CD\u5E94\u2026";
+    block = "";
+    line = "";
+    startedAt = now;
+  } else if (event.type === "step/start") {
+    status = "waiting";
+    text = "\u7B49\u5F85\u6A21\u578B\u4E0B\u4E00\u6B65\u54CD\u5E94\u2026";
+    block = "";
+    line = "";
+  } else if (event.type === "tool/call") {
+    status = "tool";
+    text = `\u6B63\u5728\u6267\u884C ${event.data.name.slice(0, 80)}`;
+  } else if (event.type === "tool/result") {
+    status = "waiting";
+    text = event.data.error ? "\u5DE5\u5177\u8FD4\u56DE\u9519\u8BEF\uFF0C\u7B49\u5F85\u6A21\u578B\u5904\u7406\u2026" : "\u5DE5\u5177\u5DF2\u8FD4\u56DE\uFF0C\u7B49\u5F85\u6A21\u578B\u7EE7\u7EED\u2026";
+  } else if (event.type === "turn/end") {
+    status = event.data.reason.kind === "error" ? "failed" : event.data.reason.kind === "completed" ? "completed" : "stopped";
+    if (status === "failed") text = "\u8FD0\u884C\u5931\u8D25\uFF0C\u8BF7\u67E5\u770B\u672C\u8F6E\u9519\u8BEF\u63D0\u793A";
+    else if (status === "stopped") text = "\u672C\u8F6E\u5DF2\u505C\u6B62";
+  } else if (event.type === "assistant/chunk") {
+    const chunk = event.data.chunk;
+    if (chunk.type !== "text-delta" && chunk.type !== "reasoning-delta") return void 0;
+    const key = `${event.data.turn}:${event.data.step}:${chunk.index}:${chunk.type}`;
+    if (key !== block) {
+      block = key;
+      line = "";
+    }
+    const joined = (line + chunk.text).slice(-1400).replace(/\r/g, "\n");
+    const lines = joined.split("\n");
+    line = lines.at(-1) ?? "";
+    const last = lines.findLast((part) => part.trim() !== "")?.trim();
+    status = chunk.type === "reasoning-delta" ? "thinking" : "writing";
+    if (last) text = last.slice(-240);
+  }
+  return {
+    value: { ...identity, seq: event.seq, status, text, startedAt, updatedAt: now },
+    block,
+    line,
+    publishedAt: previous?.publishedAt ?? 0
+  };
+}
+
+// src/room.ts
 import { basename } from "path";
 import { agentPresetProjectionDefinition } from "@deepseek-ai/dsh-agent-presets";
 import { AttachmentError } from "@deepseek-ai/dsh-attachment";
-import { BlockAssembler, createAssistantMessage, createUserMessage as createUserMessage3, freezeMessage } from "@deepseek-ai/dsh-llm";
+import { BlockAssembler, createAssistantMessage, createUserMessage as createUserMessage4, freezeMessage } from "@deepseek-ai/dsh-llm";
 import { SessionId } from "@deepseek-ai/dsh-session";
 
 // src/archive.ts
 import { createHash as createHash2, randomUUID as randomUUID2 } from "crypto";
-import { homedir } from "os";
+import { homedir as homedir2 } from "os";
 import { readFileSync } from "fs";
-import { mkdir, rename, unlink, writeFile } from "fs/promises";
-import { dirname, isAbsolute as isAbsolute2, join, resolve } from "path";
+import { mkdir as mkdir2, rename as rename2, unlink, writeFile } from "fs/promises";
+import { dirname, isAbsolute as isAbsolute2, join as join2, resolve as resolve2 } from "path";
 var SCHEMA_VERSION = 4;
 var NODE_SQLITE_MODULE = "node:sqlite";
 async function openChatArchive(configuredDirectory) {
   const memory = configuredDirectory === ":memory:";
   const root = memory ? ":memory:" : resolveArchiveRoot(configuredDirectory);
-  if (!memory) await mkdir(root, { recursive: true, mode: 448 });
+  if (!memory) await mkdir2(root, { recursive: true, mode: 448 });
   const { DatabaseSync: Database } = await import(NODE_SQLITE_MODULE);
   return new ChatArchive(
-    new Database(memory ? ":memory:" : join(root, "chatroom.sqlite")),
-    memory ? void 0 : join(root, "blobs", "v1")
+    new Database(memory ? ":memory:" : join2(root, "chatroom.sqlite")),
+    memory ? void 0 : join2(root, "blobs", "v1")
   );
 }
 var ChatArchive = class {
@@ -1377,13 +1851,13 @@ var ChatArchive = class {
       this.memoryBlobs.set(storageKey, data.slice());
       return { sha256, storageKey };
     }
-    const destination = join(this.blobRoot, storageKey);
-    await mkdir(dirname(destination), { recursive: true, mode: 448 });
+    const destination = join2(this.blobRoot, storageKey);
+    await mkdir2(dirname(destination), { recursive: true, mode: 448 });
     const temporary = `${destination}.${randomUUID2()}.tmp`;
     try {
       await writeFile(temporary, data, { flag: "wx", mode: 384 });
       try {
-        await rename(temporary, destination);
+        await rename2(temporary, destination);
       } catch (error) {
         if (!isAlreadyExists(error)) throw error;
         await unlink(temporary);
@@ -1427,7 +1901,7 @@ var ChatArchive = class {
       if (data === void 0) throw new Error("chatroom blob does not exist");
       return data.slice();
     }
-    return new Uint8Array(readFileSync(join(this.blobRoot, storageKey)));
+    return new Uint8Array(readFileSync(join2(this.blobRoot, storageKey)));
   }
   initialize() {
     this.database.exec("PRAGMA foreign_keys = ON; PRAGMA busy_timeout = 5000;");
@@ -1594,8 +2068,8 @@ function archivedSearchHit(row) {
 function resolveArchiveRoot(configuredDirectory) {
   if (configuredDirectory !== "") return configuredDirectory;
   const dshHome = process.env.DSH_HOME?.trim();
-  const base = dshHome === void 0 || dshHome === "" ? join(homedir(), ".dsh") : dshHome;
-  return join(isAbsolute2(base) ? base : resolve(base), "chatroom");
+  const base = dshHome === void 0 || dshHome === "" ? join2(homedir2(), ".dsh") : dshHome;
+  return join2(isAbsolute2(base) ? base : resolve2(base), "chatroom");
 }
 function visibleSequence(messageId) {
   const match = /^(?:user|steering):(\d+)$/u.exec(messageId);
@@ -1614,8 +2088,8 @@ function isMissing(error) {
 }
 
 // src/agent-tools.ts
-import { createUserMessage } from "@deepseek-ai/dsh-llm";
-import { defineTool } from "@deepseek-ai/dsh-tools";
+import { createUserMessage as createUserMessage2 } from "@deepseek-ai/dsh-llm";
+import { defineTool as defineTool2 } from "@deepseek-ai/dsh-tools";
 
 // src/reactions.ts
 var CHATROOM_REACTION_EMOJIS = ["\u{1F44D}", "\u2764\uFE0F", "\u{1F602}", "\u{1F62E}", "\u{1F622}", "\u{1F389}"];
@@ -1636,7 +2110,7 @@ var CHATROOM_AGENT_ACTIONS = [
 function registerChatroomAgentTools(ctx, host, sessionId) {
   const disposers = [];
   try {
-    disposers.push(ctx.tools.register(defineTool({
+    disposers.push(ctx.tools.register(defineTool2({
       name: "chatroom_capabilities",
       description: "List the current chatroom or branch scope, members, invite candidates, and the collaboration actions you can perform.",
       parameters: {},
@@ -1673,7 +2147,7 @@ function registerChatroomAgentTools(ctx, host, sessionId) {
       execute: () => host.agentCapabilities(sessionId),
       presentCall: () => ({ card: "generic", title: "Inspect chatroom capabilities", kind: "read" })
     })));
-    disposers.push(ctx.tools.register(defineTool({
+    disposers.push(ctx.tools.register(defineTool2({
       name: "chatroom_action",
       description: "Perform a collaboration action in the current chatroom. Use send_message for a proactive room message; reply quotes a message; send_file uploads a workspace file; react adds an emoji; start_branch opens a branch from a room message; invite_members adds accounts to the group; recall_message recalls one of your own room messages.",
       parameters: {
@@ -1699,7 +2173,7 @@ function registerChatroomAgentTools(ctx, host, sessionId) {
       async execute(args, exec) {
         const result = await host.agentAction(sessionId, args, exec.signal);
         if (result.followupText !== void 0) {
-          exec.deferContext(createUserMessage({
+          exec.deferContext(createUserMessage2({
             content: [
               {
                 type: "text",
@@ -1848,6 +2322,7 @@ var automationSettingsSchema = z2.object({
   updatedAt: nonNegativeSafeInteger
 });
 var roomAgentProfileSchema = z2.object({
+  avatarId: z2.string().refine(isChatroomAvatarId).optional(),
   id: z2.string().min(1),
   roomId: z2.string().min(1),
   name: z2.string().min(1).max(80),
@@ -2117,21 +2592,17 @@ ${FILE_MARKER_START}${encodePayload(file)}${PARTICIPANT_MARKER_END}${filePrefix(
 }
 function projectFileText(text) {
   const files = [];
-  let visible = text;
-  while (true) {
-    const start = visible.indexOf(FILE_MARKER_START);
-    if (start < 0) break;
-    const end = visible.indexOf(PARTICIPANT_MARKER_END, start + FILE_MARKER_START.length);
-    if (end < 0) break;
-    const file = decodePayload(visible.slice(start + FILE_MARKER_START.length, end));
-    if (!validFile(file)) break;
-    files.push(file);
-    const before = visible.slice(0, start).replace(/\n$/u, "");
-    let after = visible.slice(end + PARTICIPANT_MARKER_END.length);
-    const prefix = filePrefix(file);
-    if (after.startsWith(prefix)) after = after.slice(prefix.length);
-    visible = `${before}${after}`;
-  }
+  const visible = text.replace(
+    /\u2063?dsh-chatroom-file:([^\u2063\n]{1,8192})\u2063(?:文件：[^\n\u2063]*)?/gu,
+    (marker, payload) => {
+      const file = decodePayload(payload);
+      if (!validFile(file)) return marker;
+      if (!files.some((existing) => existing.id === file.id)) files.push(file);
+      const delimiter = marker.indexOf(PARTICIPANT_MARKER_END, marker.startsWith(PARTICIPANT_MARKER_END) ? 1 : 0);
+      const suffix = marker.slice(delimiter + 1);
+      return suffix.startsWith(filePrefix(file)) ? suffix.slice(filePrefix(file).length) : suffix;
+    }
+  ).replace(/^\n/u, "");
   return { text: visible, files };
 }
 function identifyForwardText(bundle) {
@@ -2268,10 +2739,10 @@ function optionalStrings(...values) {
 // src/wecom.ts
 import { spawn } from "child_process";
 import { createHash as createHash3 } from "crypto";
-import { mkdir as mkdir2, readFile, rm, stat, unlink as unlink2 } from "fs/promises";
+import { mkdir as mkdir3, readFile, rm as rm2, stat as stat2, unlink as unlink2 } from "fs/promises";
 import { createRequire } from "module";
-import { homedir as homedir2 } from "os";
-import { join as join2, parse, resolve as resolve2 } from "path";
+import { homedir as homedir3 } from "os";
+import { join as join3, parse, resolve as resolve3 } from "path";
 var require2 = createRequire(import.meta.url);
 var MAX_OUTPUT_BYTES = 8 * 1024 * 1024;
 var WECOM_SERVICES = [
@@ -2335,15 +2806,15 @@ var WecomCliClient = class {
       ...process.env,
       ...this.configDirectory === "" ? {} : { WECOM_CLI_CONFIG_DIR: this.configDirectory }
     };
-    return new Promise((resolve4, reject) => {
+    return new Promise((resolve5, reject) => {
       const child = spawn(process.execPath, [cli, ...args], {
         env: environment,
         stdio: ["ignore", "pipe", "pipe"],
         windowsHide: true
       });
-      const exited = new Promise((resolve5) => child.once("close", () => {
+      const exited = new Promise((resolve6) => child.once("close", () => {
         this.children.delete(child);
-        resolve5();
+        resolve6();
       }));
       this.children.set(child, exited);
       const cancel = () => {
@@ -2391,7 +2862,7 @@ ${diagnostic}`);
           return;
         }
         try {
-          resolve4(parse2(output));
+          resolve5(parse2(output));
         } catch (error) {
           reject(error instanceof WecomCliError ? error : new WecomCliError("\u4F01\u4E1A\u5FAE\u4FE1 CLI \u6CA1\u6709\u8FD4\u56DE\u6709\u6548\u6570\u636E\u3002", "invalid-output"));
         }
@@ -2486,21 +2957,21 @@ var WecomCliManager = class {
     if (!this.config.wecomEnabled) throw new WecomCliError("\u4F01\u4E1A\u5FAE\u4FE1\u80FD\u529B\u5DF2\u5173\u95ED\u3002", "disabled");
     await this.stopAuthorization(participantId);
     const directory = this.accountDirectory(participantId);
-    const resolved = resolve2(directory);
-    if (resolved === parse(resolved).root || resolved === resolve2(homedir2())) {
+    const resolved = resolve3(directory);
+    if (resolved === parse(resolved).root || resolved === resolve3(homedir3())) {
       throw new WecomCliError("\u4F01\u4E1A\u5FAE\u4FE1\u6388\u6743\u76EE\u5F55\u914D\u7F6E\u8FC7\u4E8E\u5BBD\u6CDB\uFF0C\u62D2\u7EDD\u6E05\u9664\u51ED\u636E\u3002", "failed");
     }
     await this.clients.get(participantId)?.stop();
-    await rm(directory, { recursive: true, force: true });
-    await mkdir2(directory, { recursive: true, mode: 448 });
+    await rm2(directory, { recursive: true, force: true });
+    await mkdir3(directory, { recursive: true, mode: 448 });
     this.clients.delete(participantId);
     this.authorizationErrors.delete(participantId);
     return await this.authorizationState(participantId);
   }
   /** Stop outstanding authorization processes during plugin teardown. */
   async stop() {
-    const exits = [...this.authorizations.values()].map((child) => new Promise((resolve4) => {
-      child.once("close", resolve4);
+    const exits = [...this.authorizations.values()].map((child) => new Promise((resolve5) => {
+      child.once("close", resolve5);
       child.kill("SIGKILL");
     }));
     await Promise.allSettled([...exits, ...[...this.clients.values(), ...this.legacy === void 0 ? [] : [this.legacy]].map((client) => client.stop())]);
@@ -2509,16 +2980,16 @@ var WecomCliManager = class {
   async stopAuthorization(participantId) {
     const child = this.authorizations.get(participantId);
     if (child === void 0) return;
-    await new Promise((resolve4) => {
-      child.once("close", resolve4);
+    await new Promise((resolve5) => {
+      child.once("close", resolve5);
       child.kill("SIGKILL");
     });
     if (this.authorizations.get(participantId) === child) this.authorizations.delete(participantId);
   }
   async spawnAuthorization(participantId) {
     const directory = this.accountDirectory(participantId);
-    await mkdir2(directory, { recursive: true, mode: 448 });
-    await mkdir2(join2(directory, "tmp"), { recursive: true, mode: 448 });
+    await mkdir3(directory, { recursive: true, mode: 448 });
+    await mkdir3(join3(directory, "tmp"), { recursive: true, mode: 448 });
     await unlink2(this.qrPath(participantId)).catch((error) => {
       if (error.code !== "ENOENT") throw error;
     });
@@ -2526,7 +2997,7 @@ var WecomCliManager = class {
     const cli = this.config.wecomCliPath || require2.resolve("@wecom/cli/bin/wecom.js");
     const child = spawn(process.execPath, [cli, "auth", "init", "--noninteractive", "--no-browser", "--output-qrcode", "auth-qrcode.png"], {
       cwd: directory,
-      env: { ...process.env, WECOM_CLI_CONFIG_DIR: directory, WECOM_CLI_TMP_DIR: join2(directory, "tmp") },
+      env: { ...process.env, WECOM_CLI_CONFIG_DIR: directory, WECOM_CLI_TMP_DIR: join3(directory, "tmp") },
       stdio: ["ignore", "pipe", "pipe"],
       windowsHide: true
     });
@@ -2555,16 +3026,16 @@ var WecomCliManager = class {
     const configured = this.config.wecomCliConfigDirectory;
     const base = configured !== "" ? configured : this.defaultBaseDirectory();
     const account = createHash3("sha256").update(participantId).digest("hex").slice(0, 32);
-    return join2(base, "accounts", account);
+    return join3(base, "accounts", account);
   }
   legacySharedDirectory() {
-    return this.config.wecomCliConfigDirectory !== "" ? this.config.wecomCliConfigDirectory : join2(this.defaultBaseDirectory(), "shared");
+    return this.config.wecomCliConfigDirectory !== "" ? this.config.wecomCliConfigDirectory : join3(this.defaultBaseDirectory(), "shared");
   }
   defaultBaseDirectory() {
-    return this.config.dataDirectory !== void 0 && this.config.dataDirectory !== "" && this.config.dataDirectory !== ":memory:" ? join2(this.config.dataDirectory, "wecom-cli") : join2(homedir2(), ".dsh", "chatroom", "wecom-cli");
+    return this.config.dataDirectory !== void 0 && this.config.dataDirectory !== "" && this.config.dataDirectory !== ":memory:" ? join3(this.config.dataDirectory, "wecom-cli") : join3(homedir3(), ".dsh", "chatroom", "wecom-cli");
   }
   qrPath(participantId) {
-    return join2(this.accountDirectory(participantId), "auth-qrcode.png");
+    return join3(this.accountDirectory(participantId), "auth-qrcode.png");
   }
 };
 function inferWecomCard(service, method, parameters, result) {
@@ -2667,13 +3138,13 @@ function parseJson(output) {
 }
 async function fileExists(path) {
   try {
-    return (await stat(path)).isFile();
+    return (await stat2(path)).isFile();
   } catch {
     return false;
   }
 }
 function delay(milliseconds) {
-  return new Promise((resolve4) => setTimeout(resolve4, milliseconds));
+  return new Promise((resolve5) => setTimeout(resolve5, milliseconds));
 }
 function summarizeFailure(value) {
   return [...value.replace(/\s+/gu, " ").trim()].slice(0, 500).join("") || "\u4F01\u4E1A\u5FAE\u4FE1\u64CD\u4F5C\u5931\u8D25\u3002";
@@ -2769,13 +3240,13 @@ function messageParticipant(message) {
 }
 
 // src/wecom-tools.ts
-import { createUserMessage as createUserMessage2 } from "@deepseek-ai/dsh-llm";
-import { defineTool as defineTool2 } from "@deepseek-ai/dsh-tools";
+import { createUserMessage as createUserMessage3 } from "@deepseek-ai/dsh-llm";
+import { defineTool as defineTool3 } from "@deepseek-ai/dsh-tools";
 var COMMAND_PART = /^[a-z][a-z0-9_-]*$/u;
 function registerWecomAgentTools(ctx, resolveInvocation) {
   const disposers = [];
   try {
-    disposers.push(ctx.tools.register(defineTool2({
+    disposers.push(ctx.tools.register(defineTool3({
       name: "wecom_schema",
       description: "Read the official wecom-cli JSON schema for one Enterprise WeChat calendar, meeting, document, sheet, smart sheet, smart document, contact, or identity operation. Always call this before an unfamiliar action.",
       parameters: {
@@ -2799,7 +3270,7 @@ function registerWecomAgentTools(ctx, resolveInvocation) {
       },
       presentCall: (args) => ({ card: "generic", title: `\u4F01\u5FAE\u63A5\u53E3\u5B9A\u4E49 \xB7 ${args.service}`, kind: "read", rawInput: args })
     })));
-    disposers.push(ctx.tools.register(defineTool2({
+    disposers.push(ctx.tools.register(defineTool3({
       name: "wecom_action",
       description: "Execute one official wecom-cli operation. Supports calendar CRUD/free-busy/rooms, meetings and transcripts, document search/permissions, online sheets, smart sheets, smart documents, contact resolution, and identity. Resolve people first, never invent internal IDs, and call wecom_schema before writes.",
       parameters: {
@@ -2829,7 +3300,7 @@ function registerWecomAgentTools(ctx, resolveInvocation) {
           { service, method, parameters, result }
         ) ?? inferred;
         if (card !== void 0) {
-          exec.deferContext(createUserMessage2({
+          exec.deferContext(createUserMessage3({
             content: [
               {
                 type: "text",
@@ -2890,11 +3361,14 @@ var ChatroomRuntime = class {
     this.ctx = ctx;
     this.config = config;
     this.log = ctx.logger("deepseek-harness-chatroom");
+    this.diagnostics = new DiagnosticJournal(config.dataDirectory);
     this.wecom = new WecomCliManager(config);
   }
   ctx;
   config;
+  modelProgress = /* @__PURE__ */ new Map();
   log;
+  diagnostics;
   domain;
   agentDomain;
   archive;
@@ -2917,6 +3391,8 @@ var ChatroomRuntime = class {
   authentication;
   states = /* @__PURE__ */ new Map();
   roomTitleWrites = /* @__PURE__ */ new Map();
+  /** Physical header I/O only: shared while live, never retained after settlement. */
+  nativeSessionHeadersPending;
   sessionRoomCreations = /* @__PURE__ */ new Map();
   threadStates = /* @__PURE__ */ new Map();
   notificationClients = /* @__PURE__ */ new Set();
@@ -3047,7 +3523,7 @@ var ChatroomRuntime = class {
       previous?.agent.cancel({ kind: "user" });
       if (previous !== void 0) await this.retireRoomAgent(state, profileId, previous);
     }
-    this.setRoomAgentRuntime(state, profileId, {
+    if (runtimeConfigurationChanged) this.setRoomAgentRuntime(state, profileId, {
       status: record.enabled ? "idle" : "cancelled",
       updatedAt: Date.now()
     });
@@ -3076,7 +3552,7 @@ var ChatroomRuntime = class {
   async cancelRoomAgent(roomId, profileId, identity) {
     this.assertReady();
     const state = this.requireState(roomId);
-    this.assertRoomAccess(roomId, identity);
+    this.assertRoomAgentAccess(roomId, identity);
     const profile = this.requireRoomAgentProfiles().get(profileId);
     if (profile === void 0 || profile.roomId !== roomId) throw new ChatroomInputError("\u8BE5 AI \u6210\u5458\u4E0D\u5B58\u5728\u3002");
     this.setRoomAgentRuntime(state, profileId, { status: "cancelled", updatedAt: Date.now() });
@@ -3092,6 +3568,8 @@ var ChatroomRuntime = class {
     await discarded;
   }
   async validateRoomAgentProfile(state, input, existing) {
+    if (input.avatarId !== void 0 && !isChatroomAvatarId(input.avatarId)) throw new ChatroomInputError("\u8BF7\u9009\u62E9\u6709\u6548\u7684 AI \u5934\u50CF\u3002");
+    const avatarId = input.avatarId ?? existing?.avatarId;
     const name2 = normalizeModelRoute(input.name, "AI \u6210\u5458\u540D\u79F0").trim();
     if (name2 === "") throw new ChatroomInputError("\u8BF7\u586B\u5199 AI \u6210\u5458\u540D\u79F0\u3002");
     if (name2.length > 80) throw new ChatroomInputError("AI \u6210\u5458\u540D\u79F0\u8FC7\u957F\u3002");
@@ -3119,6 +3597,7 @@ var ChatroomRuntime = class {
     return {
       name: name2,
       role,
+      ...avatarId === void 0 ? {} : { avatarId },
       ...instructions === "" ? {} : { instructions },
       provider,
       model,
@@ -3302,6 +3781,7 @@ var ChatroomRuntime = class {
   }
   /** Open storage, seed the original room, and acquire its Session without blocking Harness startup. */
   async start() {
+    this.diagnostics.record({ event: "runtime.start" });
     const domain = await this.ctx.storageDomain.open(chatroomDomainSpec);
     this.domain = domain;
     const agentDomain = await this.ctx.storageDomain.open(chatroomAgentDomainSpec);
@@ -3350,6 +3830,9 @@ var ChatroomRuntime = class {
   }
   /** Stop intake, close presence streams, and release every activated room. */
   async stop() {
+    this.modelProgress.clear();
+    this.diagnostics.record({ event: "runtime.stop" });
+    await this.diagnostics.flush();
     if (this.stopping) return;
     this.stopping = true;
     this.ready = false;
@@ -3556,8 +4039,60 @@ var ChatroomRuntime = class {
     this.assertReady();
     return this.requireSoloSessions().get(String(SessionId(sessionId)))?.participantId === identity.participantId;
   }
+  /** Reuse this native response's lineage; scan lazily only for missing/invalid ancestors. */
+  createNativeSessionAccessSnapshot(nativeItems) {
+    let headers;
+    const catalogueParents = /* @__PURE__ */ new Map();
+    const seen = /* @__PURE__ */ new Set();
+    for (const item of nativeItems ?? []) {
+      if (typeof item !== "object" || item === null || !("sessionId" in item) || typeof item.sessionId !== "string" || item.sessionId === "") continue;
+      const id = item.sessionId;
+      if (seen.has(id)) {
+        catalogueParents.delete(id);
+        continue;
+      }
+      seen.add(id);
+      const parent = "parentSessionId" in item ? item.parentSessionId : void 0;
+      if (parent !== void 0 && (typeof parent !== "string" || parent === "")) continue;
+      catalogueParents.set(id, parent);
+    }
+    return { catalogueParents, headers: () => headers ??= this.listNativeSessionHeadersOnce() };
+  }
+  listNativeSessionHeadersOnce() {
+    const active = this.nativeSessionHeadersPending;
+    if (active !== void 0) return active;
+    const pending = listSessionHeaders(this.ctx.sessionPersistence);
+    this.nativeSessionHeadersPending = pending;
+    void pending.then(
+      () => {
+        if (this.nativeSessionHeadersPending === pending) this.nativeSessionHeadersPending = void 0;
+      },
+      () => {
+        if (this.nativeSessionHeadersPending === pending) this.nativeSessionHeadersPending = void 0;
+      }
+    );
+    return pending;
+  }
+  reportRoomSelectionStage(observe, stage, outcome, elapsedMs) {
+    try {
+      observe?.({ stage, outcome, elapsedMs: Math.max(0, Math.round(elapsedMs)) });
+    } catch {
+    }
+  }
+  async observeRoomSelectionStage(observe, stage, operation) {
+    const started = Date.now();
+    this.reportRoomSelectionStage(observe, stage, "start", 0);
+    try {
+      const value = await operation();
+      this.reportRoomSelectionStage(observe, stage, "complete", Date.now() - started);
+      return value;
+    } catch (error) {
+      this.reportRoomSelectionStage(observe, stage, "failure", Date.now() - started);
+      throw error;
+    }
+  }
   /** Resolve room and Solo ownership before consulting immutable native parent lineage. */
-  async canAccessNativeSession(sessionId, identity, visited = /* @__PURE__ */ new Set()) {
+  async canAccessNativeSession(sessionId, identity, visited = /* @__PURE__ */ new Set(), snapshot) {
     this.assertReady();
     if (!this.config.authEnabled) return true;
     if (visited.has(sessionId)) return false;
@@ -3566,8 +4101,13 @@ var ChatroomRuntime = class {
     if (room !== void 0) return this.requireMembers().get(`${room.record.id}:${identity.participantId}`) !== void 0;
     const solo = this.requireSoloSessions().get(sessionId);
     if (solo !== void 0) return solo.participantId === identity.participantId;
-    const header = this.ctx.agents.get(SessionId(sessionId))?.session.header ?? (await this.ctx.sessionPersistence.list()).find((header2) => String(header2.id) === sessionId);
-    return header?.parentSession !== void 0 && await this.canAccessNativeSession(String(header.parentSession), identity, visited);
+    const liveHeader = this.ctx.agents.get(SessionId(sessionId))?.session.header;
+    if (liveHeader === void 0 && snapshot?.catalogueParents?.has(sessionId)) {
+      const parent = snapshot.catalogueParents.get(sessionId);
+      return parent !== void 0 && await this.canAccessNativeSession(parent, identity, visited, snapshot);
+    }
+    const header = liveHeader ?? (await (snapshot?.headers() ?? listSessionHeaders(this.ctx.sessionPersistence))).find((header2) => String(header2.id) === sessionId);
+    return header?.parentSession !== void 0 && await this.canAccessNativeSession(String(header.parentSession), identity, visited, snapshot);
   }
   /** Attribute a native fork to its creator before returning the child id to the browser. */
   async ownNativeFork(sessionId, identity) {
@@ -3629,7 +4169,7 @@ var ChatroomRuntime = class {
       throw new ChatroomInputError("\u5206\u652F\u4F1A\u8BDD\u4E0D\u80FD\u5355\u72EC\u8F6C\u6362\u4E3A\u7FA4\u804A\u3002");
     }
     const live = this.ctx.agents.get(SessionId(normalizedSessionId));
-    const persisted = live !== void 0 || (await this.ctx.sessionPersistence.list()).some((header) => String(header.id) === normalizedSessionId);
+    const persisted = live !== void 0 || (await listSessionHeaders(this.ctx.sessionPersistence)).some((header) => String(header.id) === normalizedSessionId);
     if (!persisted) throw new ChatroomInputError("Harness \u4F1A\u8BDD\u4E0D\u5B58\u5728\u6216\u5C1A\u672A\u5C31\u7EEA\u3002");
     const id = `session-${createHash4("sha256").update(normalizedSessionId).digest("base64url").slice(0, 24)}`;
     const now = Date.now();
@@ -3662,16 +4202,27 @@ var ChatroomRuntime = class {
     }
   }
   /** Activate an existing room and return its public metadata. */
-  async selectRoom(roomId, identity) {
-    this.assertReady();
-    if (identity !== void 0) {
-      if (!this.config.authEnabled || roomId === this.config.roomId && this.roomMemberCount(roomId) === 0) {
-        await this.touchMember(roomId, identity);
-      } else this.assertRoomMember(roomId, identity.participantId);
+  async selectRoom(roomId, identity, observe) {
+    const started = Date.now();
+    const selectionObserve = observe === void 0 ? void 0 : (event) => {
+      this.reportRoomSelectionStage(observe, event.stage, event.outcome, Date.now() - started);
+    };
+    this.reportRoomSelectionStage(selectionObserve, "enter", "start", 0);
+    try {
+      this.assertReady();
+      if (identity !== void 0) {
+        if (!this.config.authEnabled || roomId === this.config.roomId && this.roomMemberCount(roomId) === 0) {
+          await this.touchMember(roomId, identity);
+        } else this.assertRoomMember(roomId, identity.participantId);
+      }
+      this.reportRoomSelectionStage(selectionObserve, "enter", "complete", Date.now() - started);
+      const binding = await this.ensureRoom(roomId, selectionObserve);
+      if (identity !== void 0) this.ensureRoomTitle(binding, this.requireState(roomId).record.title);
+      return this.projectRoom(this.requireState(roomId), identity?.participantId);
+    } catch (error) {
+      this.reportRoomSelectionStage(selectionObserve, "exception", "failure", Date.now() - started);
+      throw error;
     }
-    const binding = await this.ensureRoom(roomId);
-    if (identity !== void 0) this.ensureRoomTitle(binding, this.requireState(roomId).record.title);
-    return this.projectRoom(this.requireState(roomId), identity?.participantId);
   }
   /** Stop the active Agent turn while retaining the room and queued user intake. */
   async stopRoomSession(roomId, identity) {
@@ -3694,8 +4245,8 @@ var ChatroomRuntime = class {
     }
     let resolveRotation;
     const predecessor = state.admission;
-    state.admission = new Promise((resolve4) => {
-      resolveRotation = resolve4;
+    state.admission = new Promise((resolve5) => {
+      resolveRotation = resolve5;
     });
     const rotation = (async () => {
       await predecessor;
@@ -3880,7 +4431,8 @@ var ChatroomRuntime = class {
       throw new ChatroomInputError("\u7FA4\u6210\u5458\u4E0D\u5B58\u5728\u3002");
     }
     const record = await this.requireRoomRecords().update(roomId, (current) => {
-      if (current.ownerParticipantId !== identity.participantId) {
+      if (this.config.authEnabled) this.assertRoomInviter(current, identity);
+      else if (current.ownerParticipantId !== identity.participantId) {
         throw new ChatroomInputError("\u53EA\u6709\u7FA4\u4E3B\u53EF\u4EE5\u8BBE\u7F6E\u7BA1\u7406\u5458\u3002");
       }
       if (participantId === current.ownerParticipantId) throw new ChatroomInputError("\u4E0D\u80FD\u4FEE\u6539\u7FA4\u4E3B\u89D2\u8272\u3002");
@@ -3949,7 +4501,7 @@ var ChatroomRuntime = class {
           throw new ChatroomInputError(`\u6A21\u578B ${JSON.stringify(modelId)} \u4E0D\u652F\u6301\u56FE\u7247\u8F93\u5165\u3002`);
         }
       }
-      const message = createUserMessage3({ content: durable, source: { kind: "user", chatroomParticipantId: identity.participantId, ...requestId === void 0 ? {} : { rpcId: requestId } } });
+      const message = createUserMessage4({ content: durable, source: { kind: "user", chatroomParticipantId: identity.participantId, ...requestId === void 0 ? {} : { rpcId: requestId } } });
       await this.persistInput(state, binding, identity, message, aiTriggered ? "respond" : state.record.autoTriggerEnabled === true ? "decide" : "passive");
       const pending = binding.agent.status === "running" && mode === "queue" && (aiTriggered || state.record.autoTriggerEnabled === true) ? this.publishPendingMessage(state, identity, message, aiTriggered ? "queued" : "deciding") : void 0;
       let automaticSourceMessageId;
@@ -4055,6 +4607,7 @@ var ChatroomRuntime = class {
   async setRoomPinned(roomId, pinned, identity) {
     this.assertReady();
     const state = this.requireState(roomId);
+    this.assertRoomAccess(roomId, identity);
     await this.requireRoomPreferences().put(roomPreferenceKey(roomId, identity.participantId), {
       roomId,
       participantId: identity.participantId,
@@ -4168,7 +4721,7 @@ var ChatroomRuntime = class {
       };
       const identified = identifyPrompt([{ type: "text", text: identifyForwardText(bundle) }], identity);
       const durable = await this.durableContent(targetRoomId, identity, identified);
-      binding.agent.session.append("user/message", createUserMessage3({
+      binding.agent.session.append("user/message", createUserMessage4({
         content: durable,
         source: { kind: "user", chatroomParticipantId: identity.participantId }
       }), { surfaceOp: "append" });
@@ -4248,6 +4801,100 @@ var ChatroomRuntime = class {
     return await this.ensureThread(thread.record.id);
   }
   /** Resolve one authenticated room-file download. */
+  galleryImageFileId(roomId, sessionId, imageId) {
+    const digest = createHash4("sha256").update(`${roomId}\0${sessionId}\0${imageId}`).digest("hex");
+    return `${digest.slice(0, 8)}-${digest.slice(8, 12)}-5${digest.slice(13, 16)}-a${digest.slice(17, 20)}-${digest.slice(20, 32)}`;
+  }
+  async gallery(roomId, sessionId, identity, offset = 0) {
+    this.assertReady();
+    this.assertRoomAccess(roomId, identity);
+    const binding = await this.forwardSourceBinding(roomId, sessionId);
+    this.assertRoomAccess(roomId, identity);
+    const recalled = new Set(this.recallsForRoom(roomId).map((record) => record.messageId));
+    const found = /* @__PURE__ */ new Map();
+    for (const event of binding.agent.session.snapshotEvents()) {
+      const message = event.type === "user/message" ? event.data : event.type === "assistant/message" ? event.data.message : void 0;
+      if (!message || recalled.has(String(message.id)) || recalled.has(`user:${event.seq}`) || recalled.has(`steering:${event.seq}`)) continue;
+      for (const block of message.content) {
+        if (block.type === "image") {
+          const image = { ...block.attachment, attachmentId: String(block.attachment.attachmentId) };
+          const id = `native:${image.attachmentId}`;
+          const fileId = this.galleryImageFileId(roomId, sessionId, id);
+          found.set(id, {
+            id,
+            name: image.name ?? "\u4E0A\u4F20\u7684\u56FE\u7247",
+            mediaType: image.mediaType,
+            createdAt: event.time,
+            ...this.requireFiles().get(fileId) ? { fileId } : {},
+            url: `${CHATROOM_API_PREFIX}/images/${encodeURIComponent(JSON.stringify({ sourceRoomId: roomId, sourceSessionId: sessionId, sourceSeq: event.seq, image }))}`
+          });
+        } else if (block.type === "text") {
+          const ids = new Set(projectFileText(block.text).files.map((file) => file.id));
+          for (const match of block.text.matchAll(/!\[[^\]\n]*\]\(\/plugins\/deepseek-harness-chatroom\/api\/files\/([0-9a-f-]{36})\)/giu)) ids.add(match[1]);
+          for (const id of ids) {
+            const file = this.requireFiles().get(id);
+            if (!file || file.roomId !== roomId || !/^image\/(png|jpeg|webp|gif)$/u.test(file.mediaType)) continue;
+            found.set(id, {
+              id,
+              fileId: id,
+              url: `${CHATROOM_API_PREFIX}/files/${id}`,
+              name: file.name,
+              mediaType: file.mediaType,
+              createdAt: event.time
+            });
+          }
+        }
+      }
+    }
+    const items = [...found.values()];
+    return { items: items.slice(offset, offset + 100), ...offset + 100 < items.length ? { next: offset + 100 } : {} };
+  }
+  /** Resolve one authenticated room-file download. */
+  async assertMediaSession(roomId, sessionId, identity) {
+    this.assertReady();
+    this.assertRoomAccess(roomId, identity);
+    await this.forwardSourceBinding(roomId, sessionId);
+    this.assertRoomAccess(roomId, identity);
+  }
+  async materializeGalleryImage(roomId, sessionId, identity, imageId) {
+    let offset = 0, item;
+    do {
+      const page = await this.gallery(roomId, sessionId, identity, offset);
+      item = page.items.find((candidate) => candidate.id === imageId);
+      offset = page.next;
+    } while (!item && offset !== void 0);
+    if (!item) throw new ChatroomInputError("\u539F\u56FE\u4E0D\u5C5E\u4E8E\u5F53\u524D\u4F1A\u8BDD\u6216\u5DF2\u64A4\u56DE\u3002");
+    if (item.fileId) return item.fileId;
+    const reference = JSON.parse(decodeURIComponent(item.url.slice(item.url.lastIndexOf("/") + 1)));
+    const id = this.galleryImageFileId(roomId, sessionId, imageId);
+    if (this.requireFiles().get(id)) return id;
+    const image = await this.image(roomId, sessionId, reference.sourceSeq, reference.image);
+    this.assertRoomAccess(roomId, identity);
+    const record = await this.fileRecord(roomId, identity, { type: "file", name: item.name, mediaType: item.mediaType, data: "" }, image.data);
+    await this.requireFiles().put(id, { ...record, id });
+    return id;
+  }
+  async saveVideoResult(roomId, sessionId, identity, id, data) {
+    await this.assertMediaSession(roomId, sessionId, identity);
+    let record = this.requireFiles().get(id);
+    if (record && (record.roomId !== roomId || record.mediaType !== "video/mp4")) throw new ChatroomInputError("\u89C6\u9891\u7ED3\u679C\u7F16\u53F7\u4E0E\u73B0\u6709\u6587\u4EF6\u51B2\u7A81\u3002");
+    if (!record) {
+      const stored = await this.fileRecord(roomId, identity, { type: "file", name: `video-${id}.mp4`, mediaType: "video/mp4", data: "" }, data);
+      record = { ...stored, id };
+      await this.requireFiles().put(id, record);
+    }
+    const binding = await this.forwardSourceBinding(roomId, sessionId);
+    const delivered = binding.agent.session.snapshotEvents().some((event) => event.type === "user/message" && event.data.content.some((block) => block.type === "text" && projectFileText(block.text).files.some((file) => file.id === id)));
+    if (!delivered) {
+      binding.agent.session.append("user/message", createUserMessage4({
+        content: [{ type: "text", text: identifyChatroomText(`MiniMax \u89C6\u9891\u5DF2\u751F\u6210\u3002${identifyFileText(publicFile(record))}`, identity) }],
+        source: { kind: "user" }
+      }), { surfaceOp: "append" });
+      await this.touchRoom(roomId);
+    }
+    return id;
+  }
+  /** Resolve one authenticated room-file download. */
   file(fileId, identity) {
     this.assertReady();
     const record = this.requireFiles().get(fileId);
@@ -4278,7 +4925,7 @@ var ChatroomRuntime = class {
     };
   }
   /** Attach one authenticated presence client to one room. */
-  subscribe(roomId, identity, response) {
+  subscribe(roomId, identity, response, isCurrentSession = () => true) {
     this.assertReady();
     const state = this.requireState(roomId);
     this.assertRoomAccess(roomId, identity);
@@ -4292,9 +4939,16 @@ var ChatroomRuntime = class {
       reactions: this.reactionsForRoom(roomId),
       recalls: this.recallsForRoom(roomId),
       threadPreviews: this.threadPreviewsForRoom(roomId),
-      pendingMessages: this.pendingMessagesForRoom(state)
+      pendingMessages: this.pendingMessagesForRoom(state),
+      modelProgress: [...this.modelProgress.values()].filter((item) => item.value.roomId === roomId).map((item) => item.value)
     };
-    const client = { participantId: identity.participantId, response, drainTimer: void 0, snapshotAllowance: 0 };
+    const client = {
+      participantId: identity.participantId,
+      response,
+      canReceive: () => isCurrentSession() && this.canReceiveRoomSse(state, identity.participantId),
+      drainTimer: void 0,
+      snapshotAllowance: 0
+    };
     state.clients.add(client);
     if (!writeSse(client, snapshot, () => removeSseClient(state.clients, client))) {
       return () => void 0;
@@ -4309,9 +4963,15 @@ var ChatroomRuntime = class {
     };
   }
   /** Attach one identity to the global message-notification stream. */
-  subscribeNotifications(identity, response) {
+  subscribeNotifications(identity, response, isCurrentSession = () => true) {
     this.assertReady();
-    const client = { participantId: identity.participantId, response, drainTimer: void 0, snapshotAllowance: 0 };
+    const client = {
+      participantId: identity.participantId,
+      response,
+      canReceive: () => isCurrentSession() && this.canReceiveNotificationSse(identity.participantId),
+      drainTimer: void 0,
+      snapshotAllowance: 0
+    };
     this.notificationClients.add(client);
     return () => {
       removeSseClient(this.notificationClients, client);
@@ -4321,7 +4981,8 @@ var ChatroomRuntime = class {
   directDirectory(identity) {
     this.assertReady();
     const peers = this.directoryPeers().filter((peer) => peer.participantId !== identity.participantId);
-    const conversations = [...this.requireDirectConversations().entries()].map(([, conversation]) => conversation).filter((conversation) => conversation.participantIds.includes(identity.participantId)).map((conversation) => this.publicDirectConversation(conversation, identity.participantId)).sort((left, right) => right.updatedAt - left.updatedAt);
+    const activePeerIds = new Set(peers.map((peer) => peer.participantId));
+    const conversations = [...this.requireDirectConversations().entries()].map(([, conversation]) => conversation).filter((conversation) => conversation.participantIds.includes(identity.participantId)).filter((conversation) => conversation.participantIds.some((id) => id !== identity.participantId && activePeerIds.has(id))).map((conversation) => this.publicDirectConversation(conversation, identity.participantId)).sort((left, right) => right.updatedAt - left.updatedAt);
     return { peers, conversations };
   }
   /** Search visible accounts, room names, branch names, and archived messages. */
@@ -4408,6 +5069,7 @@ var ChatroomRuntime = class {
     if (existing === void 0 || !existing.participantIds.includes(identity.participantId)) {
       throw new ChatroomInputError("\u79C1\u804A\u4E0D\u5B58\u5728\u6216\u4F60\u65E0\u6743\u8BBF\u95EE\u3002");
     }
+    this.publicDirectConversation(existing, identity.participantId);
     const normalized = content.filter((part) => part.type === "text").map((part) => part.text).join("\n").normalize("NFC").trim();
     if (Array.from(normalized).length > this.config.maxMessageTextChars || /\u0000/u.test(normalized)) {
       throw new ChatroomInputError("\u79C1\u804A\u6D88\u606F\u8FC7\u957F\u6216\u5305\u542B\u65E0\u6548\u5B57\u7B26\u3002");
@@ -4446,6 +5108,7 @@ var ChatroomRuntime = class {
     if (conversation === void 0 || !conversation.participantIds.includes(identity.participantId)) {
       throw new ChatroomInputError("\u79C1\u804A\u4E0D\u5B58\u5728\u6216\u4F60\u65E0\u6743\u8BBF\u95EE\u3002");
     }
+    this.publicDirectConversation(conversation, identity.participantId);
     const found = this.findDirectMessage(conversationId, normalizeMessageId(messageId));
     if (found === void 0) throw new ChatroomInputError("\u79C1\u804A\u6D88\u606F\u4E0D\u5B58\u5728\u3002");
     const current = found.message.reactions ?? [];
@@ -4533,7 +5196,7 @@ var ChatroomRuntime = class {
       const text = promptPreview(content);
       const files = durable.flatMap((block) => block.type === "text" ? projectFileText(block.text).files : []);
       const sequence = this.nextThreadSequence(threadId);
-      const message = createUserMessage3({
+      const message = createUserMessage4({
         content: durable,
         source: { kind: "user", chatroomParticipantId: identity.participantId, ...requestId === void 0 ? {} : { rpcId: requestId } }
       });
@@ -4597,6 +5260,15 @@ var ChatroomRuntime = class {
   /** Project committed AI output into its parent room or branch stream. */
   handleSessionEvent(session, event) {
     if (!this.isReady) return;
+    this.publishModelProgress(session, event);
+    if (this.ownsSession(String(session.id)) && event.type === "turn/end") {
+      this.diagnostics.record({
+        event: "turn.end",
+        sessionId: String(session.id),
+        outcome: event.data.reason.kind,
+        ...event.data.reason.kind === "error" ? { error: diagnosticError(event.data.reason.error) } : {}
+      });
+    }
     if (event.type === "turn/end") this.activeTurnDeferredMessageIds.delete(String(session.id));
     this.captureAiContextStart(session, event);
     this.archiveSessionEvent(session, event);
@@ -4647,6 +5319,27 @@ var ChatroomRuntime = class {
       text,
       createdAt: event.time
     });
+  }
+  /** Forward only real runtime events from the currently attached room/AI Session. */
+  publishModelProgress(session, event) {
+    const sessionId = String(session.id);
+    const named = parseRoomAgentSessionId(sessionId);
+    const thread = [...this.threadStates.values()].find((item) => item.record.sessionId === sessionId);
+    const state = named ? this.states.get(named.roomId) : thread ? this.states.get(thread.record.roomId) : [...this.states.values()].find((item) => item.record.sessionId === sessionId);
+    if (!state) return;
+    const profile = named ? this.roomAgentProfilesFor(named.roomId).find((item) => item.id === named.profileId) : void 0;
+    if (named && (!profile?.enabled || state.agentBindings.get(named.profileId)?.agent.session !== session)) return;
+    const cursor = projectModelProgress(this.modelProgress.get(sessionId), event, {
+      sessionId,
+      roomId: state.record.id,
+      name: profile?.name ?? state.record.aiDisplayName
+    });
+    if (!cursor) return;
+    this.modelProgress.set(sessionId, cursor);
+    if (this.modelProgress.size > 256) this.modelProgress.delete(this.modelProgress.keys().next().value);
+    if (event.type === "assistant/chunk" && Date.now() - cursor.publishedAt < 250) return;
+    cursor.publishedAt = Date.now();
+    this.broadcast(state, { type: "model-progress", progress: cursor.value });
   }
   async createThread(roomId, identity, resolved) {
     const id = randomUUID3();
@@ -5140,21 +5833,25 @@ var ChatroomRuntime = class {
     }
     this.broadcast(target.room, { type: "message-recalled", recall: publicRecall(record) });
   }
-  async ensureRoom(roomId) {
+  async ensureRoom(roomId, observe) {
     const state = this.requireState(roomId);
     if (state.binding !== void 0) {
       this.archiveRoomSession(state, state.binding.agent.session);
-      return state.binding;
+      return await this.observeRoomSelectionStage(observe, "cached", async () => state.binding);
     }
-    state.activation ??= this.activateRoom(state).then((binding) => {
-      state.binding = binding;
-      this.restorePendingMessages(state, binding);
-      this.archiveRoomSession(state, binding.agent.session);
-      return binding;
-    }).finally(() => {
-      state.activation = void 0;
+    return await this.observeRoomSelectionStage(observe, "ensure", async () => {
+      if (state.activation === void 0) {
+        state.activation = this.activateRoom(state, observe).then((binding) => {
+          state.binding = binding;
+          this.restorePendingMessages(state, binding);
+          this.archiveRoomSession(state, binding.agent.session);
+          return binding;
+        }).finally(() => {
+          state.activation = void 0;
+        });
+      }
+      return await state.activation;
     });
-    return await state.activation;
   }
   restorePendingMessages(state, binding) {
     for (const [messages, status] of [[binding.agent.inbox.nextTurn, "queued"], [binding.agent.inbox.nextStep, "guiding"]]) {
@@ -5165,13 +5862,13 @@ var ChatroomRuntime = class {
       }
     }
   }
-  async activateRoom(state) {
-    return await this.activateSharedSession(state.record.sessionId);
+  async activateRoom(state, observe) {
+    return await this.activateSharedSession(state.record.sessionId, void 0, observe);
   }
-  async activateSharedSession(sessionId, parentSessionId) {
-    const binding = await this.acquireAgent(sessionId, parentSessionId);
+  async activateSharedSession(sessionId, parentSessionId, observe) {
+    const binding = await this.acquireAgent(sessionId, parentSessionId, void 0, void 0, observe);
     try {
-      await this.attachWorkspace(sessionId);
+      await this.observeRoomSelectionStage(observe, "attach", async () => await this.attachWorkspace(sessionId));
       return binding;
     } catch (error) {
       await binding.release();
@@ -5183,28 +5880,28 @@ var ChatroomRuntime = class {
       this.ctx.sessionTitle.rename(binding.agent.session, title);
     }
   }
-  async acquireAgent(sessionId, parentSessionId, agentOptions, configureAgent) {
+  async acquireAgent(sessionId, parentSessionId, agentOptions, configureAgent, observe) {
     const id = SessionId(sessionId);
     const live = this.ctx.agents.get(id);
     if (live !== void 0) {
       this.augmentChatroomAgentContext(live.ctx, sessionId);
-      return borrowAgent(live);
+      return await this.observeRoomSelectionStage(observe, "cached", async () => borrowAgent(live));
     }
-    const persisted = (await this.ctx.sessionPersistence.list()).some((header) => header.id === id);
+    const persisted = (await this.observeRoomSelectionStage(observe, "header", async () => await listSessionHeaders(this.ctx.sessionPersistence))).some((header) => header.id === id);
     const model = this.ctx.agentDefaultModel.currentSelection();
     const options = agentOptions ?? { provider: model.provider, model: model.model };
     if (persisted) {
-      const inspected = await this.ctx.sessionPersistence.inspect(id);
+      const inspected = await this.observeRoomSelectionStage(observe, "inspect", async () => await inspectSession(this.ctx.sessionPersistence, id));
       const agentPreset = inspected.events.reduce(agentPresetProjectionDefinition.apply, agentPresetProjectionDefinition.init(inspected.meta)) ?? this.config.agentPreset;
       try {
-        return ownAgent(await this.ctx.agents.resume({
+        return ownAgent(await this.observeRoomSelectionStage(observe, "resume", async () => await this.ctx.agents.resume({
           resumeSessionId: id,
           agentOptions: options,
           setup: async (agentCtx) => {
             await this.setupAgentContext(agentCtx, agentPreset, sessionId);
             configureAgent?.(agentCtx);
           }
-        }));
+        })));
       } catch (error) {
         const raced = this.ctx.agents.get(id);
         if (raced !== void 0) {
@@ -5260,6 +5957,18 @@ var ChatroomRuntime = class {
   }
   setRoomAgentRuntime(state, profileId, runtime) {
     state.agentRuntime.set(profileId, runtime);
+    if (runtime.status !== "cancelled" && runtime.status !== "failed") return;
+    for (const cursor of this.modelProgress.values()) {
+      const named = parseRoomAgentSessionId(cursor.value.sessionId);
+      if (named?.roomId !== state.record.id || named.profileId !== profileId || !["waiting", "thinking", "writing", "tool"].includes(cursor.value.status)) continue;
+      cursor.value = {
+        ...cursor.value,
+        status: runtime.status === "failed" ? "failed" : "stopped",
+        text: runtime.status === "failed" ? "\u8FD0\u884C\u5931\u8D25\uFF0C\u8BF7\u67E5\u770B\u672C\u8F6E\u9519\u8BEF\u63D0\u793A" : "\u672C\u8F6E\u5DF2\u505C\u6B62",
+        updatedAt: Math.max(Date.now(), cursor.value.updatedAt + 1)
+      };
+      this.broadcast(state, { type: "model-progress", progress: cursor.value });
+    }
   }
   /** Invalidate every in-flight execution for this profile; dispatches capture the returned generation. */
   bumpRoomAgentExecutionGeneration(state, profileId) {
@@ -5274,7 +5983,7 @@ var ChatroomRuntime = class {
   broadcastRoomAgentProfiles(state) {
     const profiles = this.roomAgentProfilesFor(state.record.id);
     for (const client of [...state.clients]) {
-      const canManage = state.record.ownerParticipantId === client.participantId || (state.record.adminParticipantIds ?? []).includes(client.participantId) || this.auth.isSuperAdmin(client.participantId);
+      const canManage = this.config.authEnabled ? this.auth.isSuperAdmin(client.participantId) : state.record.ownerParticipantId === client.participantId || (state.record.adminParticipantIds ?? []).includes(client.participantId);
       const event = {
         type: "agent-profiles",
         roomId: state.record.id,
@@ -5360,7 +6069,7 @@ var ChatroomRuntime = class {
   async acceptRoomAgentMentions(state, profiles, identity, durable, requestId) {
     const mentions = [];
     for (const profile of profiles) {
-      const message = createUserMessage3({
+      const message = createUserMessage4({
         content: durable,
         source: { kind: "user", chatroomParticipantId: identity.participantId, ...requestId === void 0 ? {} : { rpcId: requestId } }
       });
@@ -5454,9 +6163,9 @@ var ChatroomRuntime = class {
     const content = [{ type: "text", text: identifyChatroomText(text, {
       participantId,
       displayName: profile.name,
-      avatarId: fallbackAvatarId(participantId)
+      avatarId: this.requireRoomAgentProfiles().get(profile.id)?.avatarId ?? profile.avatarId ?? fallbackAvatarId(participantId)
     }) }];
-    binding.agent.session.append("user/message", createUserMessage3({ content, source: { kind: "user" } }), { surfaceOp: "append" });
+    binding.agent.session.append("user/message", createUserMessage4({ content, source: { kind: "user" } }), { surfaceOp: "append" });
     this.notify({
       id: `room-agent:${profile.id}:${Date.now()}`,
       roomId: state.record.id,
@@ -5488,6 +6197,11 @@ var ChatroomRuntime = class {
         return decision;
       }));
       disposers.push(registerChatroomAgentTools(agentCtx, this, sessionId));
+      if (this.config.imageGenerationBaseUrl) {
+        imageGenerationEndpoint(this.config.imageGenerationBaseUrl);
+        disposers.push(registerImageGenerationTool(agentCtx, (input, signal) => this.generateAgentImage(sessionId, input, signal)));
+        disposers.push(registerImageEditTool(agentCtx, (input, signal) => this.generateAgentImage(sessionId, input, signal)));
+      }
       disposers.push(registerWecomAgentTools(agentCtx, () => {
         const identity = this.initiatingIdentity(sessionId);
         return {
@@ -5514,6 +6228,72 @@ var ChatroomRuntime = class {
     } catch (error) {
       dispose();
       throw error;
+    }
+  }
+  activeImageSessions = /* @__PURE__ */ new Set();
+  /** Image requests share room authorization and Blob storage, not an unrestricted shell. */
+  async generateAgentImage(sessionId, input, signal) {
+    this.assertReady();
+    signal.throwIfAborted();
+    const baseUrl = this.config.imageGenerationBaseUrl;
+    if (!baseUrl) throw new ChatroomInputError("\u672C\u90E8\u7F72\u672A\u542F\u7528\u751F\u56FE\u5DE5\u5177\u3002");
+    const member = parseRoomAgentSessionId(sessionId);
+    const profile = member === void 0 ? void 0 : this.requireRoomAgentProfiles().get(member.profileId);
+    if (member !== void 0 && (profile === void 0 || !profile.enabled || profile.roomId !== member.roomId)) {
+      throw new ChatroomInputError("\u5F53\u524D AI \u6210\u5458\u4E0D\u53EF\u7528\u3002");
+    }
+    const room = member === void 0 ? this.agentToolTarget(sessionId).room : this.requireState(member.roomId);
+    const generation = profile === void 0 ? void 0 : room.agentExecutionGenerations.get(profile.id);
+    const participantId = this.sessionActors.get(sessionId);
+    const actor = this.config.authEnabled ? this.auth.activeAccounts().find((account) => account.participantId === participantId) : participantId === void 0 ? void 0 : this.requireMembers().get(`${room.record.id}:${participantId}`);
+    if (actor === void 0) throw new ChatroomInputError("\u751F\u56FE\u64CD\u4F5C\u9700\u8981\u5F53\u524D\u8F6E\u552F\u4E00\u7684\u6709\u6548\u53D1\u8D77\u7528\u6237\u3002");
+    const check = () => {
+      signal.throwIfAborted();
+      this.assertRoomAccess(room.record.id, { ...actor, avatarId: actor.avatarId ?? fallbackAvatarId(actor.participantId) });
+      if (this.config.authEnabled && !this.auth.activeAccounts().some((account) => account.participantId === actor.participantId)) throw new ChatroomInputError("\u53D1\u8D77\u8D26\u53F7\u5DF2\u505C\u7528\u3002");
+      if (profile !== void 0 && (this.requireRoomAgentProfiles().get(profile.id)?.updatedAt !== profile.updatedAt || room.agentExecutionGenerations.get(profile.id) !== generation || room.agentRuntime.get(profile.id)?.status === "cancelled")) {
+        throw new ChatroomInputError("AI \u6210\u5458\u5DF2\u53D6\u6D88\u6216\u914D\u7F6E\u5DF2\u53D8\u5316\u3002");
+      }
+    };
+    check();
+    const source = input.sourceFileId ? this.file(input.sourceFileId, { ...actor, avatarId: actor.avatarId ?? fallbackAvatarId(actor.participantId) }) : void 0;
+    if (input.sourceFileId && this.requireFiles().get(input.sourceFileId)?.roomId !== room.record.id) throw new ChatroomInputError("\u6539\u56FE\u539F\u56FE\u4E0D\u5C5E\u4E8E\u5F53\u524D\u7FA4\u804A\u3002");
+    if (this.activeImageSessions.has(sessionId) || this.activeImageSessions.size >= 2) throw new ChatroomInputError("\u5DF2\u6709\u56FE\u7247\u6B63\u5728\u751F\u6210\uFF0C\u8BF7\u5B8C\u6210\u540E\u518D\u8BD5\u3002");
+    this.activeImageSessions.add(sessionId);
+    const operationId = randomUUID3();
+    const started = Date.now();
+    this.diagnostics.record({ event: "image.start", operationId, sessionId });
+    try {
+      const image = await generateImage(input, {
+        baseUrl,
+        model: this.config.imageGenerationModel ?? "gpt-image-2.5-flare",
+        maxBytes: this.config.maxFileBytes,
+        timeoutMs: 24e4,
+        ...source ? { source: { data: source.data, mediaType: source.ref.mediaType } } : {}
+      }, signal);
+      check();
+      const identity = profile === void 0 ? this.agentIdentity(room) : {
+        participantId: `chatroom-agent-${profile.id}`,
+        displayName: profile.name,
+        avatarId: profile.avatarId ?? fallbackAvatarId(`chatroom-agent-${profile.id}`)
+      };
+      const record = await this.fileRecord(room.record.id, identity, {
+        type: "file",
+        name: `generated-${randomUUID3()}.png`,
+        mediaType: image.mediaType,
+        data: ""
+      }, image.data);
+      check();
+      await this.requireFiles().put(record.id, record);
+      this.diagnostics.record({ event: "image.success", operationId, sessionId, elapsedMs: Date.now() - started, bytes: image.data.byteLength });
+      return `![\u751F\u6210\u56FE\u7247](/plugins/deepseek-harness-chatroom/api/files/${encodeURIComponent(record.id)})
+
+${identifyFileText(publicFile(record))}`;
+    } catch (error) {
+      this.diagnostics.record({ event: "image.failure", operationId, sessionId, elapsedMs: Date.now() - started, error: diagnosticError(error) });
+      throw error;
+    } finally {
+      this.activeImageSessions.delete(sessionId);
     }
   }
   initiatingIdentity(sessionId) {
@@ -5611,13 +6391,13 @@ var ChatroomRuntime = class {
         this.backfillMeetingCard(message.card, "direct", message.conversationId, message.createdAt);
       }
     }
-    const persisted = new Set((await this.ctx.sessionPersistence.list()).map((header) => String(header.id)));
+    const persisted = new Set((await listSessionHeaders(this.ctx.sessionPersistence)).map((header) => String(header.id)));
     let complete = true;
     for (const state of this.states.values()) {
       let events = state.binding?.agent.session.snapshotEvents();
       if (events === void 0 && persisted.has(state.record.sessionId)) {
         try {
-          events = (await this.ctx.sessionPersistence.inspect(SessionId(state.record.sessionId))).events;
+          events = (await inspectSession(this.ctx.sessionPersistence, SessionId(state.record.sessionId))).events;
         } catch (error) {
           complete = false;
           this.log.warn("Unable to inspect room %s while recovering meeting cards: %s", state.record.id, String(error));
@@ -5636,7 +6416,7 @@ var ChatroomRuntime = class {
       let events = state.binding?.agent.session.snapshotEvents();
       if (events === void 0 && persisted.has(state.record.sessionId)) {
         try {
-          events = (await this.ctx.sessionPersistence.inspect(SessionId(state.record.sessionId))).events;
+          events = (await inspectSession(this.ctx.sessionPersistence, SessionId(state.record.sessionId))).events;
         } catch (error) {
           complete = false;
           this.log.warn("Unable to inspect branch %s while recovering meeting cards: %s", state.record.id, String(error));
@@ -5761,7 +6541,7 @@ var ChatroomRuntime = class {
       model: settings.meetingSummaryModel,
       ...reasoningEffort === void 0 ? {} : { reasoningEffort },
       system: MEETING_SUMMARY_SYSTEM_PROMPT,
-      messages: [createUserMessage3({
+      messages: [createUserMessage4({
         source: { kind: "user" },
         content: [{ type: "text", text: JSON.stringify(meetingSummaryFacts(meeting, detail)) }]
       })],
@@ -5799,7 +6579,7 @@ ${meeting.summary ?? ""}` }],
       identity,
       identifyPrompt([{ type: "text", text: identifyExternalCardText(card) }], identity)
     );
-    const message = createUserMessage3({ content: durable, source: { kind: "user" } });
+    const message = createUserMessage4({ content: durable, source: { kind: "user" } });
     const now = Date.now();
     const record = {
       id: randomUUID3(),
@@ -5869,7 +6649,7 @@ ${meeting.summary ?? ""}` }],
       identity,
       identifyPrompt([{ type: "text", text: identifyExternalCardText(card) }], identity)
     );
-    binding.agent.session.append("user/message", createUserMessage3({
+    binding.agent.session.append("user/message", createUserMessage4({
       content: durable,
       source: { kind: "user" }
     }), { surfaceOp: "append" });
@@ -5974,8 +6754,8 @@ ${meeting.summary ?? ""}` }],
   }
   async resizeImage(data) {
     try {
-      const { default: sharp } = await import("sharp");
-      const image = sharp(data, { animated: true, failOn: "error", limitInputPixels: false });
+      const { default: sharp2 } = await import("sharp");
+      const image = sharp2(data, { animated: true, failOn: "error", limitInputPixels: false });
       const metadata = await image.metadata();
       const width = metadata.width;
       const height = metadata.pageHeight ?? metadata.height;
@@ -6143,11 +6923,19 @@ ${meeting.summary ?? ""}` }],
       canManageAgents
     );
   }
-  /** Whether this identity may manage the room's AI participants (super-admin, owner, or admin). */
+  /** Authenticated deployments grant management only to platform super-administrators. */
   canManageRoomAgents(record, identity) {
     if (identity === void 0) return false;
-    if ("role" in identity && identity.role === "super-admin") return true;
+    if (this.config.authEnabled) return this.auth.isSuperAdmin(identity.participantId);
     return record.ownerParticipantId === identity.participantId || (record.adminParticipantIds ?? []).includes(identity.participantId);
+  }
+  /** Recheck established streams before every event without an upstream dsh-auth request. */
+  canReceiveRoomSse(state, participantId) {
+    return !this.config.authEnabled || this.auth.isActiveAccount(participantId) && this.isRoomMember(state.record.id, participantId);
+  }
+  /** Notifications are account-scoped, so only local account/session liveness applies. */
+  canReceiveNotificationSse(participantId) {
+    return !this.config.authEnabled || this.auth.isActiveAccount(participantId);
   }
   /** Room AI participant access: super-admin may manage any room; others must be a managing member. */
   assertRoomAgentAccess(roomId, identity) {
@@ -6348,7 +7136,7 @@ ${meeting.summary ?? ""}` }],
   }
   appendThreadRoot(binding, root, content) {
     if (root.role === "human") {
-      binding.agent.session.append("user/message", createUserMessage3({ content, source: { kind: "user" } }), { surfaceOp: "append" });
+      binding.agent.session.append("user/message", createUserMessage4({ content, source: { kind: "user" } }), { surfaceOp: "append" });
       return;
     }
     const selection = binding.agent.options.provider !== void 0 && binding.agent.options.model !== void 0 ? { provider: binding.agent.options.provider, model: binding.agent.options.model } : this.ctx.agentDefaultModel.currentSelection();
@@ -6374,7 +7162,7 @@ ${meeting.summary ?? ""}` }],
         ...reasoningEffort === void 0 ? {} : { reasoningEffort },
         signal: this.shutdown.signal,
         system: settings.controllerPrompt,
-        messages: [createUserMessage3({
+        messages: [createUserMessage4({
           source: { kind: "user" },
           content: [{ type: "text", text: JSON.stringify({ history, latest: promptPreview(content) }) }]
         })],
@@ -6416,7 +7204,7 @@ ${meeting.summary ?? ""}` }],
         await this.commitInput(binding.agent.session, String(pending.message.id));
         return;
       }
-      const notice = createUserMessage3({
+      const notice = createUserMessage4({
         content: [{
           type: "text",
           text: `The automatic-response controller selected this chatroom message for an AI response: ${JSON.stringify(promptPreview(content))}
@@ -6587,7 +7375,10 @@ Respond to that message now. Do not mention this controller notice.`
     }
   }
   assertRoomInviter(record, identity) {
-    if ("role" in identity && identity.role === "super-admin") return;
+    if (this.config.authEnabled) {
+      if (!this.auth.isSuperAdmin(identity.participantId)) throw new ChatroomInputError("\u5F53\u524D\u8EAB\u4EFD\u6CA1\u6709\u7FA4\u7BA1\u7406\u6743\u9650\uFF1B\u4EC5\u5E73\u53F0\u8D85\u7EA7\u7BA1\u7406\u5458\u53EF\u4FEE\u6539\u3002");
+      return;
+    }
     this.assertRoomManager(record, identity.participantId);
   }
   /** Enforce authenticated membership before any room operation. */
@@ -7181,6 +7972,17 @@ function writeNotificationSse(client, event, remove) {
 function writeSseEvent(client, event, remove) {
   const response = client.response;
   if (response.destroyed || response.writableEnded) return false;
+  try {
+    if (!client.canReceive()) {
+      remove();
+      closeSse(response);
+      return false;
+    }
+  } catch {
+    remove();
+    closeSse(response);
+    return false;
+  }
   const buffered = "writableLength" in response && typeof response.writableLength === "number" ? response.writableLength : 0;
   if (buffered > SSE_MAX_BUFFER_BYTES + client.snapshotAllowance) {
     remove();
@@ -7240,8 +8042,8 @@ function removeSseClient(clients, client) {
 async function waitForIdle(agent, signal) {
   if (signal.aborted) return;
   let release = () => void 0;
-  const stopped = new Promise((resolve4) => {
-    release = resolve4;
+  const stopped = new Promise((resolve5) => {
+    release = resolve5;
     signal.addEventListener("abort", release, { once: true });
   });
   try {
@@ -7262,18 +8064,430 @@ async function withTimeout(promise, timeoutMs, message) {
   }
 }
 
+// src/thumbnails.ts
+import sharp from "sharp";
+import { createHash as createHash5, randomUUID as randomUUID4 } from "crypto";
+import { mkdir as mkdir4, readFile as readFile2, rename as rename3, unlink as unlink3, writeFile as writeFile2 } from "fs/promises";
+import { join as join4 } from "path";
+var ThumbnailCache = class {
+  constructor(directory) {
+    this.directory = directory;
+  }
+  directory;
+  cache = /* @__PURE__ */ new Map();
+  pending = /* @__PURE__ */ new Map();
+  bytes = 0;
+  active = 0;
+  queue = [];
+  async get(key, data) {
+    key = createHash5("sha256").update("webp-480x320-q72-v1\0").update(key).update(data).digest("hex");
+    const cached = this.cache.get(key);
+    if (cached) {
+      this.cache.delete(key);
+      this.cache.set(key, cached);
+      return cached;
+    }
+    const pending = this.pending.get(key);
+    if (pending) return pending;
+    if (this.pending.size >= 16) throw new Error("Thumbnail capacity reached");
+    const task = this.boundedCreate(key, data).then((buffer) => {
+      this.cache.set(key, buffer);
+      this.bytes += buffer.length;
+      while (this.bytes > 16 * 1024 * 1024 || this.cache.size > 128) {
+        const first = this.cache.keys().next().value;
+        this.bytes -= this.cache.get(first).length;
+        this.cache.delete(first);
+      }
+      return buffer;
+    }).finally(() => this.pending.delete(key));
+    this.pending.set(key, task);
+    return task;
+  }
+  async boundedCreate(key, data) {
+    if (this.active >= 2) await new Promise((resolve5) => this.queue.push(resolve5));
+    else this.active++;
+    try {
+      return await this.loadOrCreate(key, data);
+    } finally {
+      const next = this.queue.shift();
+      if (next) next();
+      else this.active--;
+    }
+  }
+  async loadOrCreate(key, data) {
+    const path = this.directory ? join4(this.directory, `${key}.webp`) : void 0;
+    if (path) {
+      try {
+        const saved = await readFile2(path);
+        const metadata = await sharp(saved).metadata();
+        if (metadata.format === "webp" && metadata.width <= 480 && metadata.height <= 320) return saved;
+      } catch (error) {
+        if (error.code !== "ENOENT") {
+          await unlink3(path).catch(() => void 0);
+        }
+      }
+    }
+    const buffer = await sharp(data, { limitInputPixels: 4e7, animated: false }).rotate().resize({ width: 480, height: 320, fit: "inside", withoutEnlargement: true }).webp({ quality: 72 }).toBuffer();
+    if (path && this.directory) {
+      await mkdir4(this.directory, { recursive: true, mode: 448 });
+      const temporary = `${path}.${randomUUID4()}.tmp`;
+      try {
+        await writeFile2(temporary, buffer, { flag: "wx", mode: 384 });
+        await rename3(temporary, path);
+      } finally {
+        await unlink3(temporary).catch(() => void 0);
+      }
+    }
+    return buffer;
+  }
+};
+
+// src/http.ts
+import { join as join6 } from "path";
+import { randomUUID as randomUUID7 } from "crypto";
+
+// src/video-jobs.ts
+import { createHash as createHash6, randomUUID as randomUUID5 } from "crypto";
+import { mkdir as mkdir5, readFile as readFile3, readdir, rename as rename4, unlink as unlink4, writeFile as writeFile3 } from "fs/promises";
+import { join as join5 } from "path";
+
+// src/minimax-code.ts
+import { spawn as spawn2 } from "child_process";
+import { isAbsolute as isAbsolute3 } from "path";
+function invokeMiniMaxCode(launcher, args, input, signal) {
+  if (!isAbsolute3(launcher) || /["%\r\n&|<>!]/u.test(launcher)) return Promise.reject(new Error("MiniMax Code \u542F\u52A8\u5668\u8DEF\u5F84\u65E0\u6548\u3002"));
+  const windows = process.platform === "win32" && /\.cmd$/iu.test(launcher);
+  if (args.some((arg) => /["%\r\n&|<>!]/u.test(arg))) return Promise.reject(new Error("MiniMax Code \u53C2\u6570\u65E0\u6548\u3002"));
+  return new Promise((resolve5, reject) => {
+    if (signal?.aborted) {
+      reject(new Error("MiniMax Code \u67E5\u8BE2\u5DF2\u53D6\u6D88\u3002"));
+      return;
+    }
+    const command = windows ? process.env.ComSpec ?? "C:\\Windows\\System32\\cmd.exe" : launcher;
+    const argv = windows ? ["/d", "/s", "/c", `""${launcher.replaceAll("/", "\\")}" ${args.map((arg) => `"${arg}"`).join(" ")}"`] : [...args];
+    const child = spawn2(command, argv, { windowsHide: true, windowsVerbatimArguments: windows, stdio: ["pipe", "pipe", "pipe"] });
+    let output = "", bytes = 0, done = false;
+    const kill = () => {
+      if (process.platform === "win32" && child.pid) {
+        const killer = spawn2("taskkill.exe", ["/PID", String(child.pid), "/T", "/F"], { windowsHide: true, stdio: "ignore" });
+        killer.on("error", () => {
+          child.kill();
+        });
+      } else child.kill();
+    };
+    const abort = () => {
+      kill();
+      finish(new Error("MiniMax Code \u67E5\u8BE2\u5DF2\u53D6\u6D88\uFF1B\u672A\u81EA\u52A8\u91CD\u8BD5\u3002"));
+    };
+    const finish = (error) => {
+      if (done) return;
+      done = true;
+      clearTimeout(timer);
+      signal?.removeEventListener("abort", abort);
+      if (error) reject(error);
+      else {
+        try {
+          resolve5(JSON.parse(output));
+        } catch {
+          reject(new Error("MiniMax Code \u8FD4\u56DE\u683C\u5F0F\u65E0\u6548\uFF1B\u672A\u81EA\u52A8\u91CD\u8BD5\u3002"));
+        }
+      }
+    };
+    const timer = setTimeout(() => {
+      kill();
+      finish(new Error("MiniMax Code \u54CD\u5E94\u8D85\u65F6\uFF1B\u63D0\u4EA4\u7ED3\u679C\u53EF\u80FD\u672A\u77E5\uFF0C\u672A\u81EA\u52A8\u91CD\u8BD5\u3002"));
+    }, 6e4);
+    signal?.addEventListener("abort", abort, { once: true });
+    child.stdout.on("data", (data) => {
+      bytes += data.length;
+      if (bytes > 2 * 1024 * 1024) {
+        kill();
+        finish(new Error("MiniMax Code \u8FD4\u56DE\u8FC7\u5927\u3002"));
+      } else output += data.toString("utf8");
+    });
+    child.stderr.on("data", () => {
+    });
+    child.once("error", () => finish(new Error("MiniMax Code \u65E0\u6CD5\u542F\u52A8\u6216\u5BBF\u4E3B\u6388\u6743\u4E0D\u53EF\u7528\u3002")));
+    child.once("close", (code) => finish(code === 0 ? void 0 : new Error(`MiniMax Code \u8C03\u7528\u5931\u8D25\uFF08\u9000\u51FA\u7801 ${code ?? "unknown"}\uFF09\uFF1B\u672A\u81EA\u52A8\u91CD\u8BD5\u3002`)));
+    child.stdin.on("error", () => {
+    });
+    child.stdin.end(input === void 0 ? void 0 : JSON.stringify(input));
+  });
+}
+function miniMaxConnector(launcher, tool, input, signal) {
+  return invokeMiniMaxCode(launcher, ["connector", "call", `connector__matrix__${tool}`, "--args-file", "-"], input, signal);
+}
+
+// src/video-jobs.ts
+var VIDEO_MODELS = ["MiniMax-Hailuo-2.3", "MiniMax-H3", "MiniMax-H3-Max"];
+function validateVideo(input) {
+  if (!/^[a-f0-9-]{36}$/iu.test(input.id) || !VIDEO_MODELS.includes(input.model) || input.confirmed !== true || typeof input.prompt !== "string" || !input.prompt.trim() || input.prompt.length > 7e3 || !Number.isInteger(input.duration)) throw new Error("\u8BF7\u660E\u786E\u9009\u62E9\u89C6\u9891\u6A21\u578B\u3001\u63CF\u8FF0\u5E76\u786E\u8BA4\u989D\u5EA6\u4F7F\u7528\u3002");
+  const allowed = input.model === "MiniMax-Hailuo-2.3" ? [6, 10].includes(input.duration) && ["768P", "1080P"].includes(input.resolution) && (input.resolution !== "1080P" || input.duration === 6) : input.model === "MiniMax-H3" ? input.duration >= 4 && input.duration <= 15 && ["768P", "2K"].includes(input.resolution) : input.duration >= 5 && input.duration <= 15 && ["480P", "768P"].includes(input.resolution);
+  if (!allowed) throw new Error("\u89C6\u9891\u65F6\u957F\u6216\u5206\u8FA8\u7387\u4E0D\u53D7\u6B64\u6A21\u578B\u652F\u6301\u3002");
+}
+var VideoJobs = class {
+  constructor(directory, launcher, journal) {
+    this.directory = directory;
+    this.launcher = launcher;
+    this.journal = journal;
+  }
+  directory;
+  launcher;
+  journal;
+  active = /* @__PURE__ */ new Map();
+  queries = /* @__PURE__ */ new Map();
+  shutdown = new AbortController();
+  admitting = 0;
+  folder(roomId, sessionId) {
+    return join5(this.directory, createHash6("sha256").update(`${roomId}\0${sessionId}`).digest("hex"));
+  }
+  path(roomId, sessionId, id) {
+    if (!/^[a-f0-9-]{36}$/iu.test(id)) throw new Error("\u89C6\u9891\u4EFB\u52A1\u7F16\u53F7\u65E0\u6548\u3002");
+    return join5(this.folder(roomId, sessionId), `${id}.json`);
+  }
+  async save(job) {
+    const path = this.path(job.roomId, job.sessionId, job.id), temporary = `${path}.${randomUUID5()}.tmp`;
+    try {
+      await writeFile3(temporary, JSON.stringify(job), { flag: "wx", mode: 384 });
+      await rename4(temporary, path);
+    } finally {
+      await unlink4(temporary).catch(() => void 0);
+    }
+  }
+  async list(roomId, sessionId, owner) {
+    const directory = this.folder(roomId, sessionId);
+    const names = await readdir(directory).catch((e) => {
+      if (e.code === "ENOENT") return [];
+      throw e;
+    });
+    const jobs = [];
+    for (const name2 of names.filter((name3) => /^[a-f0-9-]{36}\.json$/iu.test(name3))) {
+      const job = JSON.parse(await readFile3(join5(directory, name2), "utf8"));
+      if (job.owner !== owner) continue;
+      jobs.push(job.status === "submitting" && !this.active.has(job.id) ? { ...job, status: "unknown", error: "\u63D0\u4EA4\u66FE\u4E2D\u65AD\uFF0C\u7981\u6B62\u81EA\u52A8\u91CD\u6295\uFF1B\u8BF7\u6309\u5DF2\u6709\u8BB0\u5F55\u6838\u5BF9\u3002" } : job);
+    }
+    return jobs.sort((a, b) => b.createdAt - a.createdAt).slice(0, 100);
+  }
+  async submit(roomId, sessionId, owner, input, source) {
+    validateVideo(input);
+    this.shutdown.signal.throwIfAborted();
+    const fingerprint = createHash6("sha256").update(JSON.stringify(input)).digest("hex");
+    const existing = (await this.list(roomId, sessionId, owner)).find((job2) => job2.id === input.id);
+    if (existing) {
+      if (existing.fingerprint !== fingerprint) throw new Error("\u540C\u4E00\u63D0\u4EA4\u7F16\u53F7\u4E0D\u80FD\u7528\u4E8E\u4E0D\u540C\u89C6\u9891\u8BF7\u6C42\u3002");
+      return existing;
+    }
+    if (this.active.size + this.admitting >= 2) throw new Error("\u5DF2\u6709\u89C6\u9891\u6B63\u5728\u63D0\u4EA4\uFF0C\u8BF7\u7A0D\u540E\u518D\u8BD5\u3002");
+    if (input.sourceFileId && !source) throw new Error("\u56FE\u751F\u89C6\u9891\u7F3A\u5C11\u5DF2\u6388\u6743\u539F\u56FE\u3002");
+    const job = { id: input.id, roomId, sessionId, owner, fingerprint, model: input.model, createdAt: Date.now(), status: "submitting" };
+    this.admitting++;
+    try {
+      await mkdir5(this.folder(roomId, sessionId), { recursive: true, mode: 448 });
+      await writeFile3(this.path(roomId, sessionId, job.id), JSON.stringify(job), { flag: "wx", mode: 384 });
+    } finally {
+      this.admitting--;
+    }
+    this.journal?.record({ event: "video.submit", operationId: job.id, sessionId });
+    const work = (async () => {
+      let temporary;
+      try {
+        let image;
+        if (source) {
+          const { default: sharp2 } = await import("sharp");
+          const png = await sharp2(source.data, { limitInputPixels: 16777216 }).rotate().png().toBuffer();
+          if (png.length > 30 * 1024 * 1024) throw new Error("\u89C6\u9891\u53C2\u8003\u56FE\u7247\u8FC7\u5927\u3002");
+          temporary = join5(this.folder(roomId, sessionId), `${job.id}.input.png`);
+          await writeFile3(temporary, png, { flag: "wx", mode: 384 });
+          const uploaded = await invokeMiniMaxCode(this.launcher, ["upload-temp-url", temporary], void 0, this.shutdown.signal);
+          if (!uploaded.temp_url || new URL(uploaded.temp_url).protocol !== "https:") throw new Error("\u53C2\u8003\u56FE\u4E0A\u4F20\u6CA1\u6709\u8FD4\u56DE HTTPS \u5730\u5740\u3002");
+          image = { url: uploaded.temp_url, mime_type: "image/png" };
+        }
+        const result = await miniMaxConnector(this.launcher, "submit_video_generation", {
+          model: input.model,
+          prompt: input.prompt,
+          duration: input.duration,
+          resolution: input.resolution,
+          ...image ? { input_image: image, reference_type: "first_frame" } : {}
+        }, this.shutdown.signal);
+        if (!result.task_id || !/^[a-zA-Z0-9_-]{1,100}$/u.test(result.task_id)) throw new Error("\u63D0\u4EA4\u672A\u8FD4\u56DE\u53EF\u9760\u4EFB\u52A1\u7F16\u53F7\u3002");
+        job.taskId = result.task_id;
+        job.status = "queued";
+      } catch (error) {
+        job.status = "unknown";
+        job.error = "\u63D0\u4EA4\u672A\u83B7\u5F97\u53EF\u9760\u56DE\u6267\u3002\u8BF7\u6838\u5BF9 MiniMax Code\uFF0C\u7981\u6B62\u81EA\u52A8\u91CD\u590D\u63D0\u4EA4\u3002";
+        this.journal?.record({ event: "video.failure", operationId: job.id, sessionId, error: diagnosticError(error) });
+      } finally {
+        if (temporary) await unlink4(temporary).catch(() => void 0);
+        await this.save(job);
+      }
+    })().finally(() => this.active.delete(job.id));
+    this.active.set(job.id, work);
+    void work.catch(() => void 0);
+    return { ...job };
+  }
+  async importExisting(roomId, sessionId, owner, model, taskId) {
+    if (!VIDEO_MODELS.includes(model) || !/^[a-zA-Z0-9_-]{1,100}$/u.test(taskId)) throw new Error("\u5DF2\u6709\u4EFB\u52A1\u7F16\u53F7\u6216\u6A21\u578B\u65E0\u6548\u3002");
+    const existing = (await this.list(roomId, sessionId, owner)).find((job2) => job2.taskId === taskId && job2.model === model);
+    if (existing) return existing;
+    const job = { id: randomUUID5(), roomId, sessionId, owner, fingerprint: "imported-existing-task", model, taskId, createdAt: Date.now(), status: "queued" };
+    await mkdir5(this.folder(roomId, sessionId), { recursive: true, mode: 448 });
+    await this.save(job);
+    return job;
+  }
+  async refresh(roomId, sessionId, owner, id, saveVideo, signal) {
+    signal = AbortSignal.any([signal, this.shutdown.signal]);
+    signal.throwIfAborted();
+    const key = `${roomId}:${sessionId}:${owner}:${id}`;
+    const existing = this.queries.get(key);
+    if (existing) return existing;
+    const work = (async () => {
+      const job = (await this.list(roomId, sessionId, owner)).find((job2) => job2.id === id);
+      if (!job) throw new Error("\u89C6\u9891\u4EFB\u52A1\u4E0D\u5B58\u5728\u3002");
+      if (!job.taskId || job.fileId || ["failed", "cancelled"].includes(job.status)) return job;
+      const result = await miniMaxConnector(this.launcher, "query_video_generation", { task_id: job.taskId, model: job.model }, signal);
+      if (result.status === "succeeded" && result.video_url) {
+        const url = new URL(result.video_url);
+        if (url.protocol !== "https:" || !url.hostname.endsWith(".oss-cn-shanghai.aliyuncs.com") || url.username || url.password) throw new Error("\u89C6\u9891\u4E0B\u8F7D\u6765\u6E90\u672A\u7ECF\u9A8C\u8BC1\u3002");
+        const response = await fetch(url, { signal, redirect: "error" });
+        if (!response.ok || !response.body) throw new Error("\u89C6\u9891\u4E0B\u8F7D\u6682\u65F6\u5931\u8D25\uFF0C\u8BF7\u91CD\u65B0\u8BFB\u53D6\u540C\u4E00\u4EFB\u52A1\u3002");
+        const chunks = [];
+        let bytes = 0;
+        const reader = response.body.getReader();
+        try {
+          for (; ; ) {
+            const part = await reader.read();
+            if (part.done) break;
+            bytes += part.value.length;
+            if (bytes > 100 * 1024 * 1024) throw new Error("\u89C6\u9891\u8D85\u8FC7\u672C\u673A\u4FDD\u5B58\u4E0A\u9650\u3002");
+            chunks.push(part.value);
+          }
+        } finally {
+          await reader.cancel().catch(() => void 0);
+        }
+        const data = Buffer.concat(chunks);
+        if (data.subarray(4, 8).toString() !== "ftyp") throw new Error("\u89C6\u9891\u4E0D\u662F\u6709\u6548 MP4 \u5BB9\u5668\u3002");
+        signal.throwIfAborted();
+        job.fileId = await saveVideo(job, data);
+        job.status = "succeeded";
+        this.journal?.record({ event: "video.success", operationId: job.id, sessionId, bytes: data.length, outcome: "success" });
+      } else if (["queued", "running", "failed", "cancelled"].includes(result.status ?? "")) job.status = result.status;
+      await this.save(job);
+      return job;
+    })().catch((error) => {
+      this.journal?.record({ event: "video.failure", operationId: id, sessionId, error: diagnosticError(error) });
+      throw error;
+    }).finally(() => this.queries.delete(key));
+    this.queries.set(key, work);
+    return work;
+  }
+  async stop() {
+    this.shutdown.abort();
+    await Promise.allSettled([...this.active.values(), ...this.queries.values()]);
+  }
+};
+
+// src/media.ts
+function mediaByteRange(header, length) {
+  const match = /^bytes=(\d*)-(\d*)$/u.exec(header);
+  if (!match || !match[1] && !match[2] || length <= 0) return void 0;
+  const first = match[1] ? Number(match[1]) : void 0, last = match[2] ? Number(match[2]) : void 0;
+  if (first !== void 0 && !Number.isSafeInteger(first) || last !== void 0 && !Number.isSafeInteger(last)) return void 0;
+  const start = first ?? Math.max(0, length - (last ?? 0)), end = first === void 0 ? length - 1 : Math.min(length - 1, last ?? length - 1);
+  return start >= 0 && start < length && end >= start ? { start, end } : void 0;
+}
+
+// src/sse.ts
+import { randomUUID as randomUUID6 } from "crypto";
+function startSseResponse(options) {
+  const { request, response, stream, journal } = options;
+  const operationId = randomUUID6(), started = Date.now();
+  let closed = false, beats = 0, checking = false;
+  let heartbeat;
+  let revalidate;
+  let unsubscribe = () => {
+  };
+  const close = (reason = "peer-end") => {
+    if (closed) return;
+    closed = true;
+    clearInterval(heartbeat);
+    clearInterval(revalidate);
+    request.off("aborted", aborted);
+    response.off("close", ended);
+    response.off("error", failed);
+    unsubscribe();
+    if (!response.destroyed && !response.writableEnded) response.end();
+    journal.record({ event: "sse.close", stream, operationId, reason, elapsedMs: Date.now() - started, heartbeatCount: beats });
+    options.onClose?.();
+  };
+  const aborted = () => close("peer-end");
+  const ended = () => close("peer-end");
+  const failed = () => close("socket-error");
+  if (request.aborted || response.destroyed || response.writableEnded) return close;
+  request.once("aborted", aborted);
+  response.once("close", ended);
+  response.once("error", failed);
+  response.writeHead(200, {
+    "Content-Type": "text/event-stream; charset=utf-8",
+    "Cache-Control": "no-cache, no-transform",
+    Connection: "keep-alive",
+    "X-Accel-Buffering": "no",
+    "X-Chatroom-Stream-Id": operationId
+  });
+  const beat = () => {
+    if (closed || response.destroyed || response.writableEnded) return;
+    beats++;
+    response.write(`event: heartbeat
+data: ${JSON.stringify({ streamId: operationId, intervalMs: options.intervalMs })}
+
+`);
+  };
+  beat();
+  journal.record({ event: "sse.open", stream, operationId });
+  try {
+    unsubscribe = options.subscribe();
+  } catch (error) {
+    close("socket-error");
+    throw error;
+  }
+  heartbeat = setInterval(beat, options.intervalMs);
+  heartbeat.unref?.();
+  if (options.revalidate) revalidate = setInterval(() => {
+    if (checking || closed) return;
+    checking = true;
+    void options.revalidate.check().then((valid) => {
+      if (!valid) close("auth-failed");
+    }).catch(() => close("auth-failed")).finally(() => {
+      checking = false;
+    });
+  }, options.revalidate.intervalMs);
+  revalidate?.unref?.();
+  return close;
+}
+
 // src/http.ts
 var ChatroomHttpController = class {
   constructor(ctx, runtime, config) {
     this.runtime = runtime;
     this.config = config;
+    this.thumbnails = new ThumbnailCache(config.dataDirectory === ":memory:" ? void 0 : join6(resolveArchiveRoot(config.dataDirectory ?? ""), "thumbnails", "v1"));
+    this.videos = config.miniMaxCodePath ? new VideoJobs(join6(resolveArchiveRoot(config.dataDirectory ?? ""), "video-jobs"), config.miniMaxCodePath, runtime.diagnostics) : void 0;
     this.log = ctx.logger("deepseek-harness-chatroom");
     this.configurationApi = ctx.connection.createSharedFetchHandler("/api");
   }
   runtime;
   config;
+  thumbnails;
+  videos;
   log;
   configurationApi;
+  streams = /* @__PURE__ */ new Set();
+  clientReportTimes = /* @__PURE__ */ new Map();
+  /** Dispatch one request under a registered chatroom API prefix. */
+  async stop() {
+    for (const close of this.streams) close("plugin-stop");
+    this.streams.clear();
+    await this.videos?.stop();
+  }
   /** Dispatch one request under a registered chatroom API prefix. */
   async handle(request, response) {
     try {
@@ -7284,7 +8498,7 @@ var ChatroomHttpController = class {
         return;
       }
       if (route.endpoint === "/health" && request.method === "GET") {
-        json(response, this.runtime.isReady ? 200 : 503, { ready: this.runtime.isReady });
+        json(response, this.runtime.isReady ? 200 : 503, { ready: this.runtime.isReady, diagnostics: this.runtime.diagnostics.status });
         return;
       }
       if (!this.runtime.isReady) {
@@ -7293,6 +8507,42 @@ var ChatroomHttpController = class {
       }
       if (route.endpoint === "/session") {
         await this.handleSession(request, response, route.prefix);
+        return;
+      }
+      if (route.endpoint === "/connection/diagnostic" && request.method === "POST") {
+        assertSameOrigin(request);
+        const identity = await this.requireIdentity(request, response);
+        if (identity === void 0) return;
+        const body = await readJson(request, 2048);
+        const now = Date.now(), prior = this.clientReportTimes.get(identity.participantId);
+        const limit = prior && now - prior.at < 6e4 ? prior : { at: now, count: 0 };
+        if (limit.count >= 30) {
+          json(response, 429, { error: "\u8BCA\u65AD\u4E0A\u62A5\u8FC7\u4E8E\u9891\u7E41\u3002" });
+          return;
+        }
+        if (this.clientReportTimes.size > 256) this.clientReportTimes.clear();
+        limit.count++;
+        this.clientReportTimes.set(identity.participantId, limit);
+        const runtimeSource = clientRuntimeSource(body.runtimeSource);
+        const runtimeErrorKind = clientRuntimeErrorKind(body.runtimeErrorKind);
+        if (runtimeSource !== void 0 && runtimeErrorKind !== void 0) {
+          const rangeError = runtimeErrorKind === "RangeError" ? sanitizeRangeErrorEvidence(body.runtimeRangeError) : void 0;
+          this.runtime.diagnostics.record({
+            event: "client.runtime.failure",
+            clientRuntime: {
+              source: runtimeSource,
+              ...rangeError === void 0 ? {} : { rangeError }
+            },
+            error: { kind: runtimeErrorKind }
+          });
+        } else this.runtime.diagnostics.record({ event: "client.connection", connectionState: {
+          native: typeof body.native === "string" ? body.native : "",
+          room: typeof body.room === "string" ? body.room : "",
+          notifications: typeof body.notifications === "string" ? body.notifications : "",
+          visible: body.visible === true,
+          online: body.online === true
+        } });
+        json(response, 200, { ok: true });
         return;
       }
       if (route.endpoint.startsWith("/auth/")) {
@@ -7321,6 +8571,36 @@ var ChatroomHttpController = class {
       }
       if (route.endpoint === "/search") {
         await this.handleSearch(request, response, url.searchParams);
+        return;
+      }
+      if (route.endpoint === "/media/image-source") {
+        if (request.method !== "POST") {
+          methodNotAllowed(response, "POST");
+          return;
+        }
+        const identity = await this.requireIdentity(request, response);
+        if (!identity) return;
+        assertSameOrigin(request);
+        const body = await readJson(request, 4096);
+        const fileId = await this.runtime.materializeGalleryImage(fieldString(body, "roomId"), fieldString(body, "sessionId"), identity, fieldString(body, "imageId"));
+        json(response, 200, { fileId });
+        return;
+      }
+      if (route.endpoint === "/media/gallery") {
+        if (request.method !== "GET") {
+          methodNotAllowed(response, "GET");
+          return;
+        }
+        const identity = await this.requireIdentity(request, response);
+        if (!identity) return;
+        const offset = Number(url.searchParams.get("offset") ?? 0);
+        if (!Number.isSafeInteger(offset) || offset < 0) throw new ChatroomInputError("\u56FE\u5E93\u6E38\u6807\u65E0\u6548\u3002");
+        const result = await this.runtime.gallery(url.searchParams.get("roomId") ?? "", url.searchParams.get("sessionId") ?? "", identity, offset);
+        json(response, 200, result);
+        return;
+      }
+      if (route.endpoint === "/media/videos") {
+        await this.handleVideos(request, response, url);
         return;
       }
       if (route.endpoint === "/rooms") {
@@ -7870,16 +9150,58 @@ var ChatroomHttpController = class {
     json(response, 200, this.runtime.search(search.get("q") ?? "", identity));
   }
   async handleRoomSelection(request, response) {
-    if (request.method !== "POST") {
-      methodNotAllowed(response, "POST");
-      return;
+    const started = Date.now();
+    const operationId = randomUUID7();
+    let terminal = false;
+    let peerClosedBeforeResponse = false;
+    let runtimeException = false;
+    const record = (stage, outcome, closed = false) => {
+      try {
+        this.runtime.diagnostics.record({ event: "room.select.stage", operationId, roomSelection: {
+          stage,
+          outcome,
+          elapsedMs: Date.now() - started,
+          ...closed ? { closed: true } : {}
+        } });
+      } catch {
+      }
+    };
+    const observe = (event) => {
+      if (event.stage === "exception" && event.outcome === "failure") runtimeException = true;
+      record(event.stage, event.outcome);
+    };
+    const peerClosed = () => {
+      peerClosedBeforeResponse = true;
+      if (!terminal) record("response", "failure", true);
+    };
+    response.once("close", peerClosed);
+    try {
+      if (request.method !== "POST") {
+        methodNotAllowed(response, "POST");
+        terminal = true;
+        return;
+      }
+      assertSameOrigin(request);
+      record("authentication", "start");
+      const identity = await this.requireIdentity(request, response);
+      if (identity === void 0) {
+        record("authentication", "failure");
+        terminal = true;
+        return;
+      }
+      record("authentication", "complete");
+      const body = await readJson(request, smallRequestLimit(this.config));
+      const room = await this.runtime.selectRoom(fieldString(body, "roomId"), identity, observe);
+      if (peerClosedBeforeResponse || response.destroyed || response.writableEnded) return;
+      json(response, 200, { room });
+      terminal = true;
+      record("response", "complete");
+    } catch (error) {
+      if (!runtimeException) record("exception", "failure");
+      throw error;
+    } finally {
+      response.off("close", peerClosed);
     }
-    assertSameOrigin(request);
-    const identity = await this.requireIdentity(request, response);
-    if (identity === void 0) return;
-    const body = await readJson(request, smallRequestLimit(this.config));
-    const room = await this.runtime.selectRoom(fieldString(body, "roomId"), identity);
-    json(response, 200, { room });
   }
   async handleRoomManagement(request, response) {
     const identity = await this.requireIdentity(request, response);
@@ -7993,6 +9315,7 @@ var ChatroomHttpController = class {
     const input = {
       name: fieldString(body, "name"),
       role: fieldString(body, "role"),
+      ...body.avatarId === void 0 ? {} : { avatarId: fieldString(body, "avatarId") },
       ...typeof instructions === "string" ? { instructions } : {},
       provider: fieldString(body, "provider"),
       model: fieldString(body, "model"),
@@ -8118,7 +9441,7 @@ var ChatroomHttpController = class {
   async handleAutomation(request, response) {
     const identity = await this.requireIdentity(request, response);
     if (identity === void 0) return;
-    const canManage = !this.config.authEnabled || "role" in identity && identity.role === "super-admin" || this.config.settingsAdminParticipantIds.includes(identity.participantId);
+    const canManage = !this.config.authEnabled || "role" in identity && identity.role === "super-admin";
     if (request.method === "GET") {
       json(response, 200, await this.runtime.automationOverview(canManage));
       return;
@@ -8279,21 +9602,138 @@ var ChatroomHttpController = class {
     if (identity === void 0) return;
     if (fileId === "" || fileId.includes("/")) throw new ChatroomInputError("\u6587\u4EF6\u7F16\u53F7\u65E0\u6548\u3002");
     const file = this.runtime.file(fileId, identity);
+    const preview = new URL(request.url ?? "/", "http://chatroom.local").searchParams.get("preview");
+    if (preview === "thumbnail") {
+      if (!["image/png", "image/jpeg", "image/webp", "image/gif"].includes(file.ref.mediaType)) {
+        json(response, 415, { error: "\u6B64\u6587\u4EF6\u4E0D\u652F\u6301\u7F29\u7565\u56FE\u3002" });
+        return;
+      }
+      const started = Date.now();
+      try {
+        const thumbnail = await this.thumbnails.get(fileId, file.data);
+        if (response.destroyed) return;
+        response.writeHead(200, {
+          "Content-Type": "image/webp",
+          "Content-Length": thumbnail.length,
+          "Content-Disposition": "inline",
+          "Cache-Control": "private, no-cache",
+          "X-Content-Type-Options": "nosniff"
+        });
+        response.end(thumbnail);
+        this.runtime.diagnostics.record({ event: "media.preview", operationId: fileId, bytes: thumbnail.length, elapsedMs: Date.now() - started, outcome: "success" });
+      } catch (error) {
+        this.runtime.diagnostics.record({ event: "media.failure", operationId: fileId, elapsedMs: Date.now() - started, error: diagnosticError(error) });
+        response.setHeader("Retry-After", "2");
+        json(response, 503, { error: "\u7F29\u7565\u56FE\u6682\u65F6\u4E0D\u53EF\u7528\uFF0C\u8BF7\u91CD\u8BD5\u6216\u4E0B\u8F7D\u539F\u56FE\u3002" });
+      }
+      return;
+    }
+    if (file.ref.mediaType === "video/mp4" && request.headers.range) {
+      const range = mediaByteRange(request.headers.range, file.data.byteLength);
+      if (!range) {
+        response.writeHead(416, { "Content-Range": `bytes */${file.data.byteLength}` });
+        response.end();
+        return;
+      }
+      response.writeHead(206, {
+        "Content-Type": "video/mp4",
+        "Content-Length": range.end - range.start + 1,
+        "Content-Range": `bytes ${range.start}-${range.end}/${file.data.byteLength}`,
+        "Accept-Ranges": "bytes",
+        "Cache-Control": "private, no-store",
+        "X-Content-Type-Options": "nosniff"
+      });
+      response.end(file.data.subarray(range.start, range.end + 1));
+      return;
+    }
     response.writeHead(200, {
       "Content-Type": file.ref.mediaType,
       "Content-Length": file.data.byteLength,
       "Content-Disposition": `attachment; filename*=UTF-8''${encodeURIComponent(file.ref.name)}`,
       "Cache-Control": "private, no-store",
-      "X-Content-Type-Options": "nosniff"
+      "X-Content-Type-Options": "nosniff",
+      ...file.ref.mediaType === "video/mp4" ? { "Accept-Ranges": "bytes" } : {}
     });
     response.end(file.data);
+  }
+  async handleVideos(request, response, url) {
+    const account = await this.requireAccount(request, response);
+    if (!account) return;
+    if (account.role !== "super-admin") {
+      json(response, 403, { error: "\u5F53\u524D\u4EC5\u5E73\u53F0\u7BA1\u7406\u5458\u53EF\u4F7F\u7528\u672C\u673A MiniMax \u989D\u5EA6\u3002" });
+      return;
+    }
+    if (!this.videos) {
+      json(response, 409, { error: "\u672C\u90E8\u7F72\u672A\u914D\u7F6E MiniMax Code \u89C6\u9891\u8FDE\u63A5\u5668\u3002" });
+      return;
+    }
+    if (!["GET", "POST"].includes(request.method ?? "")) {
+      methodNotAllowed(response, "GET, POST");
+      return;
+    }
+    const body = request.method === "POST" ? (assertSameOrigin(request), await readJson(request, 32768)) : void 0;
+    const roomId = body ? fieldString(body, "roomId") : url.searchParams.get("roomId") ?? "";
+    const sessionId = body ? fieldString(body, "sessionId") : url.searchParams.get("sessionId") ?? "";
+    await this.runtime.assertMediaSession(roomId, sessionId, account);
+    if (request.method === "GET") {
+      const id = url.searchParams.get("id");
+      if (!id) {
+        json(response, 200, { jobs: await this.videos.list(roomId, sessionId, account.participantId) });
+        return;
+      }
+      const controller = new AbortController();
+      const close = () => controller.abort();
+      response.once("close", close);
+      try {
+        const job = await this.videos.refresh(
+          roomId,
+          sessionId,
+          account.participantId,
+          id,
+          (job2, data) => this.runtime.saveVideoResult(roomId, sessionId, account, job2.id, data),
+          AbortSignal.any([controller.signal, AbortSignal.timeout(12e4)])
+        );
+        if (!response.destroyed) json(response, 200, { job });
+      } finally {
+        response.off("close", close);
+      }
+      return;
+    }
+    const input = body;
+    if (body && body.action === "import") {
+      try {
+        json(response, 200, { job: await this.videos.importExisting(roomId, sessionId, account.participantId, fieldString(body, "model"), fieldString(body, "taskId")) });
+      } catch (error) {
+        throw new ChatroomInputError(error instanceof Error ? error.message : "\u8BFB\u53D6\u5DF2\u6709\u4EFB\u52A1\u5931\u8D25\u3002");
+      }
+      return;
+    }
+    let source;
+    if (input.sourceFileId) {
+      const gallery = await this.runtime.gallery(roomId, sessionId, account);
+      let items = [...gallery.items], next = gallery.next;
+      while (next !== void 0) {
+        const page = await this.runtime.gallery(roomId, sessionId, account, next);
+        items.push(...page.items);
+        next = page.next;
+      }
+      if (!items.some((item) => item.fileId === input.sourceFileId)) throw new ChatroomInputError("\u539F\u56FE\u4E0D\u5C5E\u4E8E\u5F53\u524D\u4F1A\u8BDD\u3002");
+      const file = this.runtime.file(input.sourceFileId, account);
+      source = { data: file.data, mediaType: file.ref.mediaType };
+    }
+    try {
+      json(response, 202, { job: await this.videos.submit(roomId, sessionId, account.participantId, input, source) });
+    } catch (error) {
+      throw new ChatroomInputError(error instanceof Error ? error.message : "\u89C6\u9891\u63D0\u4EA4\u5931\u8D25\u3002");
+    }
   }
   async handleImage(request, response, encoded) {
     if (request.method !== "GET") {
       methodNotAllowed(response, "GET");
       return;
     }
-    if (await this.requireIdentity(request, response) === void 0) return;
+    const identity = await this.requireIdentity(request, response);
+    if (identity === void 0) return;
     let value;
     try {
       value = JSON.parse(decodeURIComponent(encoded));
@@ -8301,17 +9741,26 @@ var ChatroomHttpController = class {
       throw new ChatroomInputError("\u56FE\u7247\u5F15\u7528\u65E0\u6548\u3002");
     }
     const image = forwardImageRequest(value);
+    this.runtime.assertRoomAccess(image.sourceRoomId, identity);
     const stored = await this.runtime.image(
       image.sourceRoomId,
       image.sourceSessionId,
       image.sourceSeq,
       image.image
     );
+    this.runtime.assertRoomAccess(image.sourceRoomId, identity);
+    if (new URL(request.url ?? "/", "http://chatroom.local").searchParams.get("preview") === "thumbnail") {
+      const thumbnail = await this.thumbnails.get(image.image.attachmentId, stored.data);
+      if (response.destroyed) return;
+      response.writeHead(200, { "Content-Type": "image/webp", "Content-Length": thumbnail.length, "Cache-Control": "private, no-cache", "X-Content-Type-Options": "nosniff" });
+      response.end(thumbnail);
+      return;
+    }
     response.writeHead(200, {
       "Content-Type": stored.ref.mediaType,
       "Content-Length": stored.data.byteLength,
       "Content-Disposition": `inline; filename*=UTF-8''${encodeURIComponent(stored.ref.name ?? "image")}`,
-      "Cache-Control": "private, max-age=3600",
+      "Cache-Control": "private, no-cache",
       "X-Content-Type-Options": "nosniff"
     });
     response.end(stored.data);
@@ -8322,68 +9771,33 @@ var ChatroomHttpController = class {
     const roomId = search.get("roomId");
     if (roomId === null || roomId === "") throw new ChatroomInputError("\u7F3A\u5C11\u5171\u4EAB\u4F1A\u8BDD\u7F16\u53F7\u3002");
     await this.runtime.selectRoom(roomId, identity);
-    response.writeHead(200, {
-      "Content-Type": "text/event-stream; charset=utf-8",
-      "Cache-Control": "no-cache, no-transform",
-      Connection: "keep-alive",
-      "X-Accel-Buffering": "no"
-    });
-    const unsubscribe = this.runtime.subscribe(roomId, identity, response);
-    const heartbeat = setInterval(() => {
-      if (!response.destroyed && !response.writableEnded) response.write(": heartbeat\n\n");
-    }, this.config.sseHeartbeatMs);
-    const revalidate = this.config.authMode === "dsh-auth-only" ? setInterval(() => {
-      void this.requestAccount(request).then((account) => {
-        if (account !== void 0 || response.destroyed || response.writableEnded) return;
-        clearInterval(revalidate);
-        clearInterval(heartbeat);
-        unsubscribe();
-        response.end();
-      }).catch(() => {
-        clearInterval(revalidate);
-        clearInterval(heartbeat);
-        unsubscribe();
-        response.end();
-      });
-    }, (this.config.authDshAuthRevalidateSeconds ?? 60) * 1e3) : void 0;
-    request.once("close", () => {
-      clearInterval(heartbeat);
-      if (revalidate !== void 0) clearInterval(revalidate);
-      unsubscribe();
-    });
+    this.openStream(request, response, "room", identity, (isCurrentSession) => this.runtime.subscribe(roomId, identity, response, isCurrentSession));
   }
   async handleNotifications(request, response) {
     const identity = await this.requireIdentity(request, response);
     if (identity === void 0) return;
-    response.writeHead(200, {
-      "Content-Type": "text/event-stream; charset=utf-8",
-      "Cache-Control": "no-cache, no-transform",
-      Connection: "keep-alive",
-      "X-Accel-Buffering": "no"
+    this.openStream(request, response, "notifications", identity, (isCurrentSession) => this.runtime.subscribeNotifications(identity, response, isCurrentSession));
+  }
+  openStream(request, response, stream, identity, subscribe) {
+    if (request.aborted || response.destroyed || response.writableEnded) return;
+    let close;
+    const isCurrentSession = () => !this.config.authEnabled || this.runtime.auth.account(this.authToken(request))?.participantId === identity.participantId;
+    close = startSseResponse({
+      request,
+      response,
+      stream,
+      subscribe: () => subscribe(isCurrentSession),
+      intervalMs: this.config.sseHeartbeatMs,
+      journal: this.runtime.diagnostics,
+      ...this.config.authEnabled ? { revalidate: {
+        intervalMs: this.config.authMode === "dsh-auth-only" ? (this.config.authDshAuthRevalidateSeconds ?? 60) * 1e3 : this.config.sseHeartbeatMs,
+        check: async () => await this.requestAccount(request) !== void 0
+      } } : {},
+      onClose: () => {
+        if (close) this.streams.delete(close);
+      }
     });
-    const unsubscribe = this.runtime.subscribeNotifications(identity, response);
-    const heartbeat = setInterval(() => {
-      if (!response.destroyed && !response.writableEnded) response.write(": heartbeat\n\n");
-    }, this.config.sseHeartbeatMs);
-    const revalidate = this.config.authMode === "dsh-auth-only" ? setInterval(() => {
-      void this.requestAccount(request).then((account) => {
-        if (account !== void 0 || response.destroyed || response.writableEnded) return;
-        clearInterval(revalidate);
-        clearInterval(heartbeat);
-        unsubscribe();
-        response.end();
-      }).catch(() => {
-        clearInterval(revalidate);
-        clearInterval(heartbeat);
-        unsubscribe();
-        response.end();
-      });
-    }, (this.config.authDshAuthRevalidateSeconds ?? 60) * 1e3) : void 0;
-    request.once("close", () => {
-      clearInterval(heartbeat);
-      if (revalidate !== void 0) clearInterval(revalidate);
-      unsubscribe();
-    });
+    this.streams.add(close);
   }
   async handleConfiguration(request, response, method) {
     if (request.method !== "POST") {
@@ -8398,7 +9812,7 @@ var ChatroomHttpController = class {
     const identity = await this.requireIdentity(request, response);
     if (identity === void 0) return;
     const account = this.config.authEnabled ? await this.requestAccount(request, response) : void 0;
-    if (account?.role !== "super-admin" && !canManageRemoteSettings(this.config, identity.participantId)) {
+    if (this.config.authEnabled ? account?.role !== "super-admin" : !canManageRemoteSettings(this.config, identity.participantId)) {
       json(response, 403, { error: "\u5F53\u524D\u804A\u5929\u5BA4\u8EAB\u4EFD\u6CA1\u6709\u6A21\u578B\u8BBE\u7F6E\u7BA1\u7406\u6743\u9650\u3002" });
       return;
     }
@@ -8564,6 +9978,12 @@ function fieldString(body, field) {
   const value = body[field];
   if (typeof value !== "string") throw new ChatroomInputError(`\u5B57\u6BB5 ${field} \u5FC5\u987B\u662F\u5B57\u7B26\u4E32\u3002`);
   return value;
+}
+function clientRuntimeSource(value) {
+  return value === "window-error" || value === "unhandled-rejection" || value === "room-selection" ? value : void 0;
+}
+function clientRuntimeErrorKind(value) {
+  return value === "AbortError" || value === "TimeoutError" || value === "TypeError" || value === "SyntaxError" || value === "RangeError" || value === "Error" ? value : void 0;
 }
 function optionalFieldString(body, field) {
   const value = body[field];
@@ -8865,16 +10285,17 @@ function startsNewProviderExchange(message) {
 // src/native-gateway.ts
 import { once } from "events";
 import { realpath } from "fs/promises";
-import { resolve as resolve3 } from "path";
+import { resolve as resolve4 } from "path";
+import { randomUUID as randomUUID8 } from "crypto";
 
 // src/native-platform.ts
-import { readFile as readFile2 } from "fs/promises";
+import { readFile as readFile4 } from "fs/promises";
 import { apply as applyNativeConnection } from "@deepseek-ai/dsh-client-connection";
 async function nativeModule(packageName, file) {
   const manifest = new URL(import.meta.resolve(`${packageName}/package.json`));
-  const metadata = JSON.parse(await readFile2(manifest, "utf8"));
-  if (typeof metadata !== "object" || metadata === null || !("version" in metadata) || metadata.version !== "0.1.2-rc.1") {
-    throw new Error(`chatroom requires ${packageName}@0.1.2-rc.1; refusing an unverified transport`);
+  const metadata = JSON.parse(await readFile4(manifest, "utf8"));
+  if (typeof metadata !== "object" || metadata === null || !("version" in metadata) || !["0.1.2-rc.1", "0.1.5-rc.2"].includes(String(metadata.version))) {
+    throw new Error(`chatroom requires a verified ${packageName} cohort (0.1.2-rc.1 or 0.1.5-rc.2); refusing an unverified transport`);
   }
   return await import(new URL(`lib/types/${file}.js`, manifest).href);
 }
@@ -8901,6 +10322,7 @@ async function createNativeTransport(ctx, hosts) {
 
 // src/native-gateway.ts
 var MUX_PATH = "/api/remote.mux";
+var NATIVE_SESSION_LIST_DEADLINE_MS = 3e4;
 var PUBLIC_METHODS = /* @__PURE__ */ new Set([
   "session/list",
   "session/search",
@@ -8947,6 +10369,12 @@ var SESSION_EVENTS = /* @__PURE__ */ new Set([
   "api-session/status",
   "commands/change"
 ]);
+var ADMIN_SESSION_METHODS = /* @__PURE__ */ new Set(["agentPresets/select", "session/selectModel"]);
+var MEMBER_COMMANDS = /* @__PURE__ */ new Set(["new", "compact", "help", "status", "stop"]);
+function assertMemberCommand(line) {
+  const command = /^\s*\/([^\s]+)/u.exec(line)?.[1]?.toLowerCase();
+  if (command && !MEMBER_COMMANDS.has(command)) throw new CarrierError(403, "\u6B64\u547D\u4EE4\u4EC5\u5E73\u53F0\u7BA1\u7406\u5458\u53EF\u6267\u884C\u3002");
+}
 var CarrierError = class extends Error {
   constructor(status, message) {
     super(message);
@@ -8955,18 +10383,20 @@ var CarrierError = class extends Error {
   status;
 };
 var NativeGateway = class {
-  constructor(ctx, runtime, config, dispatch, transport) {
+  constructor(ctx, runtime, config, dispatch, transport, sessionListDeadlineMs = NATIVE_SESSION_LIST_DEADLINE_MS) {
     this.ctx = ctx;
     this.runtime = runtime;
     this.config = config;
     this.dispatch = dispatch;
     this.transport = transport;
+    this.sessionListDeadlineMs = sessionListDeadlineMs;
   }
   ctx;
   runtime;
   config;
   dispatch;
   transport;
+  sessionListDeadlineMs;
   requests = /* @__PURE__ */ new Set();
   requestCompletions = /* @__PURE__ */ new Set();
   renewals = /* @__PURE__ */ new WeakMap();
@@ -9011,6 +10441,7 @@ var NativeGateway = class {
         const key = String(result.clientId) + ":" + String(result.eventId);
         const owned = this.answerable.get(key);
         if (owned?.participantId !== identity.participantId) throw new CarrierError(403, "No authorized event delivery");
+        if (owned.adminOnly && !this.isAdmin(identity)) throw new CarrierError(403, "\u53EA\u6709\u5E73\u53F0\u7BA1\u7406\u5458\u53EF\u4EE5\u6279\u51C6\u6743\u9650\u8BF7\u6C42\u3002");
         await this.requireSession(owned.sessionId, identity);
         if (this.answerable.get(key) !== owned || !this.answerable.delete(key)) throw new CarrierError(403, "No authorized event delivery");
       } else {
@@ -9018,12 +10449,21 @@ var NativeGateway = class {
         const input = isRecord(args.request) ? args.request : args;
         if (SESSION_METHODS.has(endpoint)) {
           await this.sessionArguments(args, identity);
+          if (endpoint === "session/rename" && this.runtime.ownsSession(String(input.sessionId)) && !this.isAdmin(identity)) {
+            throw new CarrierError(403, "\u53EA\u6709\u5E73\u53F0\u7BA1\u7406\u5458\u53EF\u4EE5\u4FEE\u6539\u7FA4\u804A\u540D\u79F0\u3002");
+          }
+          if (ADMIN_SESSION_METHODS.has(endpoint) && !this.isAdmin(identity)) {
+            throw new CarrierError(403, "\u53EA\u6709\u5E73\u53F0\u7BA1\u7406\u5458\u53EF\u4EE5\u66F4\u6539\u6A21\u578B\u6216\u6267\u884C\u6743\u9650\u914D\u7F6E\u3002");
+          }
           if (endpoint === "session/updateQueue" && this.runtime.ownsSession(String(input.sessionId))) {
             throw new CarrierError(403, "\u8BF7\u901A\u8FC7\u7FA4\u804A\u961F\u5217\u64CD\u4F5C\u81EA\u5DF1\u7684\u6D88\u606F\u3002");
           }
         } else if (endpoint === "session/create") {
           for (const key of ["agentPreset", "sessionId", "workspaceId", "cwd"]) {
             if (input[key] !== void 0 && typeof input[key] !== "string") throw new CarrierError(400, "Invalid session creation parameters");
+          }
+          if (!this.isAdmin(identity) && input.agentPreset !== void 0 && input.agentPreset !== this.config.agentPreset) {
+            throw new CarrierError(403, "\u53EA\u6709\u5E73\u53F0\u7BA1\u7406\u5458\u53EF\u4EE5\u66F4\u6539\u6267\u884C\u6743\u9650\u914D\u7F6E\u3002");
           }
           if (input.cwd !== void 0 && !await this.isWorkspace(typeof input.cwd === "string" ? input.cwd : void 0)) {
             throw new CarrierError(403, "\u53EA\u80FD\u5728\u804A\u5929\u5BA4\u5DE5\u4F5C\u533A\u521B\u5EFA\u4F1A\u8BDD\u3002");
@@ -9039,6 +10479,7 @@ var NativeGateway = class {
             throw new CarrierError(403, "\u8BF7\u5148\u9884\u7559\u81EA\u5DF1\u7684 Solo \u4F1A\u8BDD\u3002");
           }
           if (input.workspaceId === void 0) input.cwd = this.config.cwd;
+          if (!this.isAdmin(identity)) input.agentPreset = this.config.agentPreset;
         } else if (!PUBLIC_METHODS.has(endpoint) && !this.isAdmin(identity)) {
           throw new CarrierError(403, "\u6B64\u63A5\u53E3\u5C1A\u672A\u914D\u7F6E\u8D26\u53F7\u6743\u9650\u3002");
         }
@@ -9048,6 +10489,9 @@ var NativeGateway = class {
             throw new CarrierError(400, "Invalid prompt");
           }
           await this.runtime.assertPromptReferences(identity, input.content);
+          if (!this.isAdmin(identity)) {
+            for (const part of input.content) if (part.type === "text") assertMemberCommand(part.text);
+          }
         }
         if (endpoint === "session/prompt") {
           if (!["queue", "steer"].includes(String(input.mode)) || typeof input.sessionId !== "string") throw new CarrierError(400, "Invalid prompt");
@@ -9058,27 +10502,103 @@ var NativeGateway = class {
           }
         }
         if (endpoint === "commands/execute" && typeof input.line === "string") {
+          if (!this.isAdmin(identity)) assertMemberCommand(input.line.startsWith("/") ? input.line : "/" + input.line);
           await this.runtime.assertPromptReferences(identity, [{ type: "text", text: input.line }]);
         }
       }
-      const response = await this.dispatch(new Request(request.url, {
-        method: "POST",
-        headers: request.headers,
-        signal: request.signal,
-        body: JSON.stringify(body)
-      }));
-      if (!response.ok || !response.headers.get("content-type")?.includes("application/json")) return response;
-      const output = await response.json();
-      if (!isRecord(output) || !isRecord(output.result) || output.result.ok !== true) return Response.json(output, { status: response.status });
-      output.result.value = await this.filterResult(endpoint, output.result.value, identity);
-      return Response.json(output, { status: response.status });
+      return await this.dispatchAuthorized(endpoint, request, body, identity);
     } catch (error) {
+      if (request.signal.aborted) throw error;
       const status = error instanceof CarrierError ? error.status : error instanceof ChatroomInputError ? 403 : error instanceof SyntaxError ? 400 : 500;
       return Response.json({ error: error instanceof CarrierError || error instanceof ChatroomInputError ? error.message : "Native request failed" }, { status });
     }
   }
-  async filterResult(endpoint, value, identity) {
-    const canAccess = (id) => typeof id === "string" ? this.runtime.canAccessNativeSession(id, identity) : Promise.resolve(false);
+  /** Bound only the idempotent catalogue read, with cancellation reaching the native carrier. */
+  async dispatchAuthorized(endpoint, request, body, identity) {
+    const started = Date.now();
+    const isSessionList = endpoint === "session/list";
+    const stages = isSessionList ? {} : void 0;
+    const deadline = isSessionList ? new AbortController() : void 0;
+    const timer = deadline === void 0 ? void 0 : setTimeout(() => {
+      stages.deadlineAbortElapsedMs = Date.now() - started;
+      deadline.abort();
+    }, this.sessionListDeadlineMs);
+    timer?.unref?.();
+    const signal = deadline === void 0 ? request.signal : AbortSignal.any([request.signal, deadline.signal]);
+    let accessSnapshot;
+    let response;
+    let deadlineRecorded = false;
+    const recordDeadline = () => {
+      if (!deadline?.signal.aborted || deadlineRecorded) return;
+      deadlineRecorded = true;
+      const totalElapsedMs = Date.now() - started;
+      this.runtime.diagnostics?.record({
+        event: "native.session-list.timeout",
+        elapsedMs: totalElapsedMs,
+        error: { kind: "TimeoutError", httpStatus: 504 },
+        sessionList: { ...stages, totalElapsedMs, status: 504 }
+      });
+    };
+    const recordComplete = (status) => {
+      if (!isSessionList) return;
+      const totalElapsedMs = Date.now() - started;
+      this.runtime.diagnostics?.record({
+        event: "native.session-list.complete",
+        elapsedMs: totalElapsedMs,
+        sessionList: { ...stages, totalElapsedMs, status }
+      });
+    };
+    try {
+      const pendingResponse = this.dispatch(new Request(request.url, {
+        method: "POST",
+        headers: request.headers,
+        signal,
+        body: JSON.stringify(body)
+      }));
+      void pendingResponse.then((late) => {
+        if (signal.aborted) void late.body?.cancel().catch(() => void 0);
+      }, () => void 0);
+      response = await awaitAbort(pendingResponse, signal);
+      signal.throwIfAborted();
+      if (stages !== void 0) stages.upstreamElapsedMs = Date.now() - started;
+      if (!response.ok || !response.headers.get("content-type")?.includes("application/json")) {
+        recordComplete(response.status);
+        return response;
+      }
+      signal.throwIfAborted();
+      const output = await awaitAbort(response.json(), signal);
+      signal.throwIfAborted();
+      if (stages !== void 0) stages.jsonElapsedMs = Date.now() - started;
+      if (!isRecord(output) || !isRecord(output.result) || output.result.ok !== true) {
+        recordComplete(response.status);
+        return Response.json(output, { status: response.status });
+      }
+      if (stages !== void 0 && isRecord(output.result.value) && Array.isArray(output.result.value.items)) {
+        stages.itemsCount = output.result.value.items.length;
+        accessSnapshot = this.runtime.createNativeSessionAccessSnapshot(output.result.value.items);
+      }
+      signal.throwIfAborted();
+      output.result.value = await awaitAbort(this.filterResult(endpoint, output.result.value, identity, accessSnapshot), signal);
+      signal.throwIfAborted();
+      if (stages !== void 0) stages.filterElapsedMs = Date.now() - started;
+      recordComplete(response.status);
+      return Response.json(output, { status: response.status });
+    } catch (error) {
+      if (deadline?.signal.aborted) {
+        void response?.body?.cancel().catch(() => void 0);
+        recordDeadline();
+        throw new CarrierError(504, "Native session catalogue timed out");
+      }
+      throw error;
+    } finally {
+      if (timer !== void 0) clearTimeout(timer);
+    }
+  }
+  async filterResult(endpoint, value, identity, accessSnapshot) {
+    if (endpoint === "commands/list" && Array.isArray(value) && !this.isAdmin(identity)) {
+      return value.filter((item) => isRecord(item) && typeof item.name === "string" && MEMBER_COMMANDS.has(item.name));
+    }
+    const canAccess = (id) => typeof id === "string" ? this.runtime.canAccessNativeSession(id, identity, void 0, accessSnapshot) : Promise.resolve(false);
     if (Array.isArray(value) && ["sessionReferenceResolver/candidates", "dynamicCordisRunner/inventory"].includes(endpoint)) {
       return await filterAsync(value, (item) => isRecord(item) ? canAccess(item.sessionId ?? item.agentId) : Promise.resolve(false));
     }
@@ -9107,8 +10627,8 @@ var NativeGateway = class {
   async handle(request, response) {
     const abort = new AbortController();
     let finish;
-    const completed = new Promise((resolve4) => {
-      finish = resolve4;
+    const completed = new Promise((resolve5) => {
+      finish = resolve5;
     });
     this.requestCompletions.add(completed);
     this.requests.add(abort);
@@ -9160,6 +10680,14 @@ var NativeGateway = class {
   }
   /** Keep one native mux per authenticated socket so identities cannot share an opener. */
   async upgrade(request, socket, head) {
+    const operationId = randomUUID8();
+    const started = Date.now();
+    let reason = "transport-close";
+    const authFailed = (error) => {
+      reason = "auth-failed";
+      this.runtime.diagnostics?.record({ event: "native.auth.failure", operationId, error: diagnosticError(error) });
+      socket.destroy();
+    };
     const fetchRequest = new Request(`http://${request.headers.host ?? "localhost"}${request.url ?? "/"}`, { headers: nodeHeaders(request) });
     try {
       this.assertOrigin(fetchRequest);
@@ -9187,7 +10715,7 @@ var NativeGateway = class {
             for await (const frame of source) {
               signal.throwIfAborted();
               const current = await self.identity(fetchRequest).catch((error) => {
-                socket.destroy();
+                authFailed(error);
                 throw error;
               });
               if (endpoint === "$events" && isRecord(frame) && frame.type === "ready" && typeof frame.clientId === "string") clientId = frame.clientId;
@@ -9205,19 +10733,29 @@ var NativeGateway = class {
             }
           }
         })();
-      }, this.transport.gateway.wireStream.failure, 2e3);
+      }, this.transport.gateway.wireStream.failure, Math.max(15e3, this.config.sseHeartbeatMs));
       this.muxes.set(socket, mux);
       const heartbeat = setInterval(() => {
-        void this.identity(fetchRequest).catch(() => socket.destroy());
+        void this.identity(fetchRequest).catch(authFailed);
       }, this.config.sseHeartbeatMs);
       heartbeat.unref();
+      socket.once("end", () => {
+        if (reason === "transport-close") reason = "peer-end";
+      });
+      socket.once("error", (error) => {
+        reason = "socket-error";
+        this.runtime.diagnostics?.record({ event: "native.failure", operationId, elapsedMs: Date.now() - started, error: diagnosticError(error) });
+      });
       socket.once("close", () => {
         clearInterval(heartbeat);
         this.muxes.delete(socket);
-        void mux.close();
+        this.runtime.diagnostics?.record({ event: "native.close", operationId, elapsedMs: Date.now() - started, reason: this.stopped ? "plugin-stop" : reason });
+        void mux.close().catch((error) => this.runtime.diagnostics?.record({ event: "native.failure", operationId, error: diagnosticError(error) }));
       });
       mux.handleUpgrade(request, socket, head);
+      this.runtime.diagnostics?.record({ event: "native.open", operationId, elapsedMs: Date.now() - started });
     } catch (error) {
+      this.runtime.diagnostics?.record({ event: "native.failure", operationId, elapsedMs: Date.now() - started, error: diagnosticError(error) });
       socket.end(`HTTP/1.1 ${error instanceof CarrierError ? error.status : 500} Forbidden\r
 Connection: close\r
 \r
@@ -9252,7 +10790,9 @@ Connection: close\r
     if (endpoint !== "$events") return void 0;
     if (frame.type === "ready") return frame;
     if (frame.type === "waterfall" && typeof frame.eventId === "string" && typeof frame.agentId === "string" && clientId !== void 0 && await canAccess(frame.agentId)) {
-      this.answerable.set(clientId + ":" + frame.eventId, { participantId: identity.participantId, sessionId: frame.agentId });
+      const adminOnly = frame.event !== "user-questions/request";
+      if (adminOnly && !this.isAdmin(identity)) return void 0;
+      this.answerable.set(clientId + ":" + frame.eventId, { participantId: identity.participantId, sessionId: frame.agentId, adminOnly });
       return frame;
     }
     if (frame.type === "cancel" && typeof frame.eventId === "string" && clientId !== void 0) {
@@ -9286,7 +10826,7 @@ Connection: close\r
   }
   async isWorkspace(path) {
     if (path === void 0) return false;
-    const canonical = (value) => process.platform === "win32" ? resolve3(value).toLowerCase() : resolve3(value);
+    const canonical = (value) => process.platform === "win32" ? resolve4(value).toLowerCase() : resolve4(value);
     try {
       return canonical(await realpath(path)) === canonical(await realpath(this.config.cwd));
     } catch {
@@ -9306,7 +10846,7 @@ Connection: close\r
     return result.account;
   }
   isAdmin(identity) {
-    return "role" in identity && identity.role === "super-admin" || this.config.settingsAdminParticipantIds.includes(identity.participantId);
+    return "role" in identity && identity.role === "super-admin";
   }
   assertOrigin(request) {
     const url = new URL(request.url);
@@ -9355,6 +10895,25 @@ function isPromptPart(value) {
 function isRecord(value) {
   return value !== null && typeof value === "object" && !Array.isArray(value);
 }
+function awaitAbort(pending, signal) {
+  if (signal.aborted) {
+    void pending.catch(() => void 0);
+    return Promise.reject(signal.reason);
+  }
+  return new Promise((resolve5, reject) => {
+    let settled = false;
+    const cleanup = () => signal.removeEventListener("abort", abort);
+    const settle = (next) => {
+      if (settled) return;
+      settled = true;
+      cleanup();
+      next();
+    };
+    const abort = () => settle(() => reject(signal.reason));
+    signal.addEventListener("abort", abort, { once: true });
+    pending.then((value) => settle(() => resolve5(value)), (error) => settle(() => reject(error)));
+  });
+}
 async function filterAsync(values, include) {
   const allowed = await Promise.all(values.map(include));
   return values.filter((_, index) => allowed[index]);
@@ -9392,6 +10951,7 @@ async function apply(ctx, config) {
   const closeGateway = await registerNativeGateway(ctx, runtime, config);
   const http = new ChatroomHttpController(ctx, runtime, config);
   const log = ctx.logger("deepseek-harness-chatroom");
+  if (config.imageGenerationBaseUrl) ctx.effect(() => startProviderProbe(config.imageGenerationBaseUrl, runtime.diagnostics), "deepseek-harness-chatroom.provider-probe");
   ctx.effect(() => {
     const unregister = CHATROOM_API_PREFIXES.map((path) => ctx.webServer.register({
       kind: "prefix",
@@ -9406,6 +10966,7 @@ async function apply(ctx, config) {
     });
     return async () => {
       for (const dispose of unregister) dispose();
+      await http.stop();
       await closeGateway();
       await startup;
       await runtime.stop();
@@ -9414,14 +10975,17 @@ async function apply(ctx, config) {
   ctx.effect(() => ctx.on("session/event", (session, event) => {
     runtime.handleSessionEvent(session, event);
   }), "deepseek-harness-chatroom.session-events");
-  ctx.effect(() => ctx.on("llm/stream", (options, next) => textCompatibleStream(
-    options,
-    next,
-    (sessionId) => runtime.ownsSession(sessionId),
-    (sessionId) => runtime.hiddenModelMessageIds(sessionId),
-    (provider, model, signal) => ctx.llm.resolveModelInfo(provider, model, signal),
-    (request) => ctx.llm.stream(request)
-  )), "deepseek-harness-chatroom.model-history");
+  ctx.effect(() => ctx.on("llm/stream", (options, next) => {
+    const source = textCompatibleStream(
+      options,
+      next,
+      (sessionId) => runtime.ownsSession(sessionId),
+      (sessionId) => runtime.hiddenModelMessageIds(sessionId),
+      (provider, model, signal) => ctx.llm.resolveModelInfo(provider, model, signal),
+      (request) => ctx.llm.stream(request)
+    );
+    return options.sessionId !== void 0 && runtime.ownsSession(String(options.sessionId)) ? diagnosticStream(source, runtime.diagnostics, String(options.sessionId)) : source;
+  }), "deepseek-harness-chatroom.model-history");
 }
 var index_default = { name, inject, Config, apply };
 export {

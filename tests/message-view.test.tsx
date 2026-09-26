@@ -24,6 +24,39 @@ afterEach(() => {
 })
 
 describe('participant-specific native message projection', () => {
+  it('renders generated PNG as a bounded authenticated preview and original download, not raw Markdown', () => {
+    const file = { id: '838d3187-4f4e-4e4d-a162-f327d068261a', name: 'generated-test.png', mediaType: 'image/png', bytes: 821191 }
+    const url = `/plugins/deepseek-harness-chatroom/api/files/${file.id}`
+    const text = `完成\n![生成图片](${url})\n${identifyFileText(file)}`
+    const node = userNode(identifyChatroomText(text, { ...bob, participantId: 'chatroom-agent-m3', displayName: 'M3' }))
+    expect(projectChatroomMessage(node, alice).text).toBe('完成')
+    expect(firstText(projectChatroomMessage(node, alice).node)).toBe('完成')
+    const Native = ({ node }: ChatNodeViewProps<'user'>) => <div>{firstText(node)}</div>
+    render(<ChatroomUserMessageNodeView {...messageProps(node, alice, Native)} />)
+    const preview = screen.getByRole('img', { name: '生成的图片' }) as HTMLImageElement
+    expect(preview.getAttribute('src')).toBe(url + '?preview=thumbnail')
+    expect(preview.style.maxWidth).toBe('100%')
+    expect(preview.style.maxHeight).toBe('220px')
+    expect(screen.getByRole('link', { name: /generated-test.png/u }).getAttribute('download')).toBe(file.name)
+    expect(screen.queryByText(/!\[生成图片\]/u)).toBeNull()
+  })
+
+  it('does not hide arbitrary image links without a matching durable file', () => {
+    const text = '![外部图片](https://example.com/image.png)'
+    expect(projectChatroomMessage(userNode(identifyChatroomText(text, bob)), alice).text).toBe(text)
+  })
+
+  it('hides pasted file metadata without the optional leading invisible separator, collapsed by default', () => {
+    const file = { id: '4f039a82-b1d8-42f8-93d6-197c1d233c6f', name: 'generated-3bbd9c57-0e50-48c8-b6aa-deac7af1e2cd.png', mediaType: 'image/png', bytes: 2169760 }
+    const raw = `dsh-chatroom-file:${encodeURIComponent(JSON.stringify(file))}\u2063文件：${file.name}`
+    const node = userNode(identifyChatroomText(raw, bob))
+    const Native = ({ node }: ChatNodeViewProps<'user'>) => <div>{firstText(node)}</div>
+    const view = render(<ChatroomUserMessageNodeView {...messageProps(node, alice, Native)} />)
+    expect(projectChatroomMessage(node, alice).text).toBe('')
+    expect(view.container.textContent).not.toContain('dsh-chatroom-file:')
+    expect(view.container.querySelector('details.dsh-chatroom-file-details')?.hasAttribute('open')).toBe(false)
+  })
+
   it('uses the durable participant id and removes its invisible display marker', () => {
     const node = userNode(identifyChatroomText('你好', alice))
     const own = projectChatroomMessage(node, alice)
@@ -192,7 +225,8 @@ describe('participant-specific native message projection', () => {
       setReply,
     }} />)
 
-    expect(screen.getByText('🦊')).toBeTruthy()
+    expect(screen.queryByText('🦊')).toBeNull()
+    expect(document.querySelector('.dsh-chatroom-avatar[data-avatar="qq-3"] img')?.getAttribute('src')).toMatch(/^data:image\/png;base64,/)
     expect(screen.getByText('回复 Alice')).toBeTruthy()
     expect(screen.getByText('brief.pdf')).toBeTruthy()
     expect(screen.getByTestId('native').textContent).toBe('请查收')
@@ -295,7 +329,8 @@ describe('participant-specific native message projection', () => {
     expect(screen.getByText('report.pdf')).toBeTruthy()
     expect(screen.getByText('🎉 2')).toBeTruthy()
     const image = screen.getByRole('img', { name: 'chart.png' }) as HTMLImageElement
-    const encoded = image.src.slice(image.src.indexOf('/images/') + '/images/'.length)
+    expect(new URL(image.src).searchParams.get('preview')).toBe('thumbnail')
+    const encoded = new URL(image.src).pathname.split('/images/')[1]!
     expect(JSON.parse(decodeURIComponent(encoded))).toMatchObject({
       sourceRoomId: 'source-room', sourceSessionId: 'source-session', sourceSeq: 9,
       image: { attachmentId: 'image-id' },
@@ -384,6 +419,27 @@ describe('participant-specific native message projection', () => {
     }))
     fireEvent.click(activity)
     expect(openThread).toHaveBeenCalledWith('lobby', root)
+  })
+
+  it('projects native assistant file markers into thumbnails only in shared rooms', () => {
+    const file = { id: '4f039a82-b1d8-42f8-93d6-197c1d233c6f', name: 'generated-main.png', mediaType: 'image/png', bytes: 2169760 }
+    const text = `生成图片\n\u2063dsh-chatroom-file:${encodeURIComponent(JSON.stringify(file))}\u2063文件：${file.name}`
+    const native = vi.fn((props: { node: { data: { blocks: { kind: string; text?: string }[] } } }) => <div>{props.node.data.blocks.map(b => b.text).join('')}</div>)
+    const useChatroom = messageProps(userNode(identifyChatroomText('参考', bob)), alice, () => null).useChatroom
+    const props = {
+      node: { key: 'main-image', kind: 'assistant-step', data: { blocks: [{ kind: 'text', text }], turn: 1 } },
+      sessionId: 'chatroom-v1-lobby', nativeMessageView: native, useChatroom,
+      resolveTarget: () => ({ kind: 'room', room: { id: 'lobby', sessionId: 'chatroom-v1-lobby' } }),
+      useTurnData: () => undefined,
+      useChat: (select: (value: unknown) => unknown) => select({ order: [], nodes: new Map() }),
+    } as unknown as Parameters<typeof ChatroomAssistantNodeView>[0]
+    const { rerender } = render(<ChatroomAssistantNodeView {...props} />)
+    expect(screen.getByRole('img', { name: '生成的图片' }).getAttribute('src')).toBe(`/plugins/deepseek-harness-chatroom/api/files/${file.id}?preview=thumbnail`)
+    expect(document.body.textContent).not.toContain('dsh-chatroom-file:')
+    expect(native.mock.calls.at(-1)?.[0].node.data.blocks).toEqual([{ kind: 'text', text: '生成图片' }])
+    rerender(<ChatroomAssistantNodeView {...props} resolveTarget={() => undefined} />)
+    expect(document.body.textContent).toContain('dsh-chatroom-file:')
+    expect(screen.queryByRole('img', { name: '生成的图片' })).toBeNull()
   })
 
   it('renders an appended meeting summary as a quotable and forwardable AI message block', () => {

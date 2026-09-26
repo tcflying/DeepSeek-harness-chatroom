@@ -2,6 +2,10 @@ import type { SessionId } from '@deepseek-ai/dsh-session/types'
 import type { ISessions } from '@deepseek-ai/dsh-api-session-controller/client'
 import { useEffect, useState, useSyncExternalStore } from 'react'
 import type { ChatroomView } from './store.js'
+import { SessionGalleryButton } from './MediaGallery.js'
+import { VideoStudioButton } from './VideoStudio.js'
+import { usePageVisible } from './media-lifecycle.js'
+import { canManageRoomUi } from './admin-access.js'
 
 interface RoomIdentityActionInjected {
   useChatroom<T>(selector: (snapshot: ChatroomView) => T): T
@@ -23,13 +27,10 @@ export function RoomIdentityAction(props: RoomIdentityActionProps): JSX.Element 
   const identity = room.identity
   const selected = room.room?.id === current.id
   const presence = selected && room.connection === 'online' ? `${room.online} 人在线` : '共享会话'
-  const groupRole = selected ? room.members.find(member => member.participantId === identity?.participantId)?.role : undefined
-  const canManage = room.auth.account?.role === 'super-admin' || groupRole === 'owner' || groupRole === 'admin'
-    || current.canManageAgents === true
+  const canManage = canManageRoomUi(room)
   return (
     <span className="dsh-chatroom-header-actions">
       <span className="dsh-chatroom-identity-action" title="当前群聊身份">
-        <span className="dsh-chatroom-presence-dot" data-online={selected && room.connection === 'online'} />
         {identity?.displayName ?? '选择身份'} · {presence}
       </span>
       {props.sessions !== undefined && <RoomAgentRoster
@@ -37,8 +38,10 @@ export function RoomIdentityAction(props: RoomIdentityActionProps): JSX.Element 
         parentSessionId={props.sessionId}
         mainName={current.aiDisplayName}
       />}
-      {props.openAgents !== undefined && <button className="dsh-chatroom-manage-action" type="button" onClick={props.openAgents}>AI 成员</button>}
+      {canManage && props.openAgents !== undefined && <button className="dsh-chatroom-manage-action" type="button" onClick={props.openAgents}>AI 成员</button>}
       <button className="dsh-chatroom-manage-action" type="button" onClick={props.openMembers}>{canManage ? '群管理' : '群成员'}</button>
+      <SessionGalleryButton roomId={current.id} sessionId={String(props.sessionId)} />
+      {room.auth.account?.role === 'super-admin' && <VideoStudioButton roomId={current.id} sessionId={String(props.sessionId)} />}
     </span>
   )
 }
@@ -53,18 +56,20 @@ export function RoomAgentRoster({ sessions, parentSessionId, mainName }: {
   const catalog = list.subagentsByParent[parentSessionId]
   const children = catalog?.entries.filter(entry => entry.kind === 'child') ?? []
   const [error, setError] = useState<string>()
+  const visible = usePageVisible()
   const refresh = () => {
     setError(undefined)
     void sessions.refreshSubagents(parentSessionId).catch((cause: unknown) => setError(String(cause)))
   }
   useEffect(() => {
     setError(undefined)
-    sessions.setSubagentCatalogOpen(parentSessionId, true)
+    sessions.setSubagentCatalogOpen(parentSessionId, visible)
     return () => sessions.setSubagentCatalogOpen(parentSessionId, false)
-  }, [sessions, parentSessionId])
+  }, [sessions, parentSessionId, visible])
   const failed = error ?? (catalog?.state === 'error' ? 'Agent 列表读取失败，请重试' : undefined)
-  return <span className="dsh-chatroom-agent-roster" aria-label="房间 Agent">
-    <span>{failed !== undefined ? 'Agent 列表异常' : catalog === undefined || catalog.state === 'loading' ? 'Agent 加载中…' : `Agent ${children.length + 1}`}</span>
+  return <details className="dsh-chatroom-agent-roster" aria-label="房间 Agent">
+    <summary>{failed !== undefined ? 'Agent 列表异常' : catalog === undefined || catalog.state === 'loading' ? 'Agent 加载中…' : `Agent ${children.length + 1}`}</summary>
+    <div className="dsh-chatroom-agent-roster-menu">
     <span className="dsh-chatroom-manage-action"
       title="主 Agent：在群聊中输入 @AI 提问">{mainName} · 主 Agent</span>
     {children.map(child => <button key={child.id} type="button" className="dsh-chatroom-manage-action"
@@ -81,5 +86,6 @@ export function RoomAgentRoster({ sessions, parentSessionId, mainName }: {
     <button type="button" className="dsh-chatroom-manage-action" aria-label="刷新 Agent 列表" onClick={refresh}>↻</button>
     {failed !== undefined && <span role="alert">{failed}</span>}
     <small>子 Agent 点按钮直接续聊；@ 会话引用不会唤起它。</small>
-  </span>
+    </div>
+  </details>
 }

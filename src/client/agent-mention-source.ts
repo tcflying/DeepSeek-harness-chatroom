@@ -16,7 +16,7 @@ export function createChatroomAgentProfileSource(store: ChatroomClientStore): In
         .filter(profile => profile.roomId === room.id && profile.enabled)
         .map(profile => ({
           name: profile.name,
-          hint: '◆',
+          hint: '',
           description: `${profile.role} · ${profile.model}${profile.reasoningEffort === undefined ? '' : ` · ${profile.reasoningEffort}`}`,
           value: profile.id,
         }))

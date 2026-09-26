@@ -3,6 +3,8 @@ import { ChatroomClientStore, serializePendingFiles } from '../src/client/store.
 import type { ChatroomNotificationEvent, ChatroomServerEvent } from '../src/types.js'
 
 class FakeEventSource {
+  static CLOSED = 2
+  readyState = 0
   static instances: FakeEventSource[] = []
   onopen: (() => void) | null = null
   onmessage: ((event: MessageEvent<string>) => void) | null = null
@@ -15,6 +17,7 @@ class FakeEventSource {
 
   close(): void {
     this.closed = true
+    this.readyState = 2
   }
 
   emit(event: ChatroomServerEvent | ChatroomNotificationEvent): void {
@@ -23,11 +26,85 @@ class FakeEventSource {
 }
 
 afterEach(() => {
+  vi.useRealTimers()
   FakeEventSource.instances = []
   vi.unstubAllGlobals()
 })
 
 describe('ChatroomClientStore', () => {
+  it('isolates progress by room and sequence, accepts cancellation and clears on disconnect/switch', async () => {
+    vi.stubGlobal('EventSource', FakeEventSource)
+    const room = roomInfo()
+    vi.stubGlobal('fetch', vi.fn<typeof fetch>().mockResolvedValue(jsonResponse(sessionResponse({ participantId: 'alice', displayName: 'Alice', avatarId: 'whale' }, [room]))))
+    const store = new ChatroomClientStore()
+    await store.start(); store.activateSession(room.sessionId)
+    const source = FakeEventSource.instances.find(item => item.url.includes('/events?'))!
+    const progress = { roomId: room.id, sessionId: room.sessionId, name: 'GPT', seq: 3, status: 'thinking' as const, text: '最后一行', startedAt: 1, updatedAt: 3 }
+    source.emit({ type: 'model-progress', progress })
+    source.emit({ type: 'model-progress', progress: { ...progress, seq: 2, text: '旧数据' } })
+    source.emit({ type: 'model-progress', progress: { ...progress, roomId: 'foreign', seq: 4, text: '其他群' } })
+    expect(store.getSnapshot().modelProgress).toEqual([progress])
+    source.emit({ type: 'model-progress', progress: { ...progress, status: 'stopped', updatedAt: 4 } })
+    expect(store.getSnapshot().modelProgress![0]!.status).toBe('stopped')
+    store.stop()
+    expect(store.getSnapshot().modelProgress).toEqual([])
+    source.emit({ type: 'model-progress', progress: { ...progress, seq: 5 } })
+    expect(store.getSnapshot().modelProgress).toEqual([])
+  })
+  it('reopens permanently CLOSED streams with one bounded read-only retry and cancels when hidden', async () => {
+    vi.useFakeTimers()
+    const doc = Object.assign(new EventTarget(), { title: 'Harness', visibilityState: 'visible', documentElement: { toggleAttribute: vi.fn() } })
+    vi.stubGlobal('document', doc); vi.stubGlobal('EventSource', FakeEventSource)
+    const room = roomInfo(), session = sessionResponse({ participantId: 'alice', displayName: 'Alice', avatarId: 'whale' }, [room])
+    const request = vi.fn<typeof fetch>().mockImplementation(async () => jsonResponse(session))
+    vi.stubGlobal('fetch', request)
+    const store = new ChatroomClientStore(); await store.start(); store.activateSession(room.sessionId)
+    for (const source of FakeEventSource.instances) { source.readyState = 2; source.onerror?.() }
+    expect(vi.getTimerCount()).toBe(1)
+    await vi.advanceTimersByTimeAsync(1500)
+    expect(request).toHaveBeenCalledTimes(2)
+    expect(request.mock.calls.every(([, init]) => init?.method === undefined)).toBe(true)
+    const active = FakeEventSource.instances.filter(source => !source.closed)
+    expect(active).toHaveLength(2)
+    for (const source of active) { source.readyState = 2; source.onerror?.() }
+    doc.visibilityState = 'hidden'; doc.dispatchEvent(new Event('visibilitychange'))
+    await vi.advanceTimersByTimeAsync(60_000)
+    expect(request).toHaveBeenCalledTimes(2)
+    expect(FakeEventSource.instances.every(source => source.closed)).toBe(true)
+    store.stop()
+  })
+  it('deduplicates manual reconnect, preserves room state and ignores closed SSE callbacks', async () => {
+    vi.stubGlobal('EventSource', FakeEventSource)
+    const room = roomInfo()
+    const session = sessionResponse({ participantId: 'alice', displayName: 'Alice', avatarId: 'whale' }, [room])
+    let finish!: (response: Response) => void
+    const fetchMock = vi.fn<typeof fetch>().mockResolvedValueOnce(jsonResponse(session))
+      .mockImplementationOnce(() => new Promise(resolve => { finish = resolve }))
+    vi.stubGlobal('fetch', fetchMock)
+    const store = new ChatroomClientStore()
+    await store.start()
+    store.activateSession(room.sessionId)
+    const before = store.getSnapshot()
+    const old = [...FakeEventSource.instances]
+    const first = store.reconnect()
+    expect(store.reconnect()).toBe(first)
+    expect(old.every(s => s.closed)).toBe(true)
+    for (const source of old) source.onopen?.()
+    expect(store.getSnapshot().connection).not.toBe('online')
+    finish(jsonResponse(session))
+    await first
+    expect(store.getSnapshot().identity).toEqual(before.identity)
+    expect(store.getSnapshot().room?.id).toBe(room.id)
+    expect(store.getSnapshot().pendingFiles).toEqual(before.pendingFiles)
+    const active = FakeEventSource.instances.filter(s => !s.closed)
+    expect(active).toHaveLength(2)
+    for (const source of active) source.onopen?.()
+    expect(store.getSnapshot()).toMatchObject({ connection: 'online', notificationConnection: 'online' })
+    expect(fetchMock.mock.calls.every(([, init]) => init?.method === undefined)).toBe(true)
+    store.stop()
+    for (const source of active) source.onopen?.()
+    expect(store.getSnapshot().connection).toBe('offline')
+  })
   it('does not reopen SSE when a session response arrives after the tab is hidden', async () => {
     const documentStub = Object.assign(new EventTarget(), {
       title: 'Harness', visibilityState: 'visible', documentElement: { toggleAttribute: vi.fn() },
@@ -300,9 +377,10 @@ describe('ChatroomClientStore', () => {
     expect(store.getSnapshot()).toMatchObject({ agentProfilesRoomId: managedRoom.id, agentBusy: false })
 
     const saving = store.saveAgentProfile({
-      profileId: `${managedRoom.id}-Before`, name: 'After', role: '审查员', provider: 'deepseek', model: 'chat', enabled: true,
+      profileId: `${managedRoom.id}-Before`, name: 'After', role: '审查员', avatarId: 'qq-3', provider: 'deepseek', model: 'chat', enabled: true,
     }, managedRoom.id)
     expect(store.getSnapshot().agentBusy).toBe(true)
+    expect(JSON.parse(String(fetchMock.mock.calls.at(-1)?.[1]?.body))).toMatchObject({ action: 'update', avatarId: 'qq-3', roomId: managedRoom.id })
     save.resolve(jsonResponse({ canManage: true, models: [], profiles: [agentProfile(managedRoom.id, 'After')] }))
 
     await expect(saving).resolves.toBe(true)
@@ -386,6 +464,27 @@ describe('ChatroomClientStore', () => {
 
     expect(store.getSnapshot()).toMatchObject({ directOpen: false, room })
     expect(fetchMock).toHaveBeenCalledTimes(3)
+  })
+
+  it('keeps private chat open when a catalogue re-emits the same unbound native Session', async () => {
+    const identity = { participantId: 'alice-id', displayName: 'Alice', avatarId: 'whale' as const }
+    const peer = { participantId: 'bob-id', username: 'bob', displayName: 'Bob', avatarId: 'panda' as const }
+    const conversation = { id: 'direct-1', peer, createdAt: 1, updatedAt: 1 }
+    const fetchMock = vi.fn<typeof fetch>()
+      .mockResolvedValueOnce(jsonResponse(sessionResponse(identity, [])))
+      .mockResolvedValueOnce(jsonResponse({ peers: [peer], conversations: [conversation], conversation, messages: [{ id: 'message-1' }] }))
+    vi.stubGlobal('fetch', fetchMock)
+    const store = new ChatroomClientStore()
+    await store.start()
+    store.activateSession('ordinary-session', '个人草稿')
+    await store.openDirect(peer.participantId)
+    expect(store.getSnapshot().directOpen).toBe(true)
+
+    // Session catalogue/status updates can repeat the selected unbound Session.
+    store.activateSession('ordinary-session', '个人草稿')
+
+    expect(store.getSnapshot().directOpen).toBe(true)
+    expect(fetchMock).toHaveBeenCalledTimes(2)
   })
 
   it('prompts once when an unjoined browser enters a shared Session directly', async () => {

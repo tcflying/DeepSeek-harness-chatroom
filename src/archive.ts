@@ -546,7 +546,7 @@ function archivedSearchHit(row: Record<string, unknown>): ArchivedSearchHit {
   }
 }
 
-function resolveArchiveRoot(configuredDirectory: string): string {
+export function resolveArchiveRoot(configuredDirectory: string): string {
   if (configuredDirectory !== '') return configuredDirectory
   const dshHome = process.env.DSH_HOME?.trim()
   const base = dshHome === undefined || dshHome === '' ? join(homedir(), '.dsh') : dshHome

@@ -6,6 +6,7 @@ import { ChatroomEntry } from '../src/client/ChatroomEntry.js'
 import { ChatroomSettingsSection } from '../src/client/ChatroomAccountPanels.js'
 import { RoomIdentityAction } from '../src/client/RoomIdentityAction.js'
 import { ChatroomAvatar } from '../src/client/ChatroomAvatar.js'
+import { classicAvatarUrl } from '../src/client/avatar-images.js'
 import { BRANCH_FRAME_READY, markBranchFrameSessionReady } from '../src/client/branch-frame.js'
 import type { ChatroomView } from '../src/client/store.js'
 
@@ -16,6 +17,22 @@ afterEach(() => {
 })
 
 describe('native chatroom integration', () => {
+  it('uses the same classic AI avatar in the account settings member list', () => {
+    renderSettings(view({
+      auth: { ...view().auth, enabled: true, canManageSettings: true, account: {
+        participantId: 'alice-id', displayName: 'Alice', avatarId: 'whale', username: 'alice', role: 'super-admin', status: 'active', createdAt: 1,
+      } },
+      manageableRooms: [view().room!],
+      agentProfilesRoomId: 'lobby',
+      agentProfiles: { canManage: true, models: [], profiles: [{
+        id: 'profile-1', roomId: 'lobby', name: 'Avatar reviewer', role: 'Reviewer',
+        provider: 'deepseek', model: 'chat', enabled: true, createdAt: 1, updatedAt: 1,
+        runtime: { status: 'idle', updatedAt: 1 },
+      }] },
+    }))
+    expect(document.querySelector('.dsh-chatroom-member-avatar img')?.getAttribute('src')).toBe(classicAvatarUrl(undefined, 'chatroom-agent-profile-1'))
+  })
+
   it('uses a remote avatar without a referrer and falls back after load failure', async () => {
     const view = render(<ChatroomAvatar avatarId="whale" avatarUrl="https://avatars.example.com/alice.png" seed="alice-id" />)
     const image = document.querySelector('img')
@@ -23,16 +40,16 @@ describe('native chatroom integration', () => {
     if (image === null) throw new Error('remote avatar image was not rendered')
     expect(image.getAttribute('referrerpolicy')).toBe('no-referrer')
     fireEvent.error(image)
-    expect(document.querySelector('img')).toBeNull()
-    expect(screen.getByText('🐳')).toBeTruthy()
+    expect(document.querySelector('img')?.getAttribute('src')).toBe(classicAvatarUrl('whale', 'alice-id'))
+    expect(screen.queryByText('🐳')).toBeNull()
     view.rerender(<ChatroomAvatar avatarId="whale" avatarUrl="https://avatars.example.com/alice-v2.png" seed="alice-id" />)
-    await waitFor(() => expect(document.querySelector('img')).not.toBeNull())
+    await waitFor(() => expect(document.querySelector('img')?.getAttribute('src')).toBe('https://avatars.example.com/alice-v2.png'))
   })
 
   it('does not render an unsafe avatar URL', () => {
     render(<ChatroomAvatar avatarId="fox" avatarUrl="http://avatars.example.com/alice.png" seed="alice-id" />)
-    expect(document.querySelector('img')).toBeNull()
-    expect(screen.getByText('🦊')).toBeTruthy()
+    expect(document.querySelector('img')?.getAttribute('src')).toBe(classicAvatarUrl('fox', 'alice-id'))
+    expect(screen.queryByText('🦊')).toBeNull()
   })
 
   it('does not add a floating shared-session launcher', () => {
@@ -48,9 +65,9 @@ describe('native chatroom integration', () => {
     const button = screen.getByTestId('chatroom-join')
     expect((button as HTMLButtonElement).disabled).toBe(true)
     fireEvent.change(screen.getByTestId('chatroom-identity-input'), { target: { value: 'Alice' } })
-    fireEvent.click(screen.getByLabelText('狐狸'))
+    fireEvent.click(screen.getByLabelText('QQ 2007 经典头像 003'))
     fireEvent.click(button)
-    expect(join).toHaveBeenCalledWith('Alice', 'fox')
+    expect(join).toHaveBeenCalledWith('Alice', 'qq-3')
     fireEvent.click(screen.getByLabelText('关闭'))
     expect(closeRoom).toHaveBeenCalledOnce()
   })
@@ -58,7 +75,9 @@ describe('native chatroom integration', () => {
   it('prefills the current name and avatar when editing identity', () => {
     renderEntry(view({ open: true, phase: 'identity-required' }))
     expect((screen.getByTestId('chatroom-identity-input') as HTMLInputElement).value).toBe('Alice')
-    expect(screen.getByLabelText('鲸鱼').getAttribute('aria-checked')).toBe('true')
+    expect(screen.getByLabelText('QQ 2007 经典头像 001').getAttribute('aria-checked')).toBe('true')
+    expect(screen.getAllByRole('radio')).toHaveLength(100)
+    expect(document.querySelectorAll('.dsh-chatroom-avatar-choice img')).toHaveLength(100)
   })
 
   it('renders the login gate and submits local credentials', () => {
@@ -134,10 +153,10 @@ describe('native chatroom integration', () => {
     fireEvent.change(screen.getByLabelText('账号名'), { target: { value: 'carol' } })
     fireEvent.change(screen.getByLabelText('显示名称'), { target: { value: 'Carol' } })
     fireEvent.change(screen.getByLabelText('初始密码'), { target: { value: 'carol password 123' } })
-    fireEvent.click(screen.getByLabelText('狐狸'))
+    fireEvent.click(screen.getByLabelText('QQ 2007 经典头像 003'))
     fireEvent.click(screen.getByRole('button', { name: '创建账号' }))
     expect(adminCreateUser).toHaveBeenCalledWith({
-      username: 'carol', password: 'carol password 123', displayName: 'Carol', avatarId: 'fox', role: 'member',
+      username: 'carol', password: 'carol password 123', displayName: 'Carol', avatarId: 'qq-3', role: 'member',
     })
     fireEvent.change(screen.getByLabelText('Provider ID'), { target: { value: 'company' } })
     fireEvent.change(screen.getByLabelText('登录按钮名称'), { target: { value: '企业统一登录' } })
@@ -425,10 +444,23 @@ describe('native chatroom integration', () => {
       joinedAt: 1, lastSeenAt: Date.now(), online: true,
     }] }), { setRoomAutoTrigger })
     expect(screen.getByText('无需 @AI 自动回复')).toBeTruthy()
+    expect(screen.getByText(/本机无认证模式下，群主或群管理员可修改/)).toBeTruthy()
     const autoReply = screen.getByRole('checkbox', { name: '无需 @AI 自动回复' }) as HTMLInputElement
     expect(autoReply.disabled).toBe(false)
     fireEvent.click(autoReply)
     expect(setRoomAutoTrigger).toHaveBeenCalledWith(true)
+  })
+
+  it('describes authenticated automatic-reply management as super-admin only', () => {
+    renderEntry(view({
+      membersOpen: true,
+      auth: { ...view().auth, enabled: true, authenticated: true, canManageSettings: true, account: {
+        participantId: 'alice-id', displayName: 'Alice', avatarId: 'whale', username: 'alice',
+        role: 'super-admin', status: 'active', createdAt: 1,
+      } },
+    }))
+    expect(screen.getByText(/仅平台超级管理员可修改/)).toBeTruthy()
+    expect(screen.queryByText(/仅群主、群管理员/)).toBeNull()
   })
 
   it('does not mount a second chatroom shell inside the native branch frame', () => {

@@ -12,7 +12,7 @@ import type { ToolDefinition } from '@deepseek-ai/dsh-tools'
 import sharp from 'sharp'
 import type { Config } from '../src/config.js'
 import { chatroomAgentDomainSpec, chatroomDomainSpec } from '../src/domain.js'
-import { ChatroomRuntime, parseRoomAgentSessionId } from '../src/room.js'
+import { ChatroomRuntime, parseRoomAgentSessionId, type RoomSelectionStageEvent } from '../src/room.js'
 import {
   identifyChatroomText,
   identifyExternalCardText,
@@ -23,6 +23,142 @@ import {
 } from '../src/message.js'
 
 describe('ChatroomRuntime', () => {
+  it('reports only structural cumulative stages for a room activation', async () => {
+    const harness = fakeHarness()
+    const owner = { participantId: 'owner-id', displayName: 'Owner', avatarId: 'whale' as const }
+    const first = new ChatroomRuntime(harness.ctx, config())
+    await first.start()
+    const room = await first.createRoom('private room title', owner)
+    await first.stop()
+
+    const runtime = new ChatroomRuntime(harness.ctx, config())
+    await runtime.start()
+    const events: RoomSelectionStageEvent[] = []
+    try {
+      await runtime.selectRoom(room.id, owner, event => { events.push(event) })
+      expect(events).toEqual(expect.arrayContaining([
+        { stage: 'enter', outcome: 'start', elapsedMs: expect.any(Number) },
+        { stage: 'enter', outcome: 'complete', elapsedMs: expect.any(Number) },
+        { stage: 'ensure', outcome: 'start', elapsedMs: expect.any(Number) },
+        { stage: 'header', outcome: 'start', elapsedMs: expect.any(Number) },
+        { stage: 'header', outcome: 'complete', elapsedMs: expect.any(Number) },
+        { stage: 'attach', outcome: 'start', elapsedMs: expect.any(Number) },
+        { stage: 'attach', outcome: 'complete', elapsedMs: expect.any(Number) },
+        { stage: 'ensure', outcome: 'complete', elapsedMs: expect.any(Number) },
+      ]))
+      expect(events.every(event => event.elapsedMs >= 0 && Number.isInteger(event.elapsedMs))).toBe(true)
+      const serialized = JSON.stringify(events)
+      expect(serialized).not.toContain(room.id)
+      expect(serialized).not.toContain('private room title')
+      expect(serialized).not.toContain(owner.participantId)
+    } finally { await runtime.stop() }
+  })
+
+  it('reports activation failure without exposing its error or changing rejection', async () => {
+    const harness = fakeHarness()
+    const owner = { participantId: 'owner-id', displayName: 'Owner', avatarId: 'whale' as const }
+    const first = new ChatroomRuntime(harness.ctx, config())
+    await first.start()
+    const room = await first.createRoom('private room title', owner)
+    await first.stop()
+
+    const runtime = new ChatroomRuntime(harness.ctx, config())
+    await runtime.start()
+    const events: RoomSelectionStageEvent[] = []
+    vi.mocked(harness.ctx.workspaceRegistry.resolveByPath).mockRejectedValueOnce(new Error('sensitive attach failure'))
+    try {
+      await expect(runtime.selectRoom(room.id, owner, event => { events.push(event) })).rejects.toThrow('sensitive attach failure')
+      expect(events).toEqual(expect.arrayContaining([
+        { stage: 'attach', outcome: 'start', elapsedMs: expect.any(Number) },
+        { stage: 'attach', outcome: 'failure', elapsedMs: expect.any(Number) },
+        { stage: 'ensure', outcome: 'failure', elapsedMs: expect.any(Number) },
+        { stage: 'exception', outcome: 'failure', elapsedMs: expect.any(Number) },
+      ]))
+      expect(JSON.stringify(events)).not.toContain('sensitive attach failure')
+    } finally { await runtime.stop() }
+  })
+
+  it('persists room AI avatars without changing routes, resets, or accepting invalid choices', async () => {
+    const harness = fakeHarness()
+    const runtime = new ChatroomRuntime(harness.ctx, config())
+    await runtime.start()
+    const owner = { participantId: 'alice-id', displayName: 'Alice', avatarId: 'whale' as const }
+    try {
+      const room = await runtime.createRoom('头像验收', owner)
+      const profile = await runtime.createRoomAgentProfile(room.id, owner, { name: 'M3', role: '审查', provider: 'deepseek', model: 'chat', enabled: true, avatarId: 'qq-20' })
+      expect((await runtime.agentProfilesOverview(room.id, owner)).profiles[0]?.avatarId).toBe('qq-20')
+      await runtime.submit(room.id, owner, [{ type: 'text', text: '@M3 hi' }], 'queue')
+      const agent = harness.agents.find(candidate => candidate.id === `chatroom-agent-v1-${room.id}-${profile.id}`)!
+      await vi.waitFor(() => expect(agent.followup).toHaveBeenCalledOnce())
+      const before = (await runtime.agentProfilesOverview(room.id, owner)).profiles[0]!.runtime
+      const updated = await runtime.updateRoomAgentProfile(room.id, profile.id, owner, { ...profile, avatarId: 'qq-21' })
+      expect(updated.avatarId).toBe('qq-21')
+      expect(agent.cancel).not.toHaveBeenCalled()
+      expect((await runtime.agentProfilesOverview(room.id, owner)).profiles[0]!.runtime).toEqual(before)
+      const { avatarId: _avatar, ...oldClientInput } = updated
+      expect((await runtime.updateRoomAgentProfile(room.id, profile.id, owner, oldClientInput)).avatarId).toBe('qq-21')
+      await expect(runtime.updateRoomAgentProfile(room.id, profile.id, owner, { ...profile, avatarId: 'qq-999' })).rejects.toThrow('有效的 AI 头像')
+      await expect(runtime.updateRoomAgentProfile(room.id, profile.id, { ...owner, participantId: 'outsider' }, { ...profile, avatarId: 'qq-22' })).rejects.toThrow()
+      const writes: string[] = []
+      runtime.subscribe(room.id, owner, { destroyed: false, writableEnded: false,
+        write: (value: string) => { writes.push(value); return true }, end: vi.fn() } as never)
+      runtime.handleSessionEvent(agent.session, { type: 'assistant/chunk', seq: 10001, time: Date.now(), data: {
+        turn: 1, step: 1, chunk: { type: 'reasoning-delta', index: 0, text: '前一行\n最后一行' },
+      } } as SessionEvent)
+      expect(writes.join()).toContain('最后一行')
+      await runtime.cancelRoomAgent(room.id, profile.id, owner)
+      expect(writes.at(-2) ?? writes.at(-1)).toBeDefined()
+      const progress = writes.filter(value => value.startsWith('data: ')).map(value => JSON.parse(value.slice(6)))
+        .filter(value => value.type === 'model-progress')
+      expect(progress.at(-1).progress.status).toBe('stopped')
+      const after = writes.length
+      runtime.handleSessionEvent(agent.session, { type: 'assistant/chunk', seq: 10002, time: Date.now(), data: {
+        turn: 1, step: 1, chunk: { type: 'reasoning-delta', index: 0, text: '取消后的迟到内容' },
+      } } as SessionEvent)
+      expect(writes.length).toBe(after)
+    } finally { await runtime.stop() }
+  })
+  it('gives a named room AI the image tool and stores only authorized, current outputs', async () => {
+    const harness = fakeHarness()
+    const runtime = new ChatroomRuntime(harness.ctx, { ...config(), imageGenerationBaseUrl: 'http://127.0.0.1:10100/v1' })
+    const evidence = vi.spyOn(runtime.diagnostics, 'record')
+    const png = await sharp({ create: { width: 8, height: 8, channels: 3, background: '#3399ff' } }).png().toBuffer()
+    const request = vi.spyOn(globalThis, 'fetch').mockImplementation(async () => Response.json({ data: [{ b64_json: png.toString('base64') }] }))
+    await runtime.start()
+    try {
+      const owner = { participantId: 'alice-id', displayName: 'Alice', avatarId: 'whale' as const }
+      const room = await runtime.createRoom('生图验收', owner)
+      const profile = await runtime.createRoomAgentProfile(room.id, owner, { name: 'M3', role: '画图', provider: 'deepseek', model: 'chat', enabled: true })
+      await runtime.submit(room.id, owner, [{ type: 'text', text: '@M3 画一个圆' }], 'queue')
+      const agent = harness.agents.find(candidate => candidate.id === `chatroom-agent-v1-${room.id}-${profile.id}`)!
+      await vi.waitFor(() => expect(agent.followup).toHaveBeenCalledOnce())
+      const tools = harness.registeredTools.filter(tool => tool.name === 'chatroom_generate_image')
+      expect(tools).toHaveLength(3) // lobby, new main room, named AI
+      const tool = tools.at(-1)!
+      const exec = { signal: new AbortController().signal, deferContext: vi.fn(), concludeTurn: vi.fn() } as never
+      await expect(tool.execute({ prompt: 'A circle' }, exec)).rejects.toThrow('发起用户')
+      expect(request).not.toHaveBeenCalled()
+      await admitStep(agent, [agent.followup.mock.calls[0]![0]])
+      const output = await tool.execute({ prompt: 'A circle' }, exec) as { content: string }
+      expect(output.content).toContain('![生成图片](/plugins/deepseek-harness-chatroom/api/files/')
+      const projected = projectFileText(output.content)
+      expect(projected.files).toHaveLength(1)
+      const file = await runtime.file(projected.files[0]!.id, owner)
+      expect(file.data).toEqual(png)
+      expect(file.ref.mediaType).toBe('image/png')
+      expect(evidence).toHaveBeenCalledWith(expect.objectContaining({ event: 'image.success', sessionId: agent.id, bytes: png.byteLength }))
+      request.mockRejectedValueOnce(new TypeError('secret endpoint', { cause: { code: 'ECONNREFUSED' } }))
+      await expect(tool.execute({ prompt: 'Second requested image' }, exec)).rejects.toThrow('secret endpoint')
+      const failure = evidence.mock.calls.find(([r]) => r.event === 'image.failure')![0]
+      expect(failure).toMatchObject({ sessionId: agent.id, error: { code: 'ECONNREFUSED' } })
+      expect(evidence.mock.calls.some(([r]) => r.event === 'image.start' && r.operationId === failure.operationId)).toBe(true)
+      expect(JSON.stringify(failure)).not.toContain('secret endpoint')
+      await runtime.updateRoomAgentProfile(room.id, profile.id, owner, { ...profile, enabled: false })
+      await expect(tool.execute({ prompt: 'A circle' }, exec)).rejects.toThrow('不可用')
+      expect(request).toHaveBeenCalledTimes(2)
+    } finally { request.mockRestore(); await runtime.stop() }
+  })
+
   it('filters AI configuration in live events and removes it immediately after room-admin demotion', async () => {
     const harness = fakeHarness()
     const runtime = new ChatroomRuntime(harness.ctx, config())
@@ -1010,12 +1146,85 @@ describe('ChatroomRuntime', () => {
     await expect(runtime.addRoomMembers(room.id, [charlie.participantId], charlie)).rejects.toThrow('没有群管理权限')
 
     const bobRoom = await runtime.createRoom('Bob 的群', bob)
+    // Authenticated room ownership/admin and legacy allowlists are not platform management grants.
+    await expect(runtime.renameRoom(bobRoom.id, '越权改名', bob)).rejects.toThrow('仅平台超级管理员')
+    await expect(runtime.addRoomMembers(bobRoom.id, [charlie.participantId], bob)).rejects.toThrow('仅平台超级管理员')
+    await expect(runtime.createRoomAgentProfile(bobRoom.id, bob, { name: 'M3', role: '测试', provider: 'deepseek', model: 'chat', enabled: true })).rejects.toThrow()
+    expect((await runtime.agentProfilesOverview(bobRoom.id, bob)).canManage).toBe(false)
+    const profile = await runtime.createRoomAgentProfile(bobRoom.id, alice, {
+      name: 'Reviewer', role: '审查', provider: 'deepseek', model: 'chat', enabled: true,
+    })
+    await expect(runtime.cancelRoomAgent(bobRoom.id, profile.id, bob)).rejects.toThrow('仅平台超级管理员')
+    await expect(runtime.cancelRoomAgent(bobRoom.id, profile.id, alice)).resolves.toBeUndefined()
+    await runtime.setMemberRole(room.id, bob.participantId, 'admin', alice)
+    await expect(runtime.renameRoom(room.id, '越权改名', bob)).rejects.toThrow('仅平台超级管理员')
+    expect((await runtime.agentProfilesOverview(room.id, bob)).canManage).toBe(false)
+    const privateRoom = await runtime.createRoom('仅 Alice', alice)
+    await expect(runtime.setRoomPinned(privateRoom.id, true, bob)).rejects.toThrow('不是群成员')
     await runtime.addRoomMembers(bobRoom.id, [charlie.participantId], alice)
     expect(runtime.membersForRoom(bobRoom.id)).toEqual(expect.arrayContaining([
       expect.objectContaining({ participantId: bob.participantId, role: 'owner' }),
       expect.objectContaining({ participantId: charlie.participantId, role: 'member' }),
     ]))
     await runtime.stop()
+  })
+
+  it('revokes established authenticated room and notification streams before their next event', async () => {
+    const harness = fakeHarness()
+    const runtime = new ChatroomRuntime(harness.ctx, {
+      ...config(),
+      authEnabled: true,
+      authSecret: 'a secure test secret with at least 32 bytes',
+      authPublicOrigin: 'https://chat.example.com',
+      authBootstrapToken: 'bootstrap-token',
+    })
+    await runtime.start()
+    try {
+      const alice = (await runtime.auth.register({
+        username: 'alice', password: 'alice password 123', displayName: 'Alice', bootstrapToken: 'bootstrap-token',
+      })).account
+      const bob = (await runtime.auth.register({ username: 'bob', password: 'bob password 1234', displayName: 'Bob' })).account
+      const charlie = (await runtime.auth.register({ username: 'charlie', password: 'charlie password 123', displayName: 'Charlie' })).account
+      const room = await runtime.createRoom('实时撤销', alice)
+      await runtime.addRoomMembers(room.id, [bob.participantId, charlie.participantId], alice)
+      const response = () => {
+        const writes: string[] = []
+        return {
+          writes,
+          response: { destroyed: false, writableEnded: false, write: vi.fn((value: string) => { writes.push(value); return true }), end: vi.fn() },
+        }
+      }
+
+      let localSessionCurrent = true
+      const staleSession = response()
+      runtime.subscribe(room.id, bob, staleSession.response as never, () => localSessionCurrent)
+      staleSession.writes.length = 0
+      localSessionCurrent = false
+      await runtime.submit(room.id, alice, [{ type: 'text', text: '本地会话已撤销后不得发送' }], 'queue')
+      expect(staleSession.writes.join()).not.toContain('本地会话已撤销后不得发送')
+      expect(staleSession.response.end).toHaveBeenCalledOnce()
+
+      const disabledRoom = response(), disabledNotifications = response()
+      runtime.subscribe(room.id, bob, disabledRoom.response as never)
+      runtime.subscribeNotifications(bob, disabledNotifications.response as never)
+      disabledRoom.writes.length = 0
+      await runtime.auth.updateUser(alice, bob.participantId, { status: 'disabled' })
+      await runtime.submit(room.id, alice, [{ type: 'text', text: '账号停用后不得发送' }], 'queue')
+      expect(disabledRoom.writes.join()).not.toContain('账号停用后不得发送')
+      expect(disabledRoom.response.end).toHaveBeenCalledOnce()
+      expect(disabledNotifications.response.end).toHaveBeenCalledOnce()
+
+      const removedRoom = response()
+      runtime.subscribe(room.id, charlie, removedRoom.response as never)
+      removedRoom.writes.length = 0
+      await (runtime as unknown as { requireMembers(): { delete(key: string): Promise<boolean> } })
+        .requireMembers().delete(`${room.id}:${charlie.participantId}`)
+      await runtime.submit(room.id, alice, [{ type: 'text', text: '移出群聊后不得发送' }], 'queue')
+      expect(removedRoom.writes.join()).not.toContain('移出群聊后不得发送')
+      expect(removedRoom.response.end).toHaveBeenCalledOnce()
+    } finally {
+      await runtime.stop()
+    }
   })
 
   it('keeps a managed configured-room title across plugin restarts', async () => {
@@ -1175,6 +1384,20 @@ describe('ChatroomRuntime', () => {
     await expect(runtime.sendDirect(opened.conversation!.id, [{ type: 'text', text: '越权读取' }], charlie)).rejects.toThrow('无权访问')
     expect(() => runtime.file(sent.message.files![0]!.id, charlie)).toThrow('无权访问')
     expect(runtime.directDirectory(charlie).conversations).toEqual([])
+    await runtime.auth.updateUser(alice, bob.participantId, { status: 'disabled' })
+    expect(runtime.directDirectory(alice).conversations).toEqual([])
+    expect(runtime.directDirectory(alice).peers.map(peer => peer.participantId)).toEqual([charlie.participantId])
+    await expect(runtime.openDirect(bob.participantId, alice)).rejects.toThrow('已停用')
+    const beforeRejectedWrites = structuredClone([...harness.tables].map(([name, table]) => [name, [...table.entries()]]))
+    await expect(runtime.sendDirect(opened.conversation!.id, [
+      { type: 'text', text: '不应保存' },
+      { type: 'file', name: 'rejected.txt', mediaType: 'text/plain', data: Buffer.from('must not persist').toString('base64') },
+    ], alice)).rejects.toThrow('已停用')
+    await expect(runtime.toggleDirectReaction(opened.conversation!.id, sent.message.id, '👍', alice)).rejects.toThrow('已停用')
+    expect([...harness.tables].map(([name, table]) => [name, [...table.entries()]])).toEqual(beforeRejectedWrites)
+    await runtime.auth.updateUser(alice, bob.participantId, { status: 'active' })
+    expect(runtime.directDirectory(alice).conversations.map(item => item.id)).toEqual([opened.conversation!.id])
+    expect((await runtime.openDirect(bob.participantId, alice)).messages).toEqual([sent.message])
     await runtime.stop()
   })
 
@@ -1640,6 +1863,10 @@ describe('ChatroomRuntime', () => {
       ],
     })
     const imagePart = forwarded?.items[0]?.content?.find(part => part.type === 'image')
+    const gallery = await runtime.gallery('lobby', 'chatroom-v1-lobby', alice)
+    expect(gallery.items).toHaveLength(1)
+    expect(gallery.items[0]).toMatchObject({ name: 'diagram.png', mediaType: 'image/png' })
+    await expect(runtime.gallery(target.id, 'chatroom-v1-lobby', alice)).rejects.toThrow('不属于')
     if (imagePart?.type !== 'image') throw new Error('forwarded image missing')
     await expect(runtime.image('lobby', 'chatroom-v1-lobby', 7, imagePart.image)).resolves.toMatchObject({
       data: new Uint8Array([1, 2, 3]),
@@ -1691,6 +1918,107 @@ describe('ChatroomRuntime', () => {
       await expect(runtime.toggleReaction(room.id, 'user:1', '👍', bob)).rejects.toThrow()
       expect(harness.tables.get('members')!.size).toBe(before)
       expect(await runtime.canAccessNativeSession(room.sessionId, bob)).toBe(false)
+    } finally { await runtime.stop() }
+  })
+
+  it('uses one request-local native header scan while retaining owned, unknown and parent-lineage checks per identity', async () => {
+    const { runtime, harness, alice, bob } = await authenticatedRoom()
+    try {
+      const room = await runtime.createRoom('Shared', alice)
+      const persistence = harness.ctx.sessionPersistence as unknown as { list: ReturnType<typeof vi.fn> }
+      persistence.list.mockResolvedValue([
+        { id: 'child-a', parentSession: room.sessionId },
+        { id: 'child-b', parentSession: room.sessionId },
+      ])
+      persistence.list.mockClear()
+      const aliceSnapshot = runtime.createNativeSessionAccessSnapshot()
+      const secondAliceSnapshot = runtime.createNativeSessionAccessSnapshot()
+      await expect(Promise.all([
+        runtime.canAccessNativeSession(room.sessionId, alice, new Set(), aliceSnapshot),
+        runtime.canAccessNativeSession('child-a', alice, new Set(), aliceSnapshot),
+        runtime.canAccessNativeSession('child-b', alice, new Set(), aliceSnapshot),
+        runtime.canAccessNativeSession('missing', alice, new Set(), secondAliceSnapshot),
+      ])).resolves.toEqual([true, true, true, false])
+      expect(persistence.list).toHaveBeenCalledOnce()
+
+      const bobSnapshot = runtime.createNativeSessionAccessSnapshot()
+      await expect(runtime.canAccessNativeSession('child-a', bob, new Set(), bobSnapshot)).resolves.toBe(false)
+      expect(persistence.list).toHaveBeenCalledTimes(2)
+    } finally { await runtime.stop() }
+  })
+
+  it('reuses trusted catalogue lineage without a second persistence scan or cached authorization', async () => {
+    const { runtime, harness, alice, bob } = await authenticatedRoom()
+    try {
+      const room = await runtime.createRoom('Catalogue lineage', alice)
+      const persistence = harness.ctx.sessionPersistence as unknown as { list: ReturnType<typeof vi.fn> }
+      persistence.list.mockClear()
+      const snapshot = runtime.createNativeSessionAccessSnapshot([
+        { sessionId: 'child', parentSessionId: room.sessionId },
+        { sessionId: 'grandchild', parentSessionId: 'child' },
+        { sessionId: 'unowned-root' },
+        { sessionId: 'cycle-a', parentSessionId: 'cycle-b' },
+        { sessionId: 'cycle-b', parentSessionId: 'cycle-a' },
+      ])
+      await expect(runtime.canAccessNativeSession('grandchild', alice, new Set(), snapshot)).resolves.toBe(true)
+      await expect(runtime.canAccessNativeSession('grandchild', bob, new Set(), snapshot)).resolves.toBe(false)
+      await expect(runtime.canAccessNativeSession('unowned-root', alice, new Set(), snapshot)).resolves.toBe(false)
+      await expect(runtime.canAccessNativeSession('cycle-a', alice, new Set(), snapshot)).resolves.toBe(false)
+      await runtime.addRoomMembers(room.id, [bob.participantId], alice)
+      await expect(runtime.canAccessNativeSession('grandchild', bob, new Set(), snapshot)).resolves.toBe(true)
+      await (runtime as unknown as { requireMembers(): { delete(key: string): Promise<boolean> } })
+        .requireMembers().delete(`${room.id}:${bob.participantId}`)
+      await expect(runtime.canAccessNativeSession('grandchild', bob, new Set(), snapshot)).resolves.toBe(false)
+      expect(persistence.list).not.toHaveBeenCalled()
+      // A fresh native result must not inherit lineage from an earlier catalogue.
+      await expect(runtime.canAccessNativeSession('grandchild', alice, new Set(), runtime.createNativeSessionAccessSnapshot([
+        { sessionId: 'grandchild' },
+      ]))).resolves.toBe(false)
+      expect(persistence.list).not.toHaveBeenCalled()
+    } finally { await runtime.stop() }
+  })
+
+  it('falls back once for missing ancestors and invalid or conflicting native catalogue rows', async () => {
+    const { runtime, harness, alice } = await authenticatedRoom()
+    try {
+      const room = await runtime.createRoom('Fallback lineage', alice)
+      const persistence = harness.ctx.sessionPersistence as unknown as { list: ReturnType<typeof vi.fn> }
+      persistence.list.mockResolvedValue([{ id: 'missing-parent', parentSession: room.sessionId }])
+      persistence.list.mockClear()
+      const snapshot = runtime.createNativeSessionAccessSnapshot([
+        { sessionId: 'child', parentSessionId: 'missing-parent' },
+        { sessionId: 'duplicate', parentSessionId: room.sessionId },
+        { sessionId: 'duplicate' },
+        { sessionId: 'duplicate', parentSessionId: room.sessionId },
+        { sessionId: 'malformed', parentSessionId: 42 },
+        null,
+      ])
+      await expect(runtime.canAccessNativeSession('child', alice, new Set(), snapshot)).resolves.toBe(true)
+      await expect(runtime.canAccessNativeSession('duplicate', alice, new Set(), snapshot)).resolves.toBe(false)
+      await expect(runtime.canAccessNativeSession('malformed', alice, new Set(), snapshot)).resolves.toBe(false)
+      expect(persistence.list).toHaveBeenCalledOnce()
+    } finally { await runtime.stop() }
+  })
+
+  it('prioritizes live lineage and private Solo ownership over the catalogue', async () => {
+    const { runtime, harness, alice, bob } = await authenticatedRoom()
+    try {
+      const room = await runtime.createRoom('Live lineage', alice)
+      const solo = await runtime.reserveSoloSession(bob)
+      const persistence = harness.ctx.sessionPersistence as unknown as { list: ReturnType<typeof vi.fn> }
+      persistence.list.mockClear()
+      const snapshot = runtime.createNativeSessionAccessSnapshot([
+        { sessionId: 'live-child', parentSessionId: room.sessionId },
+        { sessionId: solo, parentSessionId: room.sessionId },
+      ])
+      vi.mocked(harness.ctx.agents.get).mockImplementation(id => String(id) === 'live-child'
+        ? { session: { header: { parentSession: solo } } } as unknown as Agent
+        : undefined)
+      await expect(runtime.canAccessNativeSession('live-child', alice, new Set(), snapshot)).resolves.toBe(false)
+      await expect(runtime.canAccessNativeSession('live-child', bob, new Set(), snapshot)).resolves.toBe(true)
+      await expect(runtime.canAccessNativeSession(solo, alice, new Set(), snapshot)).resolves.toBe(false)
+      await expect(runtime.canAccessNativeSession(solo, bob, new Set(), snapshot)).resolves.toBe(true)
+      expect(persistence.list).not.toHaveBeenCalled()
     } finally { await runtime.stop() }
   })
 
