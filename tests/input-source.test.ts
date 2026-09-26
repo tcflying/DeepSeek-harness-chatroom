@@ -26,7 +26,7 @@ describe('chatroom mention source', () => {
     await expect(source.candidates({ sessionId: 'shared' as never }, {
       query: '', position: 'inline', drilled: false, signal,
     })).resolves.toMatchObject([
-      { name: 'DeepSeek（AI 助手）', hint: '✦', description: '提及后回复' },
+      { name: 'DeepSeek（AI 助手）', hint: '', description: '提及后回复' },
     ])
     await expect(memberSource.candidates({ sessionId: 'shared' as never }, {
       query: '', position: 'inline', drilled: false, signal,

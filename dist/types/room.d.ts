@@ -1,3 +1,6 @@
+import { listSessionHeaders } from './persistence-compat.js';
+import { DiagnosticJournal } from './diagnostics.js';
+import type { GalleryPage } from './media.js';
 import type { ServerResponse } from 'node:http';
 import type { Context } from '@deepseek-ai/cordis';
 import { type Session, type SessionEvent } from '@deepseek-ai/dsh-session';
@@ -11,11 +14,27 @@ import type { ChatroomAgentProfileInput, ChatroomAgentProfilesView, ChatroomAuto
 /** Runtime validation failure safe to return to a browser. */
 export declare class ChatroomInputError extends Error {
 }
+/** A request-local, lazy native header view used only while filtering one catalogue. */
+export interface NativeSessionAccessSnapshot {
+    headers(): ReturnType<typeof listSessionHeaders>;
+    /** Lineage from this request's trusted native response, never an authorization decision. */
+    catalogueParents?: ReadonlyMap<string, string | undefined>;
+}
+/** Stage names are structural only: selection telemetry never carries room or account identifiers. */
+export type RoomSelectionStage = 'enter' | 'authentication' | 'ensure' | 'cached' | 'header' | 'inspect' | 'resume' | 'attach' | 'response' | 'exception';
+export interface RoomSelectionStageEvent {
+    readonly stage: RoomSelectionStage;
+    readonly outcome: 'start' | 'complete' | 'failure';
+    readonly elapsedMs: number;
+}
+export type RoomSelectionObserver = (event: RoomSelectionStageEvent) => void;
 /** Shared browser identities, room directory, presence, and native Harness Sessions. */
 export declare class ChatroomRuntime {
     private readonly ctx;
     readonly config: Config;
+    private readonly modelProgress;
     private readonly log;
+    readonly diagnostics: DiagnosticJournal;
     private domain;
     private agentDomain;
     private archive;
@@ -38,6 +57,8 @@ export declare class ChatroomRuntime {
     private authentication;
     private readonly states;
     private readonly roomTitleWrites;
+    /** Physical header I/O only: shared while live, never retained after settlement. */
+    private nativeSessionHeadersPending;
     private readonly sessionRoomCreations;
     private readonly threadStates;
     private readonly notificationClients;
@@ -142,8 +163,13 @@ export declare class ChatroomRuntime {
     soloSessionIds(identity: ChatroomIdentity): readonly string[];
     /** Test whether one native Session is an identity-owned Solo conversation. */
     ownsSoloSession(sessionId: string, identity: ChatroomIdentity): boolean;
+    /** Reuse this native response's lineage; scan lazily only for missing/invalid ancestors. */
+    createNativeSessionAccessSnapshot(nativeItems?: readonly unknown[]): NativeSessionAccessSnapshot;
+    private listNativeSessionHeadersOnce;
+    private reportRoomSelectionStage;
+    private observeRoomSelectionStage;
     /** Resolve room and Solo ownership before consulting immutable native parent lineage. */
-    canAccessNativeSession(sessionId: string, identity: ChatroomIdentity, visited?: Set<string>): Promise<boolean>;
+    canAccessNativeSession(sessionId: string, identity: ChatroomIdentity, visited?: Set<string>, snapshot?: NativeSessionAccessSnapshot): Promise<boolean>;
     /** Attribute a native fork to its creator before returning the child id to the browser. */
     ownNativeFork(sessionId: string, identity: ChatroomIdentity): Promise<void>;
     /** Admit native group input through the same authenticated path as the chatroom composer. */
@@ -154,7 +180,7 @@ export declare class ChatroomRuntime {
     private defaultSessionRoomTitle;
     private createSessionRoom;
     /** Activate an existing room and return its public metadata. */
-    selectRoom(roomId: string, identity?: ChatroomIdentity): Promise<ChatroomInfo>;
+    selectRoom(roomId: string, identity?: ChatroomIdentity, observe?: RoomSelectionObserver): Promise<ChatroomInfo>;
     /** Stop the active Agent turn while retaining the room and queued user intake. */
     stopRoomSession(roomId: string, identity: ChatroomIdentity): Promise<ChatroomInfo>;
     /** Start a fresh AI context while retaining the room Session, transcript, and roster. */
@@ -220,6 +246,13 @@ export declare class ChatroomRuntime {
     private resolveForwardItem;
     private forwardSourceBinding;
     /** Resolve one authenticated room-file download. */
+    private galleryImageFileId;
+    gallery(roomId: string, sessionId: string, identity: ChatroomIdentity, offset?: number): Promise<GalleryPage>;
+    /** Resolve one authenticated room-file download. */
+    assertMediaSession(roomId: string, sessionId: string, identity: ChatroomIdentity): Promise<void>;
+    materializeGalleryImage(roomId: string, sessionId: string, identity: ChatroomIdentity, imageId: string): Promise<string>;
+    saveVideoResult(roomId: string, sessionId: string, identity: ChatroomIdentity, id: string, data: Uint8Array): Promise<string>;
+    /** Resolve one authenticated room-file download. */
     file(fileId: string, identity?: ChatroomIdentity): {
         readonly ref: ChatroomFileReference;
         readonly data: Uint8Array;
@@ -230,9 +263,9 @@ export declare class ChatroomRuntime {
         readonly data: Uint8Array;
     }>;
     /** Attach one authenticated presence client to one room. */
-    subscribe(roomId: string, identity: ChatroomIdentity, response: ServerResponse): () => void;
+    subscribe(roomId: string, identity: ChatroomIdentity, response: ServerResponse, isCurrentSession?: () => boolean): () => void;
     /** Attach one identity to the global message-notification stream. */
-    subscribeNotifications(identity: ChatroomIdentity, response: ServerResponse): () => void;
+    subscribeNotifications(identity: ChatroomIdentity, response: ServerResponse, isCurrentSession?: () => boolean): () => void;
     /** List active peers and private conversations visible only to the requesting account. */
     directDirectory(identity: ChatroomIdentity): ChatroomDirectResponse;
     /** Search visible accounts, room names, branch names, and archived messages. */
@@ -254,6 +287,8 @@ export declare class ChatroomRuntime {
     submitThread(threadId: string, identity: ChatroomIdentity, content: readonly ChatroomPromptContentPart[], mode: 'queue' | 'steer', reply?: ChatroomReplyReference, requestId?: string): Promise<ChatroomPromptResponse>;
     /** Project committed AI output into its parent room or branch stream. */
     handleSessionEvent(session: Session, event: SessionEvent): void;
+    /** Forward only real runtime events from the currently attached room/AI Session. */
+    private publishModelProgress;
     private createThread;
     private resolveThreadRoot;
     private upgradeThreadRoot;
@@ -312,6 +347,9 @@ export declare class ChatroomRuntime {
     private projectRoomAgentMessage;
     private setupAgentContext;
     private augmentChatroomAgentContext;
+    private readonly activeImageSessions;
+    /** Image requests share room authorization and Blob storage, not an unrestricted shell. */
+    private generateAgentImage;
     private initiatingIdentity;
     private createMeetingCard;
     private prepareAgentWecomCard;
@@ -351,8 +389,12 @@ export declare class ChatroomRuntime {
     private assertReady;
     private requireRoom;
     private projectRoom;
-    /** Whether this identity may manage the room's AI participants (super-admin, owner, or admin). */
+    /** Authenticated deployments grant management only to platform super-administrators. */
     private canManageRoomAgents;
+    /** Recheck established streams before every event without an upstream dsh-auth request. */
+    private canReceiveRoomSse;
+    /** Notifications are account-scoped, so only local account/session liveness applies. */
+    private canReceiveNotificationSse;
     /** Room AI participant access: super-admin may manage any room; others must be a managing member. */
     private assertRoomAgentAccess;
     private roomPinned;
@@ -395,7 +437,7 @@ export declare class ChatroomRuntime {
     private assertRoomManager;
     private assertRoomInviter;
     /** Enforce authenticated membership before any room operation. */
-    private assertRoomAccess;
+    assertRoomAccess(roomId: string, identity: ChatroomIdentity): void;
     private assertRoomMember;
     private isRoomMember;
     private roomMemberCount;

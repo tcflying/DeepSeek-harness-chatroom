@@ -154,8 +154,7 @@ export class ChatroomAuth {
       if (link.providerId !== 'dsh-auth') continue
       const account = this.accounts.get(link.userId)
       if (account === undefined) continue
-      const role = account.role === 'super-admin'
-        || (this.config.authDshAuthSuperAdminSubjects ?? []).includes(link.subject)
+      const role = (this.config.authDshAuthSuperAdminSubjects ?? []).includes(link.subject)
         ? 'super-admin'
         : 'member'
       // A legacy account may use a local de-duplication suffix (for example `alice-2`).
@@ -238,8 +237,7 @@ export class ChatroomAuth {
     return {
       enabled,
       authenticated: !enabled || account !== undefined,
-      canManageSettings: !enabled || (account?.status === 'active'
-        && (account.role === 'super-admin' || this.config.settingsAdminParticipantIds.includes(account.participantId))),
+      canManageSettings: !enabled || (account?.status === 'active' && account.role === 'super-admin'),
       authMode: this.config.authMode ?? 'local',
       ...(account === undefined ? {} : { account }),
       providers,
@@ -253,6 +251,11 @@ export class ChatroomAuth {
   isSuperAdmin(participantId: string): boolean {
     const account = this.accounts.get(participantId)
     return account?.status === 'active' && account.role === 'super-admin'
+  }
+
+  /** Synchronous local liveness check for established streams; never revalidates an upstream dsh-auth session. */
+  isActiveAccount(participantId: string): boolean {
+    return this.accounts.get(participantId)?.status === 'active'
   }
 
   /** Enabled external sign-in choices shown on the login form. */
@@ -356,7 +359,6 @@ export class ChatroomAuth {
       verified.displayName ?? verified.username,
       true,
       verified.picture,
-      verified.legacy && verified.roles.split(',').map(value => value.trim()).includes('admin'),
     )
     return {
       token: await this.issueSession(account.id),
@@ -384,7 +386,6 @@ export class ChatroomAuth {
       verified.displayName ?? verified.username,
       true,
       verified.picture,
-      verified.legacy && verified.roles.split(',').map(value => value.trim()).includes('admin'),
     )
     return publicAccount(refreshed)
   }
@@ -661,7 +662,6 @@ export class ChatroomAuth {
     suggestedDisplayName: string,
     autoCreate: boolean,
     picture?: string,
-    legacySuperAdmin = false,
   ): Promise<AccountRecord> {
     return await this.serializeAccounts(async () => this.resolveExternalAccount(
       providerId,
@@ -670,7 +670,6 @@ export class ChatroomAuth {
       suggestedDisplayName,
       autoCreate,
       picture,
-      legacySuperAdmin,
     ))
   }
 
@@ -681,14 +680,13 @@ export class ChatroomAuth {
     suggestedDisplayName: string,
     autoCreate: boolean,
     picture?: string,
-    legacySuperAdmin = false,
   ): Promise<AccountRecord> {
     const key = externalKey(providerId, subject)
     const linked = this.externalAccounts.get(key)
     if (linked !== undefined) {
       const account = this.accounts.get(linked.userId)
       if (account === undefined || account.status !== 'active') throw new ChatroomAuthError('该企业账号已停用。')
-      const updated = this.externalProfile(account, providerId, subject, suggestedUsername, suggestedDisplayName, picture, legacySuperAdmin)
+      const updated = this.externalProfile(account, providerId, subject, suggestedUsername, suggestedDisplayName, picture)
       await this.accounts.put(account.id, updated)
       return updated
     }
@@ -712,7 +710,7 @@ export class ChatroomAuth {
       ...(avatarUrl === undefined ? {} : { avatarUrl }),
       externalProviderId: providerId,
       externalSubject: subject,
-      role: providerId === 'dsh-auth' && (legacySuperAdmin || (this.config.authDshAuthSuperAdminSubjects ?? []).includes(subject)) ? 'super-admin' : 'member',
+      role: providerId === 'dsh-auth' && (this.config.authDshAuthSuperAdminSubjects ?? []).includes(subject) ? 'super-admin' : 'member',
       status: 'active',
       createdAt: now,
       updatedAt: now,
@@ -730,7 +728,6 @@ export class ChatroomAuth {
     suggestedUsername: string,
     suggestedDisplayName: string,
     picture?: string,
-    legacySuperAdmin = false,
   ): AccountRecord {
     const username = normalizeUsername(suggestedUsername)
     const existing = this.findUsername(username.key)
@@ -741,7 +738,7 @@ export class ChatroomAuth {
     // Avatar templates must use the upstream username fact instead.
     const avatarUrl = this.externalAvatarUrl(username.value, picture)
     const role = providerId === 'dsh-auth'
-      ? (legacySuperAdmin || (this.config.authDshAuthSuperAdminSubjects ?? []).includes(subject) ? 'super-admin' : 'member')
+      ? ((this.config.authDshAuthSuperAdminSubjects ?? []).includes(subject) ? 'super-admin' : 'member')
       : account.role
     const { avatarUrl: _oldAvatarUrl, ...withoutAvatar } = account
     return {

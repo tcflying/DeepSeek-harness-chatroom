@@ -31,6 +31,10 @@ export declare function projectChatroomMessage(node: ParticipantNode, identity: 
     readonly participantId?: string;
     readonly reply?: ChatroomReplyReference;
     readonly files: readonly ChatroomFileReference[];
+    readonly images: readonly {
+        url: string;
+        alt: string;
+    }[];
     readonly cards: readonly ChatroomExternalCard[];
     readonly forward?: ChatroomForwardBundle;
     readonly text: string;
@@ -40,4 +44,9 @@ export declare function projectChatroomMessage(node: ParticipantNode, identity: 
 export declare const ChatroomUserMessageNodeView: import("react").MemoExoticComponent<(props: ChatroomUserMessageNodeViewProps) => import("react").JSX.Element>;
 /** Reuse Harness' native steering renderer and move only peer steering messages to the left. */
 export declare const ChatroomSteeringMessageNodeView: import("react").MemoExoticComponent<(props: ChatroomSteeringMessageNodeViewProps) => import("react").JSX.Element>;
+export declare function FileCard({ file, roomId, sessionId }: {
+    file: ChatroomFileReference;
+    roomId?: string | undefined;
+    sessionId?: string | undefined;
+}): JSX.Element;
 //# sourceMappingURL=ChatroomMessageNodeView.d.ts.map

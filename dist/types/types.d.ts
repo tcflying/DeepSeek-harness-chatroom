@@ -85,6 +85,7 @@ export interface ChatroomAutomationOverview {
 }
 /** One durable room-level AI participant with its own model routing. */
 export interface ChatroomAgentProfile {
+    readonly avatarId?: ChatroomAvatarId;
     readonly id: string;
     readonly roomId: string;
     readonly name: string;
@@ -105,8 +106,24 @@ export interface ChatroomAgentRuntimeState {
     readonly updatedAt: number;
     readonly error?: string;
 }
+/** Transient authorized progress, separate from final chat messages and diagnostics. */
+export interface ChatroomModelProgress {
+    readonly roomId: string;
+    readonly sessionId: string;
+    readonly name: string;
+    readonly seq: number;
+    readonly status: 'waiting' | 'thinking' | 'writing' | 'tool' | 'completed' | 'failed' | 'stopped';
+    readonly text: string;
+    readonly startedAt: number;
+    readonly updatedAt: number;
+}
+export interface ChatroomModelProgressEvent {
+    readonly type: 'model-progress';
+    readonly progress: ChatroomModelProgress;
+}
 /** Validated write input for one room-level AI participant. */
 export interface ChatroomAgentProfileInput {
+    readonly avatarId?: ChatroomAvatarId;
     readonly name: string;
     readonly role: string;
     readonly instructions?: string;
@@ -534,6 +551,7 @@ export interface ChatroomSnapshotEvent {
     readonly recalls?: readonly ChatroomRecall[];
     readonly threadPreviews: readonly ChatroomThreadPreview[];
     readonly pendingMessages?: readonly ChatroomPendingMessage[];
+    readonly modelProgress?: readonly ChatroomModelProgress[];
 }
 /** Complete replacement of transient room messages visible below the active AI reply. */
 export interface ChatroomPendingMessagesEvent {
@@ -587,7 +605,7 @@ export interface ChatroomDirectMessageEvent {
     readonly message: ChatroomDirectMessage;
 }
 export type ChatroomGlobalEvent = ChatroomNotificationEvent | ChatroomDirectMessageEvent;
-export type ChatroomServerEvent = ChatroomSnapshotEvent | ChatroomPresenceEvent | ChatroomPendingMessagesEvent | ChatroomThreadMessageEvent | ChatroomReactionEvent | ChatroomRecallEvent | ChatroomAgentProfilesEvent | ChatroomRoomUpdatedEvent;
+export type ChatroomServerEvent = ChatroomModelProgressEvent | ChatroomSnapshotEvent | ChatroomPresenceEvent | ChatroomPendingMessagesEvent | ChatroomThreadMessageEvent | ChatroomReactionEvent | ChatroomRecallEvent | ChatroomAgentProfilesEvent | ChatroomRoomUpdatedEvent;
 /** Browser-visible error envelope. */
 export interface ChatroomErrorResponse {
     readonly error: string;

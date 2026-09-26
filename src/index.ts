@@ -19,6 +19,7 @@ import { textCompatibleStream } from './model-history.js'
 import { CHATROOM_API_PREFIXES } from './routes.js'
 import { registerNativeGateway } from './native-gateway.js'
 import { ChatroomRuntime } from './room.js'
+import { diagnosticStream, startProviderProbe } from './diagnostics.js'
 
 export const name = 'deepseek-harness-chatroom'
 export const inject = [
@@ -50,6 +51,7 @@ export async function apply(ctx: Context, config: ChatroomConfig): Promise<void>
   const closeGateway = await registerNativeGateway(ctx, runtime, config)
   const http = new ChatroomHttpController(ctx, runtime, config)
   const log = ctx.logger('deepseek-harness-chatroom')
+  if (config.imageGenerationBaseUrl) ctx.effect(() => startProviderProbe(config.imageGenerationBaseUrl!, runtime.diagnostics), 'deepseek-harness-chatroom.provider-probe')
   ctx.effect(() => {
     const unregister = CHATROOM_API_PREFIXES.map(path => ctx.webServer.register({
       kind: 'prefix' as const,
@@ -64,6 +66,7 @@ export async function apply(ctx: Context, config: ChatroomConfig): Promise<void>
     })
     return async () => {
       for (const dispose of unregister) dispose()
+      await http.stop()
       await closeGateway()
       await startup
       await runtime.stop()
@@ -72,14 +75,18 @@ export async function apply(ctx: Context, config: ChatroomConfig): Promise<void>
   ctx.effect(() => ctx.on('session/event', (session, event) => {
     runtime.handleSessionEvent(session, event)
   }), 'deepseek-harness-chatroom.session-events')
-  ctx.effect(() => ctx.on('llm/stream', (options, next) => textCompatibleStream(
+  ctx.effect(() => ctx.on('llm/stream', (options, next) => {
+    const source = textCompatibleStream(
     options,
     next,
     sessionId => runtime.ownsSession(sessionId),
     sessionId => runtime.hiddenModelMessageIds(sessionId),
     (provider, model, signal) => ctx.llm.resolveModelInfo(provider, model, signal),
     request => ctx.llm.stream(request),
-  )), 'deepseek-harness-chatroom.model-history')
+    )
+    return options.sessionId !== undefined && runtime.ownsSession(String(options.sessionId))
+      ? diagnosticStream(source, runtime.diagnostics, String(options.sessionId)) : source
+  }), 'deepseek-harness-chatroom.model-history')
 }
 
 export default { name, inject, Config, apply }

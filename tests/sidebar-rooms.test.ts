@@ -298,7 +298,8 @@ describe('native sidebar room rows', () => {
     const image = document.querySelector<HTMLImageElement>('[data-dsh-chatroom-group-avatar] img')!
     expect(image.src).toBe('https://images.example.com/mason.png')
     image.dispatchEvent(new Event('error'))
-    expect(document.querySelector('[data-dsh-chatroom-group-avatar]')?.textContent).toBe('🐶')
+    expect(document.querySelector('[data-dsh-chatroom-group-avatar]')?.textContent).toBe('')
+    expect(image.src).toMatch(/^data:image\/png;base64,/)
   })
 
   it('renders a branch row as a nested conversation with its parent context', () => {
@@ -572,8 +573,8 @@ describe('native sidebar room rows', () => {
     reconcileSidebarRoomRows(document, snapshot)
 
     const avatar = document.querySelector<HTMLElement>('[data-dsh-chatroom-group-avatar]')!
-    expect(avatar.textContent).toBe('🐳')
-    expect(avatar.querySelector('img')).toBeNull()
+    expect(avatar.textContent).toBe('')
+    expect(avatar.querySelector('img')?.src).toMatch(/^data:image\/png;base64,/)
     expect(avatar.dataset.signature).toBe('alice:whale:')
   })
 
@@ -894,5 +895,58 @@ describe('native sidebar room rows', () => {
     expect(branchDragStart).not.toHaveBeenCalled()
     expect(rows.slice(1).map(row => row.dataset.dshChatroomSessionId)).toEqual(sessionIds.slice(1))
     dispose()
+  })
+
+  it('does not reconcile a microtask already queued when the sidebar is disposed', async () => {
+    document.body.innerHTML = '<div role="tree"><div role="treeitem" aria-selected="true"><span>会话</span></div></div>'
+    const getSnapshot = vi.fn(() => ({ current: undefined, byId: {} }))
+    const store = {
+      getSnapshot: vi.fn(() => ({ phase: 'ready', rooms: [], members: [], directPeers: [], directConversations: [] })),
+      subscribe: () => () => undefined,
+      loadDirectDirectory: vi.fn(async () => true),
+      setRoomPinned: vi.fn(), openDirect: vi.fn(), closeDirect: vi.fn(),
+    } as unknown as ChatroomClientStore
+    const sessions = { list: { getSnapshot, subscribe: () => () => undefined } } as never
+
+    const dispose = installSidebarRoomRows(store, sessions)
+    dispose()
+    await settleMutations()
+
+    expect(store.getSnapshot).not.toHaveBeenCalled()
+    expect(getSnapshot).not.toHaveBeenCalled()
+  })
+
+  it('does not recreate a directory retry after disposal when its pending load fails', async () => {
+    vi.useFakeTimers()
+    try {
+      document.body.innerHTML = '<div role="tree"><div role="treeitem" aria-selected="true"><span>会话</span></div></div>'
+      let settleDirectory!: (loaded: boolean) => void
+      const loadDirectDirectory = vi.fn(() => new Promise<boolean>(resolve => { settleDirectory = resolve }))
+      const getSnapshot = vi.fn(() => ({ current: undefined, byId: {} }))
+      const store = {
+        getSnapshot: () => ({
+          phase: 'ready', identity: { participantId: 'participant' }, rooms: [], members: [], directPeers: [], directConversations: [],
+        }),
+        subscribe: () => () => undefined,
+        loadDirectDirectory,
+        setRoomPinned: vi.fn(), openDirect: vi.fn(), closeDirect: vi.fn(),
+      } as unknown as ChatroomClientStore
+      const sessions = { list: { getSnapshot, subscribe: () => () => undefined } } as never
+
+      const dispose = installSidebarRoomRows(store, sessions)
+      await vi.advanceTimersByTimeAsync(0)
+      expect(loadDirectDirectory).toHaveBeenCalledOnce()
+      const reconcilesBeforeDispose = getSnapshot.mock.calls.length
+
+      dispose()
+      settleDirectory(false)
+      await Promise.resolve()
+      await vi.advanceTimersByTimeAsync(2_000)
+
+      expect(loadDirectDirectory).toHaveBeenCalledOnce()
+      expect(getSnapshot).toHaveBeenCalledTimes(reconcilesBeforeDispose)
+    } finally {
+      vi.useRealTimers()
+    }
   })
 })

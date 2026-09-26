@@ -2,6 +2,8 @@
 import { once } from 'node:events'
 import { realpath } from 'node:fs/promises'
 import { resolve } from 'node:path'
+import { randomUUID } from 'node:crypto'
+import { diagnosticError } from './diagnostics.js'
 import type { IncomingMessage, ServerResponse } from 'node:http'
 import type { Duplex } from 'node:stream'
 import type { Context } from '@deepseek-ai/cordis'
@@ -9,10 +11,12 @@ import type { WorkspaceView } from '@deepseek-ai/dsh-api-workspace-controller/ty
 import type { Config } from './config.js'
 import { cookieValue } from './cookies.js'
 import type { ChatroomAccount, ChatroomIdentity, ChatroomPromptContentPart } from './types.js'
-import { ChatroomInputError, type ChatroomRuntime } from './room.js'
+import { ChatroomInputError, type ChatroomRuntime, type NativeSessionAccessSnapshot } from './room.js'
 import { createNativeTransport, type NativeTransport } from './native-platform.js'
 
 const MUX_PATH = '/api/remote.mux'
+/** A stalled native catalogue must not retain the browser's single-flight read forever. */
+export const NATIVE_SESSION_LIST_DEADLINE_MS = 30_000
 const PUBLIC_METHODS = new Set([
   'session/list', 'session/search', 'session/modelCatalog', 'session/canOpenWorkspacePath',
   'workspace/list', 'agentPresets/list', 'agentPreset/list', 'llm/providers', 'llm/models',
@@ -30,11 +34,26 @@ const SESSION_EVENTS = new Set([
   'agent-preset/selected', 'api-session/activity', 'api-session/error', 'api-session/removed',
   'api-session/status', 'commands/change',
 ])
+const ADMIN_SESSION_METHODS = new Set(['agentPresets/select', 'session/selectModel'])
+const MEMBER_COMMANDS = new Set(['new', 'compact', 'help', 'status', 'stop'])
+
+function assertMemberCommand(line: string): void {
+  const command = /^\s*\/([^\s]+)/u.exec(line)?.[1]?.toLowerCase()
+  if (command && !MEMBER_COMMANDS.has(command)) throw new CarrierError(403, '此命令仅平台管理员可执行。')
+}
 class CarrierError extends Error {
   constructor(readonly status: number, message: string) { super(message) }
 }
 type FetchHandler = (request: Request) => Promise<Response>
 type Mux = InstanceType<NativeTransport['Mux']>
+/** Each elapsed field is cumulative from request start, not an isolated stage duration. */
+type SessionListStages = {
+  upstreamElapsedMs?: number
+  jsonElapsedMs?: number
+  filterElapsedMs?: number
+  itemsCount?: number
+  deadlineAbortElapsedMs?: number
+}
 
 /** Every native request and every stream item is checked against current account ownership. */
 export class NativeGateway {
@@ -42,7 +61,7 @@ export class NativeGateway {
   private readonly requestCompletions = new Set<Promise<void>>()
   private readonly renewals = new WeakMap<Request, string>()
   private readonly muxes = new Map<Duplex, Mux>()
-  private readonly answerable = new Map<string, { participantId: string; sessionId: string }>()
+  private readonly answerable = new Map<string, { participantId: string; sessionId: string; adminOnly: boolean }>()
   private stopped = false
 
   constructor(
@@ -51,6 +70,7 @@ export class NativeGateway {
     private readonly config: Config,
     private readonly dispatch: FetchHandler,
     private readonly transport: NativeTransport,
+    private readonly sessionListDeadlineMs = NATIVE_SESSION_LIST_DEADLINE_MS,
   ) {}
 
   async fetch(request: Request): Promise<Response> {
@@ -97,6 +117,7 @@ export class NativeGateway {
         const key = String(result.clientId) + ':' + String(result.eventId)
         const owned = this.answerable.get(key)
         if (owned?.participantId !== identity.participantId) throw new CarrierError(403, 'No authorized event delivery')
+        if (owned.adminOnly && !this.isAdmin(identity)) throw new CarrierError(403, '只有平台管理员可以批准权限请求。')
         await this.requireSession(owned.sessionId, identity)
         // Recheck after authorization yields; one delivery permits one answer.
         if (this.answerable.get(key) !== owned || !this.answerable.delete(key)) throw new CarrierError(403, 'No authorized event delivery')
@@ -105,12 +126,21 @@ export class NativeGateway {
         const input = isRecord(args.request) ? args.request : args
         if (SESSION_METHODS.has(endpoint)) {
           await this.sessionArguments(args, identity)
+          if (endpoint === 'session/rename' && this.runtime.ownsSession(String(input.sessionId)) && !this.isAdmin(identity)) {
+            throw new CarrierError(403, '只有平台管理员可以修改群聊名称。')
+          }
+          if (ADMIN_SESSION_METHODS.has(endpoint) && !this.isAdmin(identity)) {
+            throw new CarrierError(403, '只有平台管理员可以更改模型或执行权限配置。')
+          }
           if (endpoint === 'session/updateQueue' && this.runtime.ownsSession(String(input.sessionId))) {
             throw new CarrierError(403, '请通过群聊队列操作自己的消息。')
           }
         } else if (endpoint === 'session/create') {
           for (const key of ['agentPreset', 'sessionId', 'workspaceId', 'cwd']) {
             if (input[key] !== undefined && typeof input[key] !== 'string') throw new CarrierError(400, 'Invalid session creation parameters')
+          }
+          if (!this.isAdmin(identity) && input.agentPreset !== undefined && input.agentPreset !== this.config.agentPreset) {
+            throw new CarrierError(403, '只有平台管理员可以更改执行权限配置。')
           }
           if (input.cwd !== undefined && !await this.isWorkspace(typeof input.cwd === 'string' ? input.cwd : undefined)) {
             throw new CarrierError(403, '只能在聊天室工作区创建会话。')
@@ -126,6 +156,7 @@ export class NativeGateway {
             throw new CarrierError(403, '请先预留自己的 Solo 会话。')
           }
           if (input.workspaceId === undefined) input.cwd = this.config.cwd
+          if (!this.isAdmin(identity)) input.agentPreset = this.config.agentPreset
         } else if (!PUBLIC_METHODS.has(endpoint) && !this.isAdmin(identity)) {
           throw new CarrierError(403, '此接口尚未配置账号权限。')
         }
@@ -135,6 +166,7 @@ export class NativeGateway {
             throw new CarrierError(400, 'Invalid prompt')
           }
           await this.runtime.assertPromptReferences(identity, input.content)
+          if (!this.isAdmin(identity)) for (const part of input.content) if (part.type === 'text') assertMemberCommand(part.text)
         }
         if (endpoint === 'session/prompt') {
           if (!['queue', 'steer'].includes(String(input.mode)) || typeof input.sessionId !== 'string') throw new CarrierError(400, 'Invalid prompt')
@@ -145,25 +177,119 @@ export class NativeGateway {
           }
         }
         if (endpoint === 'commands/execute' && typeof input.line === 'string') {
+          if (!this.isAdmin(identity)) assertMemberCommand(input.line.startsWith('/') ? input.line : '/' + input.line)
           await this.runtime.assertPromptReferences(identity, [{ type: 'text', text: input.line }])
         }
       }
-      const response = await this.dispatch(new Request(request.url, {
-        method: 'POST', headers: request.headers, signal: request.signal, body: JSON.stringify(body),
-      }))
-      if (!response.ok || !response.headers.get('content-type')?.includes('application/json')) return response
-      const output: unknown = await response.json()
-      if (!isRecord(output) || !isRecord(output.result) || output.result.ok !== true) return Response.json(output, { status: response.status })
-      output.result.value = await this.filterResult(endpoint, output.result.value, identity)
-      return Response.json(output, { status: response.status })
+      return await this.dispatchAuthorized(endpoint, request, body, identity)
     } catch (error) {
+      // The Node handler owns the socket lifecycle. Do not manufacture a 500
+      // after its browser caller has already cancelled the carrier request.
+      if (request.signal.aborted) throw error
       const status = error instanceof CarrierError ? error.status : error instanceof ChatroomInputError ? 403 : error instanceof SyntaxError ? 400 : 500
       return Response.json({ error: error instanceof CarrierError || error instanceof ChatroomInputError ? error.message : 'Native request failed' }, { status })
     }
   }
 
-  private async filterResult(endpoint: string, value: unknown, identity: ChatroomIdentity): Promise<unknown> {
-    const canAccess = (id: unknown) => typeof id === 'string' ? this.runtime.canAccessNativeSession(id, identity) : Promise.resolve(false)
+  /** Bound only the idempotent catalogue read, with cancellation reaching the native carrier. */
+  private async dispatchAuthorized(
+    endpoint: string,
+    request: Request,
+    body: Record<string, unknown>,
+    identity: ChatroomIdentity,
+  ): Promise<Response> {
+    const started = Date.now()
+    const isSessionList = endpoint === 'session/list'
+    const stages: SessionListStages | undefined = isSessionList ? {} : undefined
+    const deadline = isSessionList ? new AbortController() : undefined
+    const timer = deadline === undefined ? undefined : setTimeout(() => {
+      stages!.deadlineAbortElapsedMs = Date.now() - started
+      deadline.abort()
+    }, this.sessionListDeadlineMs)
+    timer?.unref?.()
+    const signal = deadline === undefined ? request.signal : AbortSignal.any([request.signal, deadline.signal])
+    // Only a successful native response may seed lineage, never browser arguments.
+    let accessSnapshot: NativeSessionAccessSnapshot | undefined
+    let response: Response | undefined
+    let deadlineRecorded = false
+    const recordDeadline = (): void => {
+      if (!deadline?.signal.aborted || deadlineRecorded) return
+      deadlineRecorded = true
+      const totalElapsedMs = Date.now() - started
+      this.runtime.diagnostics?.record({
+        event: 'native.session-list.timeout', elapsedMs: totalElapsedMs,
+        error: { kind: 'TimeoutError', httpStatus: 504 },
+        sessionList: { ...stages, totalElapsedMs, status: 504 },
+      })
+    }
+    const recordComplete = (status: number): void => {
+      if (!isSessionList) return
+      const totalElapsedMs = Date.now() - started
+      this.runtime.diagnostics?.record({
+        event: 'native.session-list.complete', elapsedMs: totalElapsedMs,
+        sessionList: { ...stages, totalElapsedMs, status },
+      })
+    }
+    try {
+      const pendingResponse = this.dispatch(new Request(request.url, {
+        method: 'POST', headers: request.headers, signal, body: JSON.stringify(body),
+      }))
+      // The pinned native carrier honors its signal. A compatibility persistence
+      // read may not, so retain a late Response only long enough to cancel its body.
+      void pendingResponse.then(late => {
+        if (signal.aborted) void late.body?.cancel().catch(() => undefined)
+      }, () => undefined)
+      response = await awaitAbort(pendingResponse, signal)
+      signal.throwIfAborted()
+      if (stages !== undefined) stages.upstreamElapsedMs = Date.now() - started
+      if (!response.ok || !response.headers.get('content-type')?.includes('application/json')) {
+        recordComplete(response.status)
+        return response
+      }
+      signal.throwIfAborted()
+      const output: unknown = await awaitAbort(response.json(), signal)
+      signal.throwIfAborted()
+      if (stages !== undefined) stages.jsonElapsedMs = Date.now() - started
+      if (!isRecord(output) || !isRecord(output.result) || output.result.ok !== true) {
+        recordComplete(response.status)
+        return Response.json(output, { status: response.status })
+      }
+      if (stages !== undefined && isRecord(output.result.value) && Array.isArray(output.result.value.items)) {
+        stages.itemsCount = output.result.value.items.length
+        accessSnapshot = this.runtime.createNativeSessionAccessSnapshot(output.result.value.items)
+      }
+      signal.throwIfAborted()
+      output.result.value = await awaitAbort(this.filterResult(endpoint, output.result.value, identity, accessSnapshot), signal)
+      signal.throwIfAborted()
+      if (stages !== undefined) stages.filterElapsedMs = Date.now() - started
+      recordComplete(response.status)
+      return Response.json(output, { status: response.status })
+    } catch (error) {
+      if (deadline?.signal.aborted) {
+        // A ReadableStream implementation may itself ignore cancellation. The
+        // response deadline must remain a caller-visible upper bound either way.
+        void response?.body?.cancel().catch(() => undefined)
+        recordDeadline()
+        throw new CarrierError(504, 'Native session catalogue timed out')
+      }
+      throw error
+    } finally {
+      if (timer !== undefined) clearTimeout(timer)
+    }
+  }
+
+  private async filterResult(
+    endpoint: string,
+    value: unknown,
+    identity: ChatroomIdentity,
+    accessSnapshot?: NativeSessionAccessSnapshot,
+  ): Promise<unknown> {
+    if (endpoint === 'commands/list' && Array.isArray(value) && !this.isAdmin(identity)) {
+      return value.filter(item => isRecord(item) && typeof item.name === 'string' && MEMBER_COMMANDS.has(item.name))
+    }
+    const canAccess = (id: unknown) => typeof id === 'string'
+      ? this.runtime.canAccessNativeSession(id, identity, undefined, accessSnapshot)
+      : Promise.resolve(false)
     if (Array.isArray(value) && ['sessionReferenceResolver/candidates', 'dynamicCordisRunner/inventory'].includes(endpoint)) {
       return await filterAsync(value, item => isRecord(item) ? canAccess(item.sessionId ?? item.agentId) : Promise.resolve(false))
     }
@@ -238,6 +364,14 @@ export class NativeGateway {
 
   /** Keep one native mux per authenticated socket so identities cannot share an opener. */
   async upgrade(request: IncomingMessage, socket: Duplex, head: Buffer): Promise<void> {
+    const operationId = randomUUID()
+    const started = Date.now()
+    let reason: 'peer-end' | 'socket-error' | 'transport-close' | 'auth-failed' = 'transport-close'
+    const authFailed = (error: unknown): void => {
+      reason = 'auth-failed'
+      this.runtime.diagnostics?.record({ event: 'native.auth.failure', operationId, error: diagnosticError(error) })
+      socket.destroy()
+    }
     const fetchRequest = new Request(`http://${request.headers.host ?? 'localhost'}${request.url ?? '/'}`, { headers: nodeHeaders(request) })
     try {
       this.assertOrigin(fetchRequest)
@@ -261,7 +395,7 @@ export class NativeGateway {
           try {
             for await (const frame of source) {
               signal.throwIfAborted()
-              const current = await self.identity(fetchRequest).catch(error => { socket.destroy(); throw error })
+              const current = await self.identity(fetchRequest).catch(error => { authFailed(error); throw error })
               if (endpoint === '$events' && isRecord(frame) && frame.type === 'ready' && typeof frame.clientId === 'string') clientId = frame.clientId
               if (!self.config.authEnabled || current === undefined) { yield frame; continue }
               if (endpoint === 'session/follow' && isRecord(payload) && isRecord(payload.args)) await self.sessionArguments(payload.args, current)
@@ -273,17 +407,28 @@ export class NativeGateway {
             if (clientId !== undefined) for (const key of self.answerable.keys()) if (key.startsWith(clientId + ':')) self.answerable.delete(key)
           }
         })()
-      }, this.transport.gateway.wireStream.failure, 2_000)
+      // A 2-second ping cadence terminates after only ~6 seconds without a pong.
+      // Retain native protocol/liveness checks with a WAN-tolerant grace window;
+      // account revocation is still independently checked every sseHeartbeatMs.
+      }, this.transport.gateway.wireStream.failure, Math.max(15_000, this.config.sseHeartbeatMs))
       this.muxes.set(socket, mux)
-      const heartbeat = setInterval(() => { void this.identity(fetchRequest).catch(() => socket.destroy()) }, this.config.sseHeartbeatMs)
+      const heartbeat = setInterval(() => { void this.identity(fetchRequest).catch(authFailed) }, this.config.sseHeartbeatMs)
       heartbeat.unref()
+      socket.once('end', () => { if (reason === 'transport-close') reason = 'peer-end' })
+      socket.once('error', error => {
+        reason = 'socket-error'
+        this.runtime.diagnostics?.record({ event: 'native.failure', operationId, elapsedMs: Date.now() - started, error: diagnosticError(error) })
+      })
       socket.once('close', () => {
         clearInterval(heartbeat)
         this.muxes.delete(socket)
-        void mux.close()
+        this.runtime.diagnostics?.record({ event: 'native.close', operationId, elapsedMs: Date.now() - started, reason: this.stopped ? 'plugin-stop' : reason })
+        void mux.close().catch(error => this.runtime.diagnostics?.record({ event: 'native.failure', operationId, error: diagnosticError(error) }))
       })
       mux.handleUpgrade(request, socket, head)
+      this.runtime.diagnostics?.record({ event: 'native.open', operationId, elapsedMs: Date.now() - started })
     } catch (error) {
+      this.runtime.diagnostics?.record({ event: 'native.failure', operationId, elapsedMs: Date.now() - started, error: diagnosticError(error) })
       socket.end(`HTTP/1.1 ${error instanceof CarrierError ? error.status : 500} Forbidden\r\nConnection: close\r\n\r\n`)
     }
   }
@@ -318,7 +463,9 @@ export class NativeGateway {
     if (frame.type === 'ready') return frame
     if (frame.type === 'waterfall' && typeof frame.eventId === 'string' && typeof frame.agentId === 'string'
       && clientId !== undefined && await canAccess(frame.agentId)) {
-      this.answerable.set(clientId + ':' + frame.eventId, { participantId: identity.participantId, sessionId: frame.agentId })
+      const adminOnly = frame.event !== 'user-questions/request'
+      if (adminOnly && !this.isAdmin(identity)) return undefined
+      this.answerable.set(clientId + ':' + frame.eventId, { participantId: identity.participantId, sessionId: frame.agentId, adminOnly })
       return frame
     }
     if (frame.type === 'cancel' && typeof frame.eventId === 'string' && clientId !== undefined) {
@@ -372,7 +519,7 @@ export class NativeGateway {
   }
 
   private isAdmin(identity: ChatroomIdentity): boolean {
-    return ('role' in identity && (identity as ChatroomAccount).role === 'super-admin') || this.config.settingsAdminParticipantIds.includes(identity.participantId)
+    return ('role' in identity && (identity as ChatroomAccount).role === 'super-admin')
   }
 
   private assertOrigin(request: Request): void {
@@ -421,6 +568,29 @@ function isPromptPart(value: unknown): value is ChatroomPromptContentPart {
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return value !== null && typeof value === 'object' && !Array.isArray(value)
+}
+
+/** Stop awaiting a non-cooperative read without leaving an abort listener behind. */
+function awaitAbort<T>(pending: Promise<T>, signal: AbortSignal): Promise<T> {
+  if (signal.aborted) {
+    // The caller may have cancelled before this stage started. Retain a rejection
+    // observer for a promise already created by a non-cooperative dependency.
+    void pending.catch(() => undefined)
+    return Promise.reject(signal.reason)
+  }
+  return new Promise<T>((resolve, reject) => {
+    let settled = false
+    const cleanup = (): void => signal.removeEventListener('abort', abort)
+    const settle = (next: () => void): void => {
+      if (settled) return
+      settled = true
+      cleanup()
+      next()
+    }
+    const abort = (): void => settle(() => reject(signal.reason))
+    signal.addEventListener('abort', abort, { once: true })
+    pending.then(value => settle(() => resolve(value)), error => settle(() => reject(error)))
+  })
 }
 
 async function filterAsync<T>(values: readonly T[], include: (value: T) => Promise<boolean>): Promise<T[]> {

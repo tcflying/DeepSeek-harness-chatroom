@@ -85,21 +85,17 @@ export function identifyFileText(file: ChatroomFileReference): string {
 /** Remove file marker lines while collecting download cards for the browser. */
 export function projectFileText(text: string): { text: string; files: ChatroomFileReference[] } {
   const files: ChatroomFileReference[] = []
-  let visible = text
-  while (true) {
-    const start = visible.indexOf(FILE_MARKER_START)
-    if (start < 0) break
-    const end = visible.indexOf(PARTICIPANT_MARKER_END, start + FILE_MARKER_START.length)
-    if (end < 0) break
-    const file = decodePayload<ChatroomFileReference>(visible.slice(start + FILE_MARKER_START.length, end))
-    if (!validFile(file)) break
-    files.push(file)
-    const before = visible.slice(0, start).replace(/\n$/u, '')
-    let after = visible.slice(end + PARTICIPANT_MARKER_END.length)
-    const prefix = filePrefix(file)
-    if (after.startsWith(prefix)) after = after.slice(prefix.length)
-    visible = `${before}${after}`
-  }
+  // Some model renderers strip the first invisible delimiter. Parse either form,
+  // bounded by the terminating delimiter, without swallowing surrounding prose.
+  const visible = text.replace(/\u2063?dsh-chatroom-file:([^\u2063\n]{1,8192})\u2063(?:文件：[^\n\u2063]*)?/gu,
+    (marker: string, payload: string) => {
+      const file = decodePayload<ChatroomFileReference>(payload)
+      if (!validFile(file)) return marker
+      if (!files.some(existing => existing.id === file.id)) files.push(file)
+      const delimiter = marker.indexOf(PARTICIPANT_MARKER_END, marker.startsWith(PARTICIPANT_MARKER_END) ? 1 : 0)
+      const suffix = marker.slice(delimiter + 1)
+      return suffix.startsWith(filePrefix(file)) ? suffix.slice(filePrefix(file).length) : suffix
+    }).replace(/^\n/u, '')
   return { text: visible, files }
 }
 

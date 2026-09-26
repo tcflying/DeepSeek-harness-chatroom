@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react'
-import { chatroomAvatar, type ChatroomAvatarId } from '../avatars.js'
+import { type ChatroomAvatarId } from '../avatars.js'
+import { ChatroomAvatar } from './ChatroomAvatar.js'
 
 interface ChatroomAvatarViewProps {
   readonly participantId: string
@@ -9,20 +9,13 @@ interface ChatroomAvatarViewProps {
   readonly title?: string
 }
 
-/** Render a verified enterprise profile image with the deterministic cartoon avatar as its load fallback. */
+/** Reuse the shared classic-avatar renderer in member and private-chat surfaces. */
 export function ChatroomAvatarView(props: ChatroomAvatarViewProps): JSX.Element {
-  const [failed, setFailed] = useState(false)
-  const fallback = chatroomAvatar(props.avatarId, props.participantId)
-  useEffect(() => { setFailed(false) }, [props.avatarUrl])
-  return <span
+  return <ChatroomAvatar
     className={props.className}
-    data-avatar={fallback.id}
-    data-avatar-source={props.avatarUrl === undefined || failed ? 'fallback' : 'enterprise'}
-    title={props.title ?? fallback.label}
-    aria-hidden
-  >
-    {props.avatarUrl !== undefined && !failed
-      ? <img src={props.avatarUrl} alt="" referrerPolicy="no-referrer" onError={() => { setFailed(true) }} />
-      : fallback.emoji}
-  </span>
+    avatarId={props.avatarId}
+    avatarUrl={props.avatarUrl}
+    seed={props.participantId}
+    {...(props.title === undefined ? {} : { title: props.title })}
+  />
 }

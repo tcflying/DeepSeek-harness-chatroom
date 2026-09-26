@@ -3,6 +3,7 @@ import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/re
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { ChatroomAgentProfile, ChatroomAgentProfilesView } from '../src/types.js'
 import { AgentProfilesPanel } from '../src/client/ChatroomPanels.js'
+import { classicAvatarUrl } from '../src/client/avatar-images.js'
 
 function profile(patch: Partial<ChatroomAgentProfile> = {}): ChatroomAgentProfile {
   return {
@@ -31,6 +32,8 @@ function view(profiles: readonly ChatroomAgentProfile[], canManage = true): Chat
 function renderPanel(agentProfiles: ChatroomAgentProfilesView, overrides: Record<string, unknown> = {}): void {
   const props = {
     room: {
+      phase: 'ready',
+      auth: { enabled: false, authenticated: true },
       room: { id: 'room-1', title: '评审部' },
       agentsOpen: true,
       agentProfiles,
@@ -46,6 +49,35 @@ function renderPanel(agentProfiles: ChatroomAgentProfilesView, overrides: Record
 }
 
 describe('AgentProfilesPanel', () => {
+  it('does not report missing permissions or an empty roster while loading', () => {
+    renderPanel(view([]), { room: { room: { id: 'room-1', title: '评审部' }, agentsOpen: true, agentBusy: true } })
+    expect(screen.getByText(/正在加载 AI 成员/)).toBeTruthy()
+    expect(screen.queryByText('只有群主和管理员可以修改 AI 成员。')).toBeNull()
+    expect(screen.queryByText('本群没有启用中的 AI 成员。')).toBeNull()
+  })
+  it('portals a modal outside the host panel, closes on Escape, and restores focus', () => {
+    const trigger = document.createElement('button'); document.body.append(trigger); trigger.focus()
+    const closeAgents = vi.fn()
+    renderPanel(view([]), { closeAgents })
+    const dialog = screen.getByRole('dialog', { name: 'AI 成员' })
+    expect(dialog.parentElement).toBe(document.body)
+    expect(dialog.getAttribute('aria-modal')).toBe('true')
+    fireEvent(dialog, new Event('cancel', { cancelable: true }))
+    expect(closeAgents).toHaveBeenCalledTimes(1)
+    cleanup()
+    expect(document.activeElement).toBe(trigger)
+    trigger.remove()
+  })
+  it('edits a persistent avatar through the same profile save and renders the selected roster icon', async () => {
+    const saveAgentProfile = vi.fn(async () => true)
+    renderPanel(view([profile({ avatarId: 'qq-20' })]), { saveAgentProfile })
+    expect(document.querySelector('.dsh-chatroom-member-avatar img')?.getAttribute('src')).toBe(classicAvatarUrl('qq-20', 'chatroom-agent-profile-1'))
+    fireEvent.click(screen.getByRole('button', { name: '编辑 / 换头像' }))
+    fireEvent.click(screen.getByText('更换 AI 头像'))
+    fireEvent.click(screen.getByRole('button', { name: 'QQ 2007 经典头像 021' }))
+    fireEvent.click(screen.getByRole('button', { name: '保存修改' }))
+    await waitFor(() => expect(saveAgentProfile).toHaveBeenCalledWith(expect.objectContaining({ profileId: 'profile-1', avatarId: 'qq-21', model: 'chat', name: 'Terra' })))
+  })
   afterEach(() => {
     cleanup()
     vi.restoreAllMocks()
@@ -56,6 +88,7 @@ describe('AgentProfilesPanel', () => {
     const deleteAgentProfile = vi.fn(async () => undefined)
     renderPanel(view([profile()]), { saveAgentProfile, deleteAgentProfile })
     expect(screen.getByText('Terra')).toBeTruthy()
+    expect(document.querySelector('.dsh-chatroom-member-avatar img')?.getAttribute('src')).toBe(classicAvatarUrl(undefined, 'chatroom-agent-profile-1'))
     expect(screen.getByText(/审查员 · deepseek · chat/)).toBeTruthy()
 
     fireEvent.click(screen.getByRole('button', { name: '停用' }))
@@ -100,7 +133,7 @@ describe('AgentProfilesPanel', () => {
 
   it('stays read-only for members without management rights', () => {
     renderPanel(view([], false))
-    expect(screen.getByText('只有群主和管理员可以修改 AI 成员。')).toBeTruthy()
+    expect(screen.getByText('只有平台管理员可以修改 AI 成员。')).toBeTruthy()
     expect(screen.queryByRole('button', { name: '删除' })).toBeNull()
     expect(screen.queryByRole('button', { name: '添加 AI 成员' })).toBeNull()
   })

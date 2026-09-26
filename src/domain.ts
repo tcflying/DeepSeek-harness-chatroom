@@ -142,6 +142,7 @@ export interface AutomationSettingsRecord {
 
 /** Durable room participant AI identity. Kept separate from native Harness subagents. */
 export interface RoomAgentProfileRecord {
+  readonly avatarId?: ChatroomAvatarId
   readonly id: string
   readonly roomId: string
   readonly name: string
@@ -372,6 +373,7 @@ const automationSettingsSchema = z.object({
 }) as z.ZodType<AutomationSettingsRecord>
 
 const roomAgentProfileSchema = z.object({
+  avatarId: z.string().refine(isChatroomAvatarId).optional(),
   id: z.string().min(1),
   roomId: z.string().min(1),
   name: z.string().min(1).max(80),

@@ -16,6 +16,7 @@ import type {
   ChatroomManageableRoomsResponse,
   ChatroomInfo,
   ChatroomMember,
+  ChatroomModelProgress,
   ChatroomNotification,
   ChatroomGlobalEvent,
   ChatroomAgentProfilesView,
@@ -48,10 +49,13 @@ import type {
 import type { ChatroomReactionEmoji } from '../reactions.js'
 import { mentionsName } from '../message.js'
 import { CHATROOM_API_PREFIX } from '../routes.js'
+import { watchReadStream } from './read-stream-watch.js'
+import type { ClientRuntimeFailureReporter } from './runtime-diagnostics.js'
 
 export type ChatroomPhase = 'loading' | 'auth-required' | 'identity-required' | 'ready' | 'error'
 export type ChatroomConnection = 'offline' | 'connecting' | 'online'
 export type ChatroomNewSessionMode = 'choose' | 'group' | 'solo'
+export type ChatroomManageableRoomsStatus = 'idle' | 'loading' | 'ready' | 'error'
 
 /** Pick an unambiguous visible @ token for one account in the new-Group directory. */
 export function newGroupMentionName(
@@ -95,10 +99,12 @@ export type ChatroomAgentTarget =
 
 /** Browser identity, room directory, selection, and presence around native Harness Sessions. */
 export interface ChatroomView {
+  readonly modelProgress?: readonly ChatroomModelProgress[]
   readonly branchFrame?: ChatroomBranchFrame | undefined
   readonly open: boolean
   readonly phase: ChatroomPhase
   readonly connection: ChatroomConnection
+  readonly notificationConnection?: ChatroomConnection
   readonly rooms: readonly ChatroomInfo[]
   readonly room: ChatroomInfo | undefined
   readonly roomEnsureSessionId: string | undefined
@@ -116,6 +122,8 @@ export interface ChatroomView {
   readonly agentProfiles: ChatroomAgentProfilesView | undefined
   readonly agentProfilesRoomId: string | undefined
   readonly manageableRooms: readonly ChatroomInfo[]
+  readonly manageableRoomsStatus?: ChatroomManageableRoomsStatus
+  readonly manageableRoomsError?: string | undefined
   readonly agentBusy: boolean
   readonly agentError: string | undefined
   readonly managementBusy?: boolean
@@ -176,6 +184,14 @@ export class ChatroomClientStore implements HostObservable<ChatroomView> {
   private readonly nativeOwnershipLookups = new Map<string, Promise<boolean>>()
   private readonly nativeSessionAccess = new Map<string, boolean>()
   private readonly agentProfileLoads = new Map<string, { readonly generation: number; readonly promise: Promise<void> }>()
+  private manageableRoomsLoad: {
+    readonly generation: number
+    readonly participantId: string
+    readonly controller: AbortController
+    readonly cancel: () => void
+    readonly bindSignal: (signal?: AbortSignal) => void
+    readonly promise: Promise<void>
+  } | undefined
   private sessionGeneration = 0
   private agentBusyGeneration = 0
   private agentBusyRoomId: string | undefined
@@ -207,6 +223,8 @@ export class ChatroomClientStore implements HostObservable<ChatroomView> {
     agentProfiles: undefined,
     agentProfilesRoomId: undefined,
     manageableRooms: [],
+    manageableRoomsStatus: 'idle',
+    manageableRoomsError: undefined,
     agentBusy: false,
     agentError: undefined,
     managementBusy: false,
@@ -264,12 +282,22 @@ export class ChatroomClientStore implements HostObservable<ChatroomView> {
   private readonly listeners = new Set<() => void>()
   private eventSource: EventSource | undefined
   private notificationSource: EventSource | undefined
+  private roomWatch: ReturnType<typeof watchReadStream> | undefined
+  private notificationWatch: ReturnType<typeof watchReadStream> | undefined
+  private readRetryTimer: ReturnType<typeof setTimeout> | undefined
+  private readRetryDelay = 1500
   private pendingOpenRoomId: string | undefined
   private identityPromptedRoomId: string | undefined
   private stopped = false
   private compositionRevision = 0
   private pendingFileSequence = 0
   private searchRevision = 0
+  // UI reads are not mutations, but their late responses must never cross a
+  // navigation, panel close, or account boundary.
+  private roomNavigationRevision = 0
+  private directRevision = 0
+  private directDirectoryRevision = 0
+  private threadRevision = 0
   private originalTitle: string | undefined
   // Background tabs release their SSE slots: browsers cap connections per host,
   // and 2 SSE per tab across several tabs starves every other request.
@@ -283,6 +311,7 @@ export class ChatroomClientStore implements HostObservable<ChatroomView> {
     }
     this.closeEvents()
     this.closeNotifications()
+    this.clearReadRetry()
   }
   private activeNativeSession: {
     readonly id: string
@@ -290,19 +319,48 @@ export class ChatroomClientStore implements HostObservable<ChatroomView> {
     readonly shareable: boolean
     readonly parentSessionId?: string
   } | undefined
+  // Host session projection can synchronously re-emit from a store listener.
+  // Keep this latch through publication and event-source setup, not just the
+  // first state write, because openEvents()/closeEvents() also publish.
+  private readonly activatingSessionIds = new Set<string | undefined>()
   private roomEnsure: { readonly sessionId: string; readonly promise: Promise<void> } | undefined
   private readonly pendingAutoTriggerWrites = new Map<string, Promise<boolean>>()
   private pendingQuickMeetingTarget: { roomId: string } | { threadId: string } | { directConversationId: string } | undefined
 
   private beginSessionGeneration(): number {
+    this.cancelManageableRoomsLoad()
     this.nativeOwnershipLookups.clear()
     this.nativeSessionAccess.clear()
     this.invalidateAgentBusy()
+    this.roomNavigationRevision += 1
+    this.directRevision += 1
+    this.directDirectoryRevision += 1
+    this.threadRevision += 1
     return ++this.sessionGeneration
   }
 
   private isCurrentSessionGeneration(generation: number): boolean {
     return !this.stopped && this.sessionGeneration === generation
+  }
+
+  private isCurrentManageableRoomsTarget(generation: number, participantId: string): boolean {
+    return this.isCurrentSessionGeneration(generation)
+      && this.snapshot.identity?.participantId === participantId
+  }
+
+  private ownsManageableRoomsLoad(
+    load: Promise<void>,
+    generation: number,
+    participantId: string,
+  ): boolean {
+    return this.isCurrentManageableRoomsTarget(generation, participantId)
+      && this.manageableRoomsLoad?.promise === load
+  }
+
+  private cancelManageableRoomsLoad(): void {
+    const pending = this.manageableRoomsLoad
+    this.manageableRoomsLoad = undefined
+    pending?.cancel()
   }
 
   private isCurrentAgentProfileTarget(roomId: string, generation: number): boolean {
@@ -343,12 +401,32 @@ export class ChatroomClientStore implements HostObservable<ChatroomView> {
   constructor(
     private readonly openSession: (sessionId: string) => boolean = () => false,
     branchFrame?: ChatroomBranchFrame,
+    private readonly reportRuntimeFailure?: ClientRuntimeFailureReporter,
   ) {
     if (branchFrame !== undefined) this.snapshot = { ...this.snapshot, branchFrame }
   }
 
   /** Current immutable room projection. */
   getSnapshot = (): ChatroomView => this.snapshot
+  private reconnectPending: Promise<void> | undefined
+
+  /** Revalidate the cookie and replace both read-only streams; never replay mutations. */
+  reconnect = (): Promise<void> => {
+    if (this.stopped) return Promise.resolve()
+    if (this.reconnectPending !== undefined) return this.reconnectPending
+    this.clearReadRetry()
+    this.closeEvents()
+    this.closeNotifications()
+    this.set({ connection: 'connecting' })
+    const pending = this.loadSession().then(() => {
+      if (!this.stopped && this.snapshot.phase === 'ready') {
+        if (this.snapshot.room !== undefined) this.openEvents(this.snapshot.room)
+        this.openNotifications()
+      }
+    }).finally(() => { if (this.reconnectPending === pending) this.reconnectPending = undefined })
+    this.reconnectPending = pending
+    return pending
+  }
 
   /** Resolve room metadata for any native Session in the shared directory. */
   roomForSession(sessionId: string): ChatroomInfo | undefined {
@@ -519,7 +597,9 @@ export class ChatroomClientStore implements HostObservable<ChatroomView> {
 
   /** Stop network activity and notification delivery. */
   stop(): void {
+    this.set({ connection: 'offline', notificationConnection: 'offline', modelProgress: [] })
     this.stopped = true
+    this.clearReadRetry()
     this.beginSessionGeneration()
     if (typeof document !== 'undefined') document.removeEventListener('visibilitychange', this.handleVisibilityChange)
     this.closeEvents()
@@ -639,6 +719,8 @@ export class ChatroomClientStore implements HostObservable<ChatroomView> {
         agentProfilesRoomId: undefined,
         agentBusy: false,
         manageableRooms: [],
+        manageableRoomsStatus: 'idle',
+        manageableRoomsError: undefined,
         toasts: [],
         unreadCount: 0,
         composerRoomId: undefined,
@@ -783,6 +865,9 @@ export class ChatroomClientStore implements HostObservable<ChatroomView> {
 
   /** Open the private-message directory. */
   openDirect = async (peerId?: string): Promise<void> => {
+    const generation = this.sessionGeneration
+    const participantId = this.snapshot.identity?.participantId
+    const revision = ++this.directRevision
     this.set({ directOpen: true, directBusy: true, directError: undefined, adminOpen: false, accountOpen: false })
     try {
       const response = peerId === undefined
@@ -792,6 +877,8 @@ export class ChatroomClientStore implements HostObservable<ChatroomView> {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ peerId }),
         })
+      if (!this.isCurrentSessionGeneration(generation) || this.snapshot.identity?.participantId !== participantId
+        || this.snapshot.phase !== 'ready' || !this.snapshot.directOpen || this.directRevision !== revision) return
       this.set({
         directBusy: false,
         directPeers: response.peers,
@@ -800,6 +887,8 @@ export class ChatroomClientStore implements HostObservable<ChatroomView> {
         directMessages: response.messages ?? [],
       })
     } catch (error) {
+      if (!this.isCurrentSessionGeneration(generation) || this.snapshot.identity?.participantId !== participantId
+        || this.snapshot.phase !== 'ready' || !this.snapshot.directOpen || this.directRevision !== revision) return
       this.set({ directBusy: false, directError: errorMessage(error) })
     }
   }
@@ -807,8 +896,13 @@ export class ChatroomClientStore implements HostObservable<ChatroomView> {
   /** Refresh the private-message directory without opening its conversation panel. */
   loadDirectDirectory = async (): Promise<boolean> => {
     if (this.snapshot.phase !== 'ready' || this.snapshot.identity === undefined) return false
+    const generation = this.sessionGeneration
+    const participantId = this.snapshot.identity.participantId
+    const revision = ++this.directDirectoryRevision
     try {
       const response = await requestJson<ChatroomDirectResponse>(`${CHATROOM_API_PREFIX}/direct`)
+      if (!this.isCurrentSessionGeneration(generation) || this.snapshot.identity?.participantId !== participantId
+        || this.snapshot.phase !== 'ready' || this.directDirectoryRevision !== revision) return false
       this.set({
         directPeers: response.peers,
         directConversations: response.conversations,
@@ -816,12 +910,15 @@ export class ChatroomClientStore implements HostObservable<ChatroomView> {
       })
       return true
     } catch (error) {
+      if (!this.isCurrentSessionGeneration(generation) || this.snapshot.identity?.participantId !== participantId
+        || this.snapshot.phase !== 'ready' || this.directDirectoryRevision !== revision) return false
       this.set({ directError: errorMessage(error) })
       return false
     }
   }
 
   closeDirect = (): void => {
+    this.directRevision += 1
     this.set({ directOpen: false, directError: undefined })
   }
 
@@ -1063,17 +1160,97 @@ export class ChatroomClientStore implements HostObservable<ChatroomView> {
   }
 
   /** Load the room directory the signed-in identity may manage AI participants in. */
-  loadManageableRooms = async (): Promise<void> => {
-    try {
-      const result = await requestJson<ChatroomManageableRoomsResponse>(`${CHATROOM_API_PREFIX}/rooms/manageable`)
-      this.set({ manageableRooms: result.rooms })
-    } catch {
-      this.set({ manageableRooms: [] })
+  loadManageableRooms = async (signal?: AbortSignal): Promise<void> => {
+    if (this.stopped) return
+    const generation = this.sessionGeneration
+    const participantId = this.snapshot.identity?.participantId
+    if (participantId === undefined || this.snapshot.phase !== 'ready') return
+    const existing = this.manageableRoomsLoad
+    if (existing?.generation === generation && existing.participantId === participantId) {
+      existing.bindSignal(signal)
+      return await existing.promise
     }
+    this.cancelManageableRoomsLoad()
+    const controller = new AbortController()
+    const completion = Promise.withResolvers<void>()
+    const load = completion.promise
+    let timeout: ReturnType<typeof setTimeout> | undefined
+    const signalCleanups = new Set<() => void>()
+    const clearSignals = (): void => {
+      for (const cleanup of signalCleanups) cleanup()
+      signalCleanups.clear()
+    }
+    const settle = (): void => {
+      if (timeout !== undefined) clearTimeout(timeout)
+      clearSignals()
+      completion.resolve()
+    }
+    const cancel = (): void => {
+      controller.abort()
+      settle()
+    }
+    const bindSignal = (ownerSignal?: AbortSignal): void => {
+      if (ownerSignal === undefined) return
+      const onAbort = (): void => {
+        if (this.ownsManageableRoomsLoad(load, generation, participantId)) {
+          this.manageableRoomsLoad = undefined
+          cancel()
+          this.set({ manageableRooms: [], manageableRoomsStatus: 'idle', manageableRoomsError: undefined })
+          return
+        }
+        cancel()
+      }
+      if (ownerSignal.aborted) {
+        onAbort()
+        return
+      }
+      ownerSignal.addEventListener('abort', onAbort, { once: true })
+      signalCleanups.add(() => ownerSignal.removeEventListener('abort', onAbort))
+    }
+    this.manageableRoomsLoad = { generation, participantId, controller, cancel, bindSignal, promise: load }
+    this.set({ manageableRoomsStatus: 'loading', manageableRoomsError: undefined })
+    bindSignal(signal)
+    if (!this.ownsManageableRoomsLoad(load, generation, participantId) || controller.signal.aborted) return await load
+    timeout = setTimeout(() => {
+      controller.abort()
+      if (this.ownsManageableRoomsLoad(load, generation, participantId)) {
+        this.manageableRoomsLoad = undefined
+        settle()
+        this.set({ manageableRooms: [], manageableRoomsStatus: 'error', manageableRoomsError: '暂时无法加载可管理的群聊，请重试。' })
+        return
+      }
+      settle()
+    }, 15_000)
+    void (async () => {
+      try {
+        const result = await requestJson<ChatroomManageableRoomsResponse>(
+          `${CHATROOM_API_PREFIX}/rooms/manageable`,
+          { signal: controller.signal },
+        )
+        if (!this.ownsManageableRoomsLoad(load, generation, participantId)) return
+        this.manageableRoomsLoad = undefined
+        settle()
+        if (controller.signal.aborted) {
+          this.set({ manageableRooms: [], manageableRoomsStatus: 'error', manageableRoomsError: '暂时无法加载可管理的群聊，请重试。' })
+        } else {
+          this.set({ manageableRooms: result.rooms, manageableRoomsStatus: 'ready', manageableRoomsError: undefined })
+        }
+      } catch {
+        if (this.ownsManageableRoomsLoad(load, generation, participantId)) {
+          this.manageableRoomsLoad = undefined
+          settle()
+          this.set({ manageableRooms: [], manageableRoomsStatus: 'error', manageableRoomsError: '暂时无法加载可管理的群聊，请重试。' })
+        }
+      } finally {
+        settle()
+      }
+    })()
+    return await load
   }
 
   /** Create or update one room AI participant with its own model routing. */
   saveAgentProfile = async (input: {
+    readonly avatarId?: import('../avatars.js').ChatroomAvatarId
     readonly profileId?: string
     readonly name: string
     readonly role: string
@@ -1098,6 +1275,7 @@ export class ChatroomClientStore implements HostObservable<ChatroomView> {
           ...(input.profileId === undefined ? {} : { profileId: input.profileId }),
           name: input.name,
           role: input.role,
+          ...(input.avatarId === undefined ? {} : { avatarId: input.avatarId }),
           instructions: input.instructions ?? '',
           provider: input.provider,
           model: input.model,
@@ -1319,20 +1497,79 @@ export class ChatroomClientStore implements HostObservable<ChatroomView> {
     shareable = true,
     parentSessionId?: string,
   ): void => {
-    this.activeNativeSession = sessionId === undefined
-      ? undefined
-      : { id: sessionId, title, shareable, ...(parentSessionId === undefined ? {} : { parentSessionId }) }
-    const target = sessionId === undefined ? undefined : this.agentTargetForSession(sessionId)
-    const room = target?.room
-    if (room === undefined) {
-      this.invalidateActiveRoomAgentBusy(this.snapshot.room?.id)
-      this.closeEvents()
-      this.identityPromptedRoomId = undefined
-      this.updateActiveDocumentRoom(false)
+    if (this.activatingSessionIds.has(sessionId)) return
+    this.activatingSessionIds.add(sessionId)
+    try {
+      const nativeSelectionChanged = this.activeNativeSession?.id !== sessionId
+      this.activeNativeSession = sessionId === undefined
+        ? undefined
+        : { id: sessionId, title, shareable, ...(parentSessionId === undefined ? {} : { parentSessionId }) }
+      const target = sessionId === undefined ? undefined : this.agentTargetForSession(sessionId)
+      const room = target?.room
+      if (room === undefined) {
+        // A catalogue/status refresh may repeat an unchanged unbound Session.
+        // It is not navigation, so it must not tear down an unrelated private
+        // conversation or room controls while this view remains unbound.
+        if (!nativeSelectionChanged && this.snapshot.room === undefined) return
+        this.invalidateActiveRoomAgentBusy(this.snapshot.room?.id)
+        // Catalogue/status updates re-emit the current native selection. Only an
+        // actual navigation invalidates an in-flight explicit room selection.
+        if (nativeSelectionChanged) this.roomNavigationRevision += 1
+        this.directRevision += 1
+        this.threadRevision += 1
+        this.closeEvents()
+        if (this.activeNativeSession?.id !== sessionId) return
+        this.identityPromptedRoomId = undefined
+        this.updateActiveDocumentRoom(false)
+        this.set({
+          room: undefined,
+          roomEnsureSessionId: this.roomEnsure?.sessionId === sessionId ? sessionId : undefined,
+          connection: 'offline',
+          online: 0,
+          members: [],
+          memberCandidates: [],
+          reactions: [],
+          recalls: [],
+          threadPreviews: [],
+          pendingMessages: [],
+          membersOpen: false,
+          agentsOpen: false,
+          agentProfiles: undefined,
+          agentProfilesRoomId: undefined,
+          agentBusy: false,
+          thread: undefined,
+          threadMessages: [],
+          threadReply: undefined,
+          selectionRoomId: undefined,
+          selectedMessages: [],
+          forwardOpen: false,
+          directOpen: false,
+          directError: undefined,
+        })
+        return
+      }
+      this.updateActiveDocumentRoom(true)
+      if (this.snapshot.identity === undefined && this.identityPromptedRoomId !== room.id) {
+        this.identityPromptedRoomId = room.id
+        this.set({ open: true })
+        if (this.activeNativeSession?.id !== sessionId) return
+      }
+      if (this.snapshot.room?.id === room.id
+        && (this.eventSource !== undefined || this.snapshot.branchFrame !== undefined)) {
+        if (this.snapshot.directOpen) {
+          this.directRevision += 1
+          this.set({ directOpen: false, directError: undefined })
+        }
+        return
+      }
+      if (this.snapshot.room?.id !== room.id) this.invalidateActiveRoomAgentBusy(this.snapshot.room?.id)
+      if (nativeSelectionChanged) this.roomNavigationRevision += 1
+      this.directRevision += 1
+      this.threadRevision += 1
       this.set({
-        room: undefined,
-        roomEnsureSessionId: this.roomEnsure?.sessionId === sessionId ? sessionId : undefined,
-        connection: 'offline',
+        room,
+        roomEnsureSessionId: undefined,
+        connection: 'connecting',
         online: 0,
         members: [],
         memberCandidates: [],
@@ -1343,7 +1580,7 @@ export class ChatroomClientStore implements HostObservable<ChatroomView> {
         membersOpen: false,
         agentsOpen: false,
         agentProfiles: undefined,
-      agentProfilesRoomId: undefined,
+        agentProfilesRoomId: undefined,
         agentBusy: false,
         thread: undefined,
         threadMessages: [],
@@ -1354,46 +1591,15 @@ export class ChatroomClientStore implements HostObservable<ChatroomView> {
         directOpen: false,
         directError: undefined,
       })
-      return
+      // A different Session selected by a synchronous host listener wins;
+      // do not let this older activation attach its own stream afterward.
+      if (this.activeNativeSession?.id !== sessionId) return
+      this.clearUnread()
+      if (this.activeNativeSession?.id !== sessionId) return
+      this.openEvents(room)
+    } finally {
+      this.activatingSessionIds.delete(sessionId)
     }
-    this.updateActiveDocumentRoom(true)
-    if (this.snapshot.identity === undefined && this.identityPromptedRoomId !== room.id) {
-      this.identityPromptedRoomId = room.id
-      this.set({ open: true })
-    }
-    if (this.snapshot.room?.id === room.id
-      && (this.eventSource !== undefined || this.snapshot.branchFrame !== undefined)) {
-      if (this.snapshot.directOpen) this.set({ directOpen: false, directError: undefined })
-      return
-    }
-    if (this.snapshot.room?.id !== room.id) this.invalidateActiveRoomAgentBusy(this.snapshot.room?.id)
-    this.set({
-      room,
-      roomEnsureSessionId: undefined,
-      connection: 'connecting',
-      online: 0,
-      members: [],
-      memberCandidates: [],
-      reactions: [],
-      recalls: [],
-      threadPreviews: [],
-      pendingMessages: [],
-      membersOpen: false,
-      agentsOpen: false,
-      agentProfiles: undefined,
-      agentProfilesRoomId: undefined,
-      agentBusy: false,
-      thread: undefined,
-      threadMessages: [],
-      threadReply: undefined,
-      selectionRoomId: undefined,
-      selectedMessages: [],
-      forwardOpen: false,
-      directOpen: false,
-      directError: undefined,
-    })
-    this.clearUnread()
-    this.openEvents(room)
   }
 
   /** Create the persistent browser identity, then show the room directory. */
@@ -1627,6 +1833,9 @@ export class ChatroomClientStore implements HostObservable<ChatroomView> {
   /** Activate and navigate to an existing shared room. */
   selectRoom = async (roomId: string): Promise<void> => {
     const generation = this.sessionGeneration
+    const revision = ++this.roomNavigationRevision
+    this.directRevision += 1
+    this.threadRevision += 1
     this.set({ directOpen: false, directError: undefined, error: undefined })
     try {
       const response = await requestJson<ChatroomRoomResponse>(`${CHATROOM_API_PREFIX}/rooms/select`, {
@@ -1634,15 +1843,23 @@ export class ChatroomClientStore implements HostObservable<ChatroomView> {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ roomId }),
       })
-      if (this.isCurrentSessionGeneration(generation)) this.selectAndOpen(response.room)
+      if (this.isCurrentSessionGeneration(generation) && this.roomNavigationRevision === revision) this.selectAndOpen(response.room)
     } catch (error) {
-      if (this.isCurrentSessionGeneration(generation)) this.set({ phase: 'ready', error: errorMessage(error) })
+      if (this.isCurrentSessionGeneration(generation) && this.roomNavigationRevision === revision) {
+        // Observability must not throw over the original navigation failure or
+        // report a stale account's response after a different user signs in.
+        try { this.reportRuntimeFailure?.('room-selection', error) } catch { /* best-effort diagnostics */ }
+        this.set({ phase: 'ready', error: errorMessage(error) })
+      }
     }
   }
 
   /** Create, activate, and navigate to a new independent shared room. */
   createRoom = async (title: string): Promise<void> => {
     const generation = this.sessionGeneration
+    const revision = ++this.roomNavigationRevision
+    this.directRevision += 1
+    this.threadRevision += 1
     this.set({ error: undefined })
     try {
       const response = await requestJson<ChatroomRoomResponse>(`${CHATROOM_API_PREFIX}/rooms`, {
@@ -1650,9 +1867,9 @@ export class ChatroomClientStore implements HostObservable<ChatroomView> {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ title }),
       })
-      if (this.isCurrentSessionGeneration(generation)) this.selectAndOpen(response.room)
+      if (this.isCurrentSessionGeneration(generation) && this.roomNavigationRevision === revision) this.selectAndOpen(response.room)
     } catch (error) {
-      if (this.isCurrentSessionGeneration(generation)) this.set({ phase: 'ready', error: errorMessage(error) })
+      if (this.isCurrentSessionGeneration(generation) && this.roomNavigationRevision === revision) this.set({ phase: 'ready', error: errorMessage(error) })
     }
   }
 
@@ -1710,9 +1927,10 @@ export class ChatroomClientStore implements HostObservable<ChatroomView> {
   }
 
   /** Refresh authorization for the current platform account. */
-  loadWecomAuthorization = async (): Promise<ChatroomWecomAuthorizationState | undefined> => {
+  loadWecomAuthorization = async (signal?: AbortSignal): Promise<ChatroomWecomAuthorizationState | undefined> => {
     try {
-      const state = await requestJson<ChatroomWecomAuthorizationState>(`${CHATROOM_API_PREFIX}/wecom/auth`)
+      const state = await requestJson<ChatroomWecomAuthorizationState>(`${CHATROOM_API_PREFIX}/wecom/auth`, signal ? { signal } : undefined)
+      if (signal?.aborted) return undefined
       this.set({ wecomAuthorization: state, wecomError: state.error })
       const target = state.status === 'authorized' ? this.pendingQuickMeetingTarget : undefined
       if (target !== undefined) {
@@ -1721,7 +1939,7 @@ export class ChatroomClientStore implements HostObservable<ChatroomView> {
       }
       return state
     } catch (error) {
-      this.set({ wecomError: errorMessage(error) })
+      if (!signal?.aborted) this.set({ wecomError: errorMessage(error) })
       return undefined
     }
   }
@@ -1819,6 +2037,9 @@ export class ChatroomClientStore implements HostObservable<ChatroomView> {
 
   /** Create or reopen a branch rooted at one main-room message. */
   openThread = async (roomId: string, root: ChatroomThreadRoot): Promise<void> => {
+    const generation = this.sessionGeneration
+    const participantId = this.snapshot.identity?.participantId
+    const revision = ++this.threadRevision
     this.set({ membersOpen: false, agentsOpen: false, agentProfiles: undefined, agentProfilesRoomId: undefined, threadReply: undefined, threadBusy: true, threadError: undefined })
     try {
       const response = await requestJson<ChatroomThreadResponse>(`${CHATROOM_API_PREFIX}/threads/open`, {
@@ -1826,6 +2047,8 @@ export class ChatroomClientStore implements HostObservable<ChatroomView> {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ roomId, root }),
       })
+      if (!this.isCurrentSessionGeneration(generation) || this.snapshot.identity?.participantId !== participantId
+        || this.snapshot.phase !== 'ready' || this.snapshot.room?.id !== roomId || this.threadRevision !== revision) return
       this.set({
         thread: response.thread,
         threadMessages: response.messages,
@@ -1841,12 +2064,15 @@ export class ChatroomClientStore implements HostObservable<ChatroomView> {
       })
       this.clearUnread()
     } catch (error) {
+      if (!this.isCurrentSessionGeneration(generation) || this.snapshot.identity?.participantId !== participantId
+        || this.snapshot.phase !== 'ready' || this.snapshot.room?.id !== roomId || this.threadRevision !== revision) return
       this.set({ threadBusy: false, threadError: errorMessage(error) })
     }
   }
 
   /** Close the right-side branch panel. */
   closeThread = (): void => {
+    this.threadRevision += 1
     this.set({
       thread: undefined,
       threadMessages: [],
@@ -1965,6 +2191,8 @@ export class ChatroomClientStore implements HostObservable<ChatroomView> {
       agentBusy: false,
       agentError: undefined,
       manageableRooms: [],
+      manageableRoomsStatus: 'idle',
+      manageableRoomsError: undefined,
       directOpen: false,
       directBusy: false,
       directPeers: [],
@@ -2027,6 +2255,8 @@ export class ChatroomClientStore implements HostObservable<ChatroomView> {
 
   private selectAndOpen(room: ChatroomInfo): void {
     if (this.snapshot.room?.id !== room.id) this.invalidateActiveRoomAgentBusy(this.snapshot.room?.id)
+    this.directRevision += 1
+    this.threadRevision += 1
     const rooms = this.snapshot.rooms.some(candidate => candidate.id === room.id)
       ? this.snapshot.rooms.map(candidate => candidate.id === room.id ? room : candidate)
       : [...this.snapshot.rooms, room]
@@ -2068,8 +2298,9 @@ export class ChatroomClientStore implements HostObservable<ChatroomView> {
 
   private async loadSession(): Promise<void> {
     const generation = this.beginSessionGeneration()
+    const priorParticipantId = this.snapshot.identity?.participantId
     try {
-      const session = await requestJson<ChatroomSessionResponse>(`${CHATROOM_API_PREFIX}/session`)
+      const session = await requestJson<ChatroomSessionResponse>(`${CHATROOM_API_PREFIX}/session`, { signal: AbortSignal.timeout(10_000) })
       if (!this.isCurrentSessionGeneration(generation)) return
       const auth = sessionAuth(session)
       if (auth.enabled && !auth.authenticated) {
@@ -2085,6 +2316,9 @@ export class ChatroomClientStore implements HostObservable<ChatroomView> {
           roomEnsureSessionId: undefined,
           identity: undefined,
           auth,
+          manageableRooms: [],
+          manageableRoomsStatus: 'idle',
+          manageableRoomsError: undefined,
           online: 0,
           error: undefined,
         })
@@ -2102,6 +2336,9 @@ export class ChatroomClientStore implements HostObservable<ChatroomView> {
           roomEnsureSessionId: undefined,
           identity: undefined,
           auth,
+          manageableRooms: [],
+          manageableRoomsStatus: 'idle',
+          manageableRoomsError: undefined,
           online: 0,
           error: undefined,
         })
@@ -2114,6 +2351,9 @@ export class ChatroomClientStore implements HostObservable<ChatroomView> {
         soloSessionIds: session.soloSessionIds,
         identity: session.identity,
         auth,
+        ...(priorParticipantId !== session.identity.participantId
+          ? { manageableRooms: [], manageableRoomsStatus: 'idle' as const, manageableRoomsError: undefined }
+          : {}),
         error: undefined,
       })
       this.openNotifications()
@@ -2123,8 +2363,30 @@ export class ChatroomClientStore implements HostObservable<ChatroomView> {
     }
   }
 
+  private clearReadRetry(): void {
+    if (this.readRetryTimer !== undefined) clearTimeout(this.readRetryTimer)
+    this.readRetryTimer = undefined
+  }
+
+  /** EventSource retries CONNECTING itself, but a 404/MIME failure can permanently CLOSE it. */
+  private retryClosedRead(): void {
+    if (this.stopped || this.readRetryTimer !== undefined || this.snapshot.identity === undefined
+      || this.snapshot.phase === 'auth-required' || this.snapshot.phase === 'identity-required'
+      || (typeof document !== 'undefined' && document.visibilityState === 'hidden')) return
+    this.readRetryTimer = setTimeout(() => {
+      this.readRetryTimer = undefined
+      void this.reconnect().then(() => { if (this.snapshot.phase === 'error') this.retryClosedRead() }).catch(() => this.retryClosedRead())
+    }, this.readRetryDelay)
+    this.readRetryDelay = Math.min(30_000, this.readRetryDelay * 2)
+  }
+
+  private resetReadRetryBackoff(): void {
+    if (this.snapshot.notificationConnection === 'online' && (this.snapshot.room === undefined || this.snapshot.connection === 'online')) this.readRetryDelay = 1500
+  }
+
   private openEvents(room: ChatroomInfo): void {
     this.closeEvents()
+    if (this.snapshot.room?.id !== room.id) return
     if (this.stopped || this.snapshot.identity === undefined) return
     if (this.snapshot.branchFrame !== undefined) {
       this.set({ connection: 'online' })
@@ -2132,13 +2394,20 @@ export class ChatroomClientStore implements HostObservable<ChatroomView> {
     }
     if (typeof document !== 'undefined' && document.visibilityState === 'hidden') return
     this.set({ connection: 'connecting' })
+    if (this.snapshot.room?.id !== room.id) return
     const source = new EventSource(`${CHATROOM_API_PREFIX}/events?roomId=${encodeURIComponent(room.id)}`)
     this.eventSource = source
+    const watch = this.roomWatch = watchReadStream(source, () => {
+      if (this.eventSource !== source) return
+      watch.stop(); source.close()
+      this.set({ connection: 'connecting' }); this.retryClosedRead()
+    })
     source.onopen = () => {
-      if (this.eventSource === source) this.set({ connection: 'online', error: undefined })
+      if (this.eventSource === source) { watch.touch(); this.set({ connection: 'online', error: undefined }); this.resetReadRetryBackoff() }
     }
     source.onmessage = (event) => {
       if (this.eventSource !== source) return
+      watch.touch()
       try {
         this.receive(JSON.parse(event.data) as ChatroomServerEvent)
       } catch {
@@ -2146,7 +2415,9 @@ export class ChatroomClientStore implements HostObservable<ChatroomView> {
       }
     }
     source.onerror = () => {
-      if (this.eventSource === source) this.set({ connection: 'connecting' })
+      if (this.eventSource !== source) return
+      this.set({ connection: 'connecting' })
+      if (source.readyState === EventSource.CLOSED) { watch.stop(); this.retryClosedRead() }
     }
   }
 
@@ -2156,8 +2427,23 @@ export class ChatroomClientStore implements HostObservable<ChatroomView> {
     if (typeof document !== 'undefined' && document.visibilityState === 'hidden') return
     const source = new EventSource(`${CHATROOM_API_PREFIX}/notifications`)
     this.notificationSource = source
+    const watch = this.notificationWatch = watchReadStream(source, () => {
+      if (this.notificationSource !== source) return
+      watch.stop(); source.close()
+      this.set({ notificationConnection: 'connecting' }); this.retryClosedRead()
+    })
+    this.set({ notificationConnection: 'connecting' })
+    source.onopen = () => {
+      if (this.notificationSource === source) { watch.touch(); this.set({ notificationConnection: 'online' }); this.resetReadRetryBackoff() }
+    }
+    source.onerror = () => {
+      if (this.notificationSource !== source) return
+      this.set({ notificationConnection: 'connecting' })
+      if (source.readyState === EventSource.CLOSED) { watch.stop(); this.retryClosedRead() }
+    }
     source.onmessage = (event) => {
       if (this.notificationSource !== source) return
+      watch.touch()
       try {
         const parsed = JSON.parse(event.data) as ChatroomGlobalEvent
         if (parsed.type === 'notification') this.receiveNotification(parsed.notification)
@@ -2169,13 +2455,24 @@ export class ChatroomClientStore implements HostObservable<ChatroomView> {
   }
 
   private closeEvents(): void {
-    this.eventSource?.close()
-    this.eventSource = undefined
+    const source = this.eventSource
+    const watch = this.roomWatch
+    this.set({ modelProgress: [] })
+    // A synchronous listener can select another room while publishing the
+    // progress reset. It may already have installed its own read stream.
+    if (this.eventSource !== source) return
+    watch?.stop()
+    if (this.roomWatch === watch) this.roomWatch = undefined
+    source?.close()
+    if (this.eventSource === source) this.eventSource = undefined
+    if (this.snapshot.connection !== 'offline') this.set({ connection: 'offline' })
   }
 
   private closeNotifications(): void {
+    this.notificationWatch?.stop(); this.notificationWatch = undefined
     this.notificationSource?.close()
     this.notificationSource = undefined
+    if (this.snapshot.notificationConnection !== 'offline') this.set({ notificationConnection: 'offline' })
   }
 
   private receive(event: ChatroomServerEvent): void {
@@ -2195,6 +2492,7 @@ export class ChatroomClientStore implements HostObservable<ChatroomView> {
           recalls: event.recalls ?? [],
           threadPreviews: event.threadPreviews,
           pendingMessages: event.pendingMessages ?? [],
+          modelProgress: event.modelProgress ?? [],
           error: undefined,
         })
         return
@@ -2231,6 +2529,15 @@ export class ChatroomClientStore implements HostObservable<ChatroomView> {
       case 'room-updated':
         this.applyRoomManagement({ room: event.room, members: event.members })
         return
+      case 'model-progress': {
+        if (event.progress.roomId !== this.snapshot.room?.id) return
+        const current = this.snapshot.modelProgress ?? []
+        const prior = current.find(item => item.sessionId === event.progress.sessionId)
+        if (prior && (prior.seq > event.progress.seq
+          || (prior.seq === event.progress.seq && prior.updatedAt >= event.progress.updatedAt))) return
+        this.set({ modelProgress: [...current.filter(item => item.sessionId !== event.progress.sessionId), event.progress].slice(-64) })
+        return
+      }
       case 'agent-profiles': {
         if (this.snapshot.room?.id !== event.roomId && this.snapshot.agentProfilesRoomId !== event.roomId) return
         const current = this.snapshot.agentProfilesRoomId === event.roomId ? this.snapshot.agentProfiles : undefined

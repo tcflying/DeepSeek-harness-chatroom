@@ -22,8 +22,8 @@ async function nativeModule(packageName: string, file: string): Promise<Record<s
   const manifest = new URL(import.meta.resolve(`${packageName}/package.json`))
   const metadata: unknown = JSON.parse(await readFile(manifest, 'utf8'))
   if (typeof metadata !== 'object' || metadata === null || !('version' in metadata)
-    || metadata.version !== '0.1.2-rc.1') {
-    throw new Error(`chatroom requires ${packageName}@0.1.2-rc.1; refusing an unverified transport`)
+    || !['0.1.2-rc.1', '0.1.5-rc.2'].includes(String(metadata.version))) {
+    throw new Error(`chatroom requires a verified ${packageName} cohort (0.1.2-rc.1 or 0.1.5-rc.2); refusing an unverified transport`)
   }
   return await import(new URL(`lib/types/${file}.js`, manifest).href) as Record<string, unknown>
 }

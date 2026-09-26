@@ -1,5 +1,10 @@
 import { parseSessionReferenceText } from '@deepseek-ai/dsh-session-reference'
+import { inspectSession, listSessionHeaders } from './persistence-compat.js'
 import { createHash, randomBytes, randomUUID } from 'node:crypto'
+import { DiagnosticJournal, diagnosticError } from './diagnostics.js'
+import { projectModelProgress, type ProgressCursor } from './progress.js'
+import type { GalleryItem, GalleryPage } from './media.js'
+import { CHATROOM_API_PREFIX } from './routes.js'
 import type { ServerResponse } from 'node:http'
 import { basename } from 'node:path'
 import type { Context } from '@deepseek-ai/cordis'
@@ -8,7 +13,7 @@ import type {} from '@deepseek-ai/dsh-agent-default-model'
 import { agentPresetProjectionDefinition } from '@deepseek-ai/dsh-agent-presets'
 import { AttachmentError, type ImageAttachmentRef, type ImageMediaType } from '@deepseek-ai/dsh-attachment'
 import { BlockAssembler, createAssistantMessage, createUserMessage, freezeMessage, type ContentBlock, type ReasoningEffortId, type UserMessage } from '@deepseek-ai/dsh-llm'
-import { SessionId, type Session, type SessionEvent } from '@deepseek-ai/dsh-session'
+import { SessionId, type Session, type SessionEvent, type SessionHeader } from '@deepseek-ai/dsh-session'
 import type {} from '@deepseek-ai/dsh-session-persistence'
 import type {} from '@deepseek-ai/dsh-session-title'
 import type {} from '@deepseek-ai/dsh-system-prompt'
@@ -66,6 +71,7 @@ import { WecomCliManager, inferWecomCard, type WecomAuthorizationState, type Wec
 import { fetchTencentDocumentTitle, normalizeDocumentTitle, parseWecomDocumentUrl } from './wecom-document.js'
 import { messageParticipant } from './principal.js'
 import { registerWecomAgentTools } from './wecom-tools.js'
+import { generateImage, imageGenerationEndpoint, registerImageGenerationTool, registerImageEditTool, type ImageGenerationInput } from './image-generation.js'
 import type {
   ChatroomAgentProfile,
   ChatroomAgentProfileInput,
@@ -119,6 +125,7 @@ interface AgentBinding {
 interface SseClient {
   readonly participantId: string
   readonly response: ServerResponse
+  readonly canReceive: () => boolean
   drainTimer: ReturnType<typeof setTimeout> | undefined
   snapshotAllowance: number
 }
@@ -126,6 +133,7 @@ interface SseClient {
 interface NotificationClient {
   readonly participantId: string
   readonly response: ServerResponse
+  readonly canReceive: () => boolean
   drainTimer: ReturnType<typeof setTimeout> | undefined
   snapshotAllowance: number
 }
@@ -182,6 +190,22 @@ interface AgentToolTarget {
 /** Runtime validation failure safe to return to a browser. */
 export class ChatroomInputError extends Error {}
 
+/** A request-local, lazy native header view used only while filtering one catalogue. */
+export interface NativeSessionAccessSnapshot {
+  headers(): ReturnType<typeof listSessionHeaders>
+  /** Lineage from this request's trusted native response, never an authorization decision. */
+  catalogueParents?: ReadonlyMap<string, string | undefined>
+}
+
+/** Stage names are structural only: selection telemetry never carries room or account identifiers. */
+export type RoomSelectionStage = 'enter' | 'authentication' | 'ensure' | 'cached' | 'header' | 'inspect' | 'resume' | 'attach' | 'response' | 'exception'
+export interface RoomSelectionStageEvent {
+  readonly stage: RoomSelectionStage
+  readonly outcome: 'start' | 'complete' | 'failure'
+  readonly elapsedMs: number
+}
+export type RoomSelectionObserver = (event: RoomSelectionStageEvent) => void
+
 const ROOM_AGENT_ACTIVATION_TIMEOUT_MS = 30_000
 const ROOM_AGENT_RESPONSE_TIMEOUT_MS = 180_000
 const ROOM_AGENT_INSTRUCTIONS_MAX_CHARS = 4_000
@@ -190,7 +214,9 @@ const SSE_MAX_BUFFER_BYTES = 1_048_576
 
 /** Shared browser identities, room directory, presence, and native Harness Sessions. */
 export class ChatroomRuntime {
+  private readonly modelProgress = new Map<string, ProgressCursor>()
   private readonly log
+  readonly diagnostics: DiagnosticJournal
   private domain: Domain<typeof chatroomDomainSpec> | undefined
   private agentDomain: Domain<typeof chatroomAgentDomainSpec> | undefined
   private archive: ChatArchive | undefined
@@ -213,6 +239,8 @@ export class ChatroomRuntime {
   private authentication: ChatroomAuth | undefined
   private readonly states = new Map<string, RoomState>()
   private readonly roomTitleWrites = new Map<string, Promise<void>>()
+  /** Physical header I/O only: shared while live, never retained after settlement. */
+  private nativeSessionHeadersPending: Promise<readonly SessionHeader[]> | undefined
   private readonly sessionRoomCreations = new Map<string, Promise<ChatroomInfo>>()
   private readonly threadStates = new Map<string, ThreadState>()
   private readonly notificationClients = new Set<NotificationClient>()
@@ -233,6 +261,7 @@ export class ChatroomRuntime {
     readonly config: Config,
   ) {
     this.log = ctx.logger('deepseek-harness-chatroom')
+    this.diagnostics = new DiagnosticJournal(config.dataDirectory)
     this.wecom = new WecomCliManager(config)
   }
 
@@ -361,7 +390,7 @@ export class ChatroomRuntime {
       previous?.agent.cancel({ kind: 'user' })
       if (previous !== undefined) await this.retireRoomAgent(state, profileId, previous)
     }
-    this.setRoomAgentRuntime(state, profileId, {
+    if (runtimeConfigurationChanged) this.setRoomAgentRuntime(state, profileId, {
       status: record.enabled ? 'idle' : 'cancelled',
       updatedAt: Date.now(),
     })
@@ -392,7 +421,7 @@ export class ChatroomRuntime {
   async cancelRoomAgent(roomId: string, profileId: string, identity: ChatroomIdentity): Promise<void> {
     this.assertReady()
     const state = this.requireState(roomId)
-    this.assertRoomAccess(roomId, identity)
+    this.assertRoomAgentAccess(roomId, identity)
     const profile = this.requireRoomAgentProfiles().get(profileId)
     if (profile === undefined || profile.roomId !== roomId) throw new ChatroomInputError('该 AI 成员不存在。')
     this.setRoomAgentRuntime(state, profileId, { status: 'cancelled', updatedAt: Date.now() })
@@ -413,6 +442,8 @@ export class ChatroomRuntime {
     input: ChatroomAgentProfileInput,
     existing?: RoomAgentProfileRecord,
   ): Promise<Omit<RoomAgentProfileRecord, 'id' | 'roomId' | 'createdAt' | 'updatedAt'>> {
+    if (input.avatarId !== undefined && !isChatroomAvatarId(input.avatarId)) throw new ChatroomInputError('请选择有效的 AI 头像。')
+    const avatarId = input.avatarId ?? existing?.avatarId
     const name = normalizeModelRoute(input.name, 'AI 成员名称').trim()
     if (name === '') throw new ChatroomInputError('请填写 AI 成员名称。')
     if (name.length > 80) throw new ChatroomInputError('AI 成员名称过长。')
@@ -441,6 +472,7 @@ export class ChatroomRuntime {
     return {
       name,
       role,
+      ...(avatarId === undefined ? {} : { avatarId }),
       ...(instructions === '' ? {} : { instructions }),
       provider,
       model,
@@ -668,6 +700,7 @@ export class ChatroomRuntime {
 
   /** Open storage, seed the original room, and acquire its Session without blocking Harness startup. */
   async start(): Promise<void> {
+    this.diagnostics.record({ event: 'runtime.start' })
     const domain = await this.ctx.storageDomain.open(chatroomDomainSpec)
     this.domain = domain
     // Room-level AI participant profiles persist in their own storage unit, physically separate from the legacy chatroom domain.
@@ -718,6 +751,9 @@ export class ChatroomRuntime {
 
   /** Stop intake, close presence streams, and release every activated room. */
   async stop(): Promise<void> {
+    this.modelProgress.clear()
+    this.diagnostics.record({ event: 'runtime.stop' })
+    await this.diagnostics.flush()
     if (this.stopping) return
     this.stopping = true
     this.ready = false
@@ -939,8 +975,70 @@ export class ChatroomRuntime {
     return this.requireSoloSessions().get(String(SessionId(sessionId)))?.participantId === identity.participantId
   }
 
+  /** Reuse this native response's lineage; scan lazily only for missing/invalid ancestors. */
+  createNativeSessionAccessSnapshot(nativeItems?: readonly unknown[]): NativeSessionAccessSnapshot {
+    let headers: ReturnType<typeof listSessionHeaders> | undefined
+    const catalogueParents = new Map<string, string | undefined>()
+    const seen = new Set<string>()
+    for (const item of nativeItems ?? []) {
+      if (typeof item !== 'object' || item === null || !('sessionId' in item)
+        || typeof item.sessionId !== 'string' || item.sessionId === '') continue
+      const id = item.sessionId
+      // Never let a later duplicate restore an ambiguous lineage entry.
+      if (seen.has(id)) { catalogueParents.delete(id); continue }
+      seen.add(id)
+      const parent = 'parentSessionId' in item ? item.parentSessionId : undefined
+      if (parent !== undefined && (typeof parent !== 'string' || parent === '')) continue
+      catalogueParents.set(id, parent)
+    }
+    return { catalogueParents, headers: () => headers ??= this.listNativeSessionHeadersOnce() }
+  }
+
+  private listNativeSessionHeadersOnce(): Promise<readonly SessionHeader[]> {
+    const active = this.nativeSessionHeadersPending
+    if (active !== undefined) return active
+    const pending = listSessionHeaders(this.ctx.sessionPersistence)
+    this.nativeSessionHeadersPending = pending
+    void pending.then(
+      () => { if (this.nativeSessionHeadersPending === pending) this.nativeSessionHeadersPending = undefined },
+      () => { if (this.nativeSessionHeadersPending === pending) this.nativeSessionHeadersPending = undefined },
+    )
+    return pending
+  }
+
+  private reportRoomSelectionStage(
+    observe: RoomSelectionObserver | undefined,
+    stage: RoomSelectionStage,
+    outcome: RoomSelectionStageEvent['outcome'],
+    elapsedMs: number,
+  ): void {
+    try { observe?.({ stage, outcome, elapsedMs: Math.max(0, Math.round(elapsedMs)) }) } catch { /* diagnostics must not affect navigation */ }
+  }
+
+  private async observeRoomSelectionStage<T>(
+    observe: RoomSelectionObserver | undefined,
+    stage: RoomSelectionStage,
+    operation: () => Promise<T>,
+  ): Promise<T> {
+    const started = Date.now()
+    this.reportRoomSelectionStage(observe, stage, 'start', 0)
+    try {
+      const value = await operation()
+      this.reportRoomSelectionStage(observe, stage, 'complete', Date.now() - started)
+      return value
+    } catch (error) {
+      this.reportRoomSelectionStage(observe, stage, 'failure', Date.now() - started)
+      throw error
+    }
+  }
+
   /** Resolve room and Solo ownership before consulting immutable native parent lineage. */
-  async canAccessNativeSession(sessionId: string, identity: ChatroomIdentity, visited = new Set<string>()): Promise<boolean> {
+  async canAccessNativeSession(
+    sessionId: string,
+    identity: ChatroomIdentity,
+    visited = new Set<string>(),
+    snapshot?: NativeSessionAccessSnapshot,
+  ): Promise<boolean> {
     this.assertReady()
     if (!this.config.authEnabled) return true
     if (visited.has(sessionId)) return false
@@ -950,9 +1048,14 @@ export class ChatroomRuntime {
     if (room !== undefined) return this.requireMembers().get(`${room.record.id}:${identity.participantId}`) !== undefined
     const solo = this.requireSoloSessions().get(sessionId)
     if (solo !== undefined) return solo.participantId === identity.participantId
-    const header = this.ctx.agents.get(SessionId(sessionId))?.session.header
-      ?? (await this.ctx.sessionPersistence.list()).find(header => String(header.id) === sessionId)
-    return header?.parentSession !== undefined && await this.canAccessNativeSession(String(header.parentSession), identity, visited)
+    const liveHeader = this.ctx.agents.get(SessionId(sessionId))?.session.header
+    if (liveHeader === undefined && snapshot?.catalogueParents?.has(sessionId)) {
+      const parent = snapshot.catalogueParents.get(sessionId)
+      return parent !== undefined && await this.canAccessNativeSession(parent, identity, visited, snapshot)
+    }
+    const header = liveHeader
+      ?? (await (snapshot?.headers() ?? listSessionHeaders(this.ctx.sessionPersistence))).find(header => String(header.id) === sessionId)
+    return header?.parentSession !== undefined && await this.canAccessNativeSession(String(header.parentSession), identity, visited, snapshot)
   }
 
   /** Attribute a native fork to its creator before returning the child id to the browser. */
@@ -1027,7 +1130,7 @@ export class ChatroomRuntime {
       throw new ChatroomInputError('分支会话不能单独转换为群聊。')
     }
     const live = this.ctx.agents.get(SessionId(normalizedSessionId))
-    const persisted = live !== undefined || (await this.ctx.sessionPersistence.list())
+    const persisted = live !== undefined || (await listSessionHeaders(this.ctx.sessionPersistence))
       .some(header => String(header.id) === normalizedSessionId)
     if (!persisted) throw new ChatroomInputError('Harness 会话不存在或尚未就绪。')
     const id = `session-${createHash('sha256').update(normalizedSessionId).digest('base64url').slice(0, 24)}`
@@ -1062,17 +1165,28 @@ export class ChatroomRuntime {
   }
 
   /** Activate an existing room and return its public metadata. */
-  async selectRoom(roomId: string, identity?: ChatroomIdentity): Promise<ChatroomInfo> {
-    this.assertReady()
-    if (identity !== undefined) {
-      if (!this.config.authEnabled || (roomId === this.config.roomId && this.roomMemberCount(roomId) === 0)) {
-        await this.touchMember(roomId, identity)
-      }
-      else this.assertRoomMember(roomId, identity.participantId)
+  async selectRoom(roomId: string, identity?: ChatroomIdentity, observe?: RoomSelectionObserver): Promise<ChatroomInfo> {
+    const started = Date.now()
+    const selectionObserve: RoomSelectionObserver | undefined = observe === undefined ? undefined : event => {
+      this.reportRoomSelectionStage(observe, event.stage, event.outcome, Date.now() - started)
     }
-    const binding = await this.ensureRoom(roomId)
-    if (identity !== undefined) this.ensureRoomTitle(binding, this.requireState(roomId).record.title)
-    return this.projectRoom(this.requireState(roomId), identity?.participantId)
+    this.reportRoomSelectionStage(selectionObserve, 'enter', 'start', 0)
+    try {
+      this.assertReady()
+      if (identity !== undefined) {
+        if (!this.config.authEnabled || (roomId === this.config.roomId && this.roomMemberCount(roomId) === 0)) {
+          await this.touchMember(roomId, identity)
+        }
+        else this.assertRoomMember(roomId, identity.participantId)
+      }
+      this.reportRoomSelectionStage(selectionObserve, 'enter', 'complete', Date.now() - started)
+      const binding = await this.ensureRoom(roomId, selectionObserve)
+      if (identity !== undefined) this.ensureRoomTitle(binding, this.requireState(roomId).record.title)
+      return this.projectRoom(this.requireState(roomId), identity?.participantId)
+    } catch (error) {
+      this.reportRoomSelectionStage(selectionObserve, 'exception', 'failure', Date.now() - started)
+      throw error
+    }
   }
 
   /** Stop the active Agent turn while retaining the room and queued user intake. */
@@ -1307,7 +1421,8 @@ export class ChatroomRuntime {
       throw new ChatroomInputError('群成员不存在。')
     }
     const record = await this.requireRoomRecords().update(roomId, current => {
-      if (current.ownerParticipantId !== identity.participantId) {
+      if (this.config.authEnabled) this.assertRoomInviter(current, identity)
+      else if (current.ownerParticipantId !== identity.participantId) {
         throw new ChatroomInputError('只有群主可以设置管理员。')
       }
       if (participantId === current.ownerParticipantId) throw new ChatroomInputError('不能修改群主角色。')
@@ -1513,6 +1628,7 @@ export class ChatroomRuntime {
   async setRoomPinned(roomId: string, pinned: boolean, identity: ChatroomIdentity): Promise<ChatroomInfo> {
     this.assertReady()
     const state = this.requireState(roomId)
+    this.assertRoomAccess(roomId, identity)
     await this.requireRoomPreferences().put(roomPreferenceKey(roomId, identity.participantId), {
       roomId,
       participantId: identity.participantId,
@@ -1741,6 +1857,95 @@ export class ChatroomRuntime {
   }
 
   /** Resolve one authenticated room-file download. */
+  private galleryImageFileId(roomId: string, sessionId: string, imageId: string): string {
+    const digest = createHash('sha256').update(`${roomId}\0${sessionId}\0${imageId}`).digest('hex')
+    return `${digest.slice(0, 8)}-${digest.slice(8, 12)}-5${digest.slice(13, 16)}-a${digest.slice(17, 20)}-${digest.slice(20, 32)}`
+  }
+  async gallery(roomId: string, sessionId: string, identity: ChatroomIdentity, offset = 0): Promise<GalleryPage> {
+    this.assertReady()
+    this.assertRoomAccess(roomId, identity)
+    const binding = await this.forwardSourceBinding(roomId, sessionId)
+    this.assertRoomAccess(roomId, identity)
+    const recalled = new Set(this.recallsForRoom(roomId).map(record => record.messageId))
+    const found = new Map<string, GalleryItem>()
+    for (const event of binding.agent.session.snapshotEvents()) {
+      const message = event.type === 'user/message' ? event.data
+        : event.type === 'assistant/message' ? event.data.message : undefined
+      if (!message || recalled.has(String(message.id)) || recalled.has(`user:${event.seq}`) || recalled.has(`steering:${event.seq}`)) continue
+      for (const block of message.content) {
+        if (block.type === 'image') {
+          const image = { ...block.attachment, attachmentId: String(block.attachment.attachmentId) }
+          const id = `native:${image.attachmentId}`
+          const fileId = this.galleryImageFileId(roomId, sessionId, id)
+          found.set(id, { id, name: image.name ?? '上传的图片', mediaType: image.mediaType, createdAt: event.time,
+            ...(this.requireFiles().get(fileId) ? { fileId } : {}),
+            url: `${CHATROOM_API_PREFIX}/images/${encodeURIComponent(JSON.stringify({ sourceRoomId: roomId, sourceSessionId: sessionId, sourceSeq: event.seq, image }))}` })
+        } else if (block.type === 'text') {
+          const ids = new Set(projectFileText(block.text).files.map(file => file.id))
+          for (const match of block.text.matchAll(/!\[[^\]\n]*\]\(\/plugins\/deepseek-harness-chatroom\/api\/files\/([0-9a-f-]{36})\)/giu)) ids.add(match[1]!)
+          for (const id of ids) {
+            const file = this.requireFiles().get(id)
+            if (!file || file.roomId !== roomId || !/^image\/(png|jpeg|webp|gif)$/u.test(file.mediaType)) continue
+            found.set(id, { id, fileId: id, url: `${CHATROOM_API_PREFIX}/files/${id}`, name: file.name,
+              mediaType: file.mediaType, createdAt: event.time })
+          }
+        }
+      }
+    }
+    const items = [...found.values()]
+    return { items: items.slice(offset, offset + 100), ...(offset + 100 < items.length ? { next: offset + 100 } : {}) }
+  }
+
+  /** Resolve one authenticated room-file download. */
+  async assertMediaSession(roomId: string, sessionId: string, identity: ChatroomIdentity): Promise<void> {
+    this.assertReady()
+    this.assertRoomAccess(roomId, identity)
+    await this.forwardSourceBinding(roomId, sessionId)
+    this.assertRoomAccess(roomId, identity)
+  }
+
+  async materializeGalleryImage(roomId: string, sessionId: string, identity: ChatroomIdentity, imageId: string): Promise<string> {
+    let offset: number | undefined = 0, item: GalleryItem | undefined
+    do {
+      const page = await this.gallery(roomId, sessionId, identity, offset)
+      item = page.items.find(candidate => candidate.id === imageId)
+      offset = page.next
+    } while (!item && offset !== undefined)
+    if (!item) throw new ChatroomInputError('原图不属于当前会话或已撤回。')
+    if (item.fileId) return item.fileId
+    const reference = JSON.parse(decodeURIComponent(item.url.slice(item.url.lastIndexOf('/') + 1))) as { sourceSeq: number; image: ChatroomImageReference }
+    const id = this.galleryImageFileId(roomId, sessionId, imageId)
+    if (this.requireFiles().get(id)) return id
+    const image = await this.image(roomId, sessionId, reference.sourceSeq, reference.image)
+    this.assertRoomAccess(roomId, identity)
+    const record = await this.fileRecord(roomId, identity, { type: 'file', name: item.name, mediaType: item.mediaType, data: '' }, image.data)
+    await this.requireFiles().put(id, { ...record, id })
+    return id
+  }
+
+  async saveVideoResult(roomId: string, sessionId: string, identity: ChatroomIdentity, id: string, data: Uint8Array): Promise<string> {
+    await this.assertMediaSession(roomId, sessionId, identity)
+    let record = this.requireFiles().get(id)
+    if (record && (record.roomId !== roomId || record.mediaType !== 'video/mp4')) throw new ChatroomInputError('视频结果编号与现有文件冲突。')
+    if (!record) {
+      const stored = await this.fileRecord(roomId, identity, { type: 'file', name: `video-${id}.mp4`, mediaType: 'video/mp4', data: '' }, data)
+      record = { ...stored, id }
+      await this.requireFiles().put(id, record)
+    }
+    const binding = await this.forwardSourceBinding(roomId, sessionId)
+    const delivered = binding.agent.session.snapshotEvents().some(event => event.type === 'user/message'
+      && event.data.content.some(block => block.type === 'text' && projectFileText(block.text).files.some(file => file.id === id)))
+    if (!delivered) {
+      binding.agent.session.append('user/message', createUserMessage({
+        content: [{ type: 'text', text: identifyChatroomText(`MiniMax 视频已生成。${identifyFileText(publicFile(record))}`, identity) }],
+        source: { kind: 'user' },
+      }), { surfaceOp: 'append' })
+      await this.touchRoom(roomId)
+    }
+    return id
+  }
+
+  /** Resolve one authenticated room-file download. */
   file(fileId: string, identity?: ChatroomIdentity): { readonly ref: ChatroomFileReference; readonly data: Uint8Array } {
     this.assertReady()
     const record = this.requireFiles().get(fileId)
@@ -1787,7 +1992,12 @@ export class ChatroomRuntime {
   }
 
   /** Attach one authenticated presence client to one room. */
-  subscribe(roomId: string, identity: ChatroomIdentity, response: ServerResponse): () => void {
+  subscribe(
+    roomId: string,
+    identity: ChatroomIdentity,
+    response: ServerResponse,
+    isCurrentSession: () => boolean = () => true,
+  ): () => void {
     this.assertReady()
     const state = this.requireState(roomId)
     this.assertRoomAccess(roomId, identity)
@@ -1802,8 +2012,15 @@ export class ChatroomRuntime {
       recalls: this.recallsForRoom(roomId),
       threadPreviews: this.threadPreviewsForRoom(roomId),
       pendingMessages: this.pendingMessagesForRoom(state),
+      modelProgress: [...this.modelProgress.values()].filter(item => item.value.roomId === roomId).map(item => item.value),
     }
-    const client: SseClient = { participantId: identity.participantId, response, drainTimer: undefined, snapshotAllowance: 0 }
+    const client: SseClient = {
+      participantId: identity.participantId,
+      response,
+      canReceive: () => isCurrentSession() && this.canReceiveRoomSse(state, identity.participantId),
+      drainTimer: undefined,
+      snapshotAllowance: 0,
+    }
     state.clients.add(client)
     if (!writeSse(client, snapshot, () => removeSseClient(state.clients, client))) {
       return () => undefined
@@ -1819,9 +2036,19 @@ export class ChatroomRuntime {
   }
 
   /** Attach one identity to the global message-notification stream. */
-  subscribeNotifications(identity: ChatroomIdentity, response: ServerResponse): () => void {
+  subscribeNotifications(
+    identity: ChatroomIdentity,
+    response: ServerResponse,
+    isCurrentSession: () => boolean = () => true,
+  ): () => void {
     this.assertReady()
-    const client: NotificationClient = { participantId: identity.participantId, response, drainTimer: undefined, snapshotAllowance: 0 }
+    const client: NotificationClient = {
+      participantId: identity.participantId,
+      response,
+      canReceive: () => isCurrentSession() && this.canReceiveNotificationSse(identity.participantId),
+      drainTimer: undefined,
+      snapshotAllowance: 0,
+    }
     this.notificationClients.add(client)
     return () => { removeSseClient(this.notificationClients, client) }
   }
@@ -1830,9 +2057,12 @@ export class ChatroomRuntime {
   directDirectory(identity: ChatroomIdentity): ChatroomDirectResponse {
     this.assertReady()
     const peers = this.directoryPeers().filter(peer => peer.participantId !== identity.participantId)
+    const activePeerIds = new Set(peers.map(peer => peer.participantId))
     const conversations = [...this.requireDirectConversations().entries()]
       .map(([, conversation]) => conversation)
       .filter(conversation => conversation.participantIds.includes(identity.participantId))
+      // Keep archived records intact, but one disabled peer must not break the entire directory.
+      .filter(conversation => conversation.participantIds.some(id => id !== identity.participantId && activePeerIds.has(id)))
       .map(conversation => this.publicDirectConversation(conversation, identity.participantId))
       .sort((left, right) => right.updatedAt - left.updatedAt)
     return { peers, conversations }
@@ -1934,6 +2164,8 @@ export class ChatroomRuntime {
     if (existing === undefined || !existing.participantIds.includes(identity.participantId)) {
       throw new ChatroomInputError('私聊不存在或你无权访问。')
     }
+    // Cached conversation IDs must not write files or messages for disabled peers.
+    this.publicDirectConversation(existing, identity.participantId)
     const normalized = content
       .filter((part): part is Extract<ChatroomPromptContentPart, { type: 'text' }> => part.type === 'text')
       .map(part => part.text)
@@ -1983,6 +2215,7 @@ export class ChatroomRuntime {
     if (conversation === undefined || !conversation.participantIds.includes(identity.participantId)) {
       throw new ChatroomInputError('私聊不存在或你无权访问。')
     }
+    this.publicDirectConversation(conversation, identity.participantId)
     const found = this.findDirectMessage(conversationId, normalizeMessageId(messageId))
     if (found === undefined) throw new ChatroomInputError('私聊消息不存在。')
     const current = found.message.reactions ?? []
@@ -2174,6 +2407,12 @@ export class ChatroomRuntime {
   /** Project committed AI output into its parent room or branch stream. */
   handleSessionEvent(session: Session, event: SessionEvent): void {
     if (!this.isReady) return
+    this.publishModelProgress(session, event)
+    if (this.ownsSession(String(session.id)) && event.type === 'turn/end') {
+      this.diagnostics.record({ event: 'turn.end', sessionId: String(session.id), outcome: event.data.reason.kind,
+        ...(event.data.reason.kind === 'error' ? { error: diagnosticError(event.data.reason.error) } : {}),
+      })
+    }
     if (event.type === 'turn/end') this.activeTurnDeferredMessageIds.delete(String(session.id))
     this.captureAiContextStart(session, event)
     this.archiveSessionEvent(session, event)
@@ -2226,6 +2465,28 @@ export class ChatroomRuntime {
       text,
       createdAt: event.time,
     })
+  }
+
+  /** Forward only real runtime events from the currently attached room/AI Session. */
+  private publishModelProgress(session: Session, event: SessionEvent): void {
+    const sessionId = String(session.id)
+    const named = parseRoomAgentSessionId(sessionId)
+    const thread = [...this.threadStates.values()].find(item => item.record.sessionId === sessionId)
+    const state = named ? this.states.get(named.roomId) : thread ? this.states.get(thread.record.roomId)
+      : [...this.states.values()].find(item => item.record.sessionId === sessionId)
+    if (!state) return
+    const profile = named ? this.roomAgentProfilesFor(named.roomId).find(item => item.id === named.profileId) : undefined
+    if (named && (!profile?.enabled || state.agentBindings.get(named.profileId)?.agent.session !== session)) return
+    const cursor = projectModelProgress(this.modelProgress.get(sessionId), event, {
+      sessionId, roomId: state.record.id, name: profile?.name ?? state.record.aiDisplayName,
+    })
+    if (!cursor) return
+    this.modelProgress.set(sessionId, cursor)
+    // Bound transient memory; no raw progress is written to the diagnostic journal.
+    if (this.modelProgress.size > 256) this.modelProgress.delete(this.modelProgress.keys().next().value!)
+    if (event.type === 'assistant/chunk' && Date.now() - cursor.publishedAt < 250) return
+    cursor.publishedAt = Date.now()
+    this.broadcast(state, { type: 'model-progress', progress: cursor.value })
   }
 
   private async createThread(
@@ -2825,21 +3086,25 @@ export class ChatroomRuntime {
     this.broadcast(target.room, { type: 'message-recalled', recall: publicRecall(record) })
   }
 
-  private async ensureRoom(roomId: string): Promise<AgentBinding> {
+  private async ensureRoom(roomId: string, observe?: RoomSelectionObserver): Promise<AgentBinding> {
     const state = this.requireState(roomId)
     if (state.binding !== undefined) {
       this.archiveRoomSession(state, state.binding.agent.session)
-      return state.binding
+      return await this.observeRoomSelectionStage(observe, 'cached', async () => state.binding!)
     }
-    state.activation ??= this.activateRoom(state).then((binding) => {
-      state.binding = binding
-      this.restorePendingMessages(state, binding)
-      this.archiveRoomSession(state, binding.agent.session)
-      return binding
-    }).finally(() => {
-      state.activation = undefined
+    return await this.observeRoomSelectionStage(observe, 'ensure', async () => {
+      if (state.activation === undefined) {
+        state.activation = this.activateRoom(state, observe).then((binding) => {
+          state.binding = binding
+          this.restorePendingMessages(state, binding)
+          this.archiveRoomSession(state, binding.agent.session)
+          return binding
+        }).finally(() => {
+          state.activation = undefined
+        })
+      }
+      return await state.activation
     })
-    return await state.activation
   }
 
   private restorePendingMessages(state: RoomState, binding: AgentBinding): void {
@@ -2852,14 +3117,14 @@ export class ChatroomRuntime {
     }
   }
 
-  private async activateRoom(state: RoomState): Promise<AgentBinding> {
-    return await this.activateSharedSession(state.record.sessionId)
+  private async activateRoom(state: RoomState, observe?: RoomSelectionObserver): Promise<AgentBinding> {
+    return await this.activateSharedSession(state.record.sessionId, undefined, observe)
   }
 
-  private async activateSharedSession(sessionId: string, parentSessionId?: string): Promise<AgentBinding> {
-    const binding = await this.acquireAgent(sessionId, parentSessionId)
+  private async activateSharedSession(sessionId: string, parentSessionId?: string, observe?: RoomSelectionObserver): Promise<AgentBinding> {
+    const binding = await this.acquireAgent(sessionId, parentSessionId, undefined, undefined, observe)
     try {
-      await this.attachWorkspace(sessionId)
+      await this.observeRoomSelectionStage(observe, 'attach', async () => await this.attachWorkspace(sessionId))
       return binding
     } catch (error) {
       await binding.release()
@@ -2878,29 +3143,31 @@ export class ChatroomRuntime {
     parentSessionId?: string,
     agentOptions?: AgentOptions,
     configureAgent?: (agentCtx: Context) => void,
+    observe?: RoomSelectionObserver,
   ): Promise<AgentBinding> {
     const id = SessionId(sessionId)
     const live = this.ctx.agents.get(id)
     if (live !== undefined) {
       this.augmentChatroomAgentContext(live.ctx, sessionId)
-      return borrowAgent(live)
+      return await this.observeRoomSelectionStage(observe, 'cached', async () => borrowAgent(live))
     }
-    const persisted = (await this.ctx.sessionPersistence.list()).some(header => header.id === id)
+    const persisted = (await this.observeRoomSelectionStage(observe, 'header', async () => await listSessionHeaders(this.ctx.sessionPersistence)))
+      .some(header => header.id === id)
     const model = this.ctx.agentDefaultModel.currentSelection()
     const options = agentOptions ?? { provider: model.provider, model: model.model }
     if (persisted) {
-      const inspected = await this.ctx.sessionPersistence.inspect(id)
+      const inspected = await this.observeRoomSelectionStage(observe, 'inspect', async () => await inspectSession(this.ctx.sessionPersistence, id))
       const agentPreset = inspected.events.reduce(agentPresetProjectionDefinition.apply, agentPresetProjectionDefinition.init(inspected.meta))
         ?? this.config.agentPreset
       try {
-        return ownAgent(await this.ctx.agents.resume({
+        return ownAgent(await this.observeRoomSelectionStage(observe, 'resume', async () => await this.ctx.agents.resume({
           resumeSessionId: id,
           agentOptions: options,
           setup: async (agentCtx) => {
             await this.setupAgentContext(agentCtx, agentPreset, sessionId)
             configureAgent?.(agentCtx)
           },
-        }))
+        })))
       } catch (error) {
         const raced = this.ctx.agents.get(id)
         if (raced !== undefined) {
@@ -2963,6 +3230,16 @@ export class ChatroomRuntime {
 
   private setRoomAgentRuntime(state: RoomState, profileId: string, runtime: ChatroomAgentRuntimeState): void {
     state.agentRuntime.set(profileId, runtime)
+    if (runtime.status !== 'cancelled' && runtime.status !== 'failed') return
+    for (const cursor of this.modelProgress.values()) {
+      const named = parseRoomAgentSessionId(cursor.value.sessionId)
+      if (named?.roomId !== state.record.id || named.profileId !== profileId
+        || !['waiting', 'thinking', 'writing', 'tool'].includes(cursor.value.status)) continue
+      cursor.value = { ...cursor.value, status: runtime.status === 'failed' ? 'failed' : 'stopped',
+        text: runtime.status === 'failed' ? '运行失败，请查看本轮错误提示' : '本轮已停止',
+        updatedAt: Math.max(Date.now(), cursor.value.updatedAt + 1) }
+      this.broadcast(state, { type: 'model-progress', progress: cursor.value })
+    }
   }
 
   /** Invalidate every in-flight execution for this profile; dispatches capture the returned generation. */
@@ -2981,9 +3258,9 @@ export class ChatroomRuntime {
     const profiles = this.roomAgentProfilesFor(state.record.id)
     for (const client of [...state.clients]) {
       // Re-evaluate membership for every event, including after a manager is demoted.
-      const canManage = state.record.ownerParticipantId === client.participantId
-        || (state.record.adminParticipantIds ?? []).includes(client.participantId)
-        || this.auth.isSuperAdmin(client.participantId)
+      const canManage = this.config.authEnabled ? this.auth.isSuperAdmin(client.participantId)
+        : state.record.ownerParticipantId === client.participantId
+          || (state.record.adminParticipantIds ?? []).includes(client.participantId)
       const event: ChatroomServerEvent = {
         type: 'agent-profiles', roomId: state.record.id, canManage,
         profiles: profiles.map(profile => this.projectRoomAgentProfile(state, profile, canManage)),
@@ -3189,7 +3466,7 @@ export class ChatroomRuntime {
     const content = [{ type: 'text' as const, text: identifyChatroomText(text, {
       participantId,
       displayName: profile.name,
-      avatarId: fallbackAvatarId(participantId),
+      avatarId: this.requireRoomAgentProfiles().get(profile.id)?.avatarId ?? profile.avatarId ?? fallbackAvatarId(participantId),
     }) }]
     binding.agent.session.append('user/message', createUserMessage({ content, source: { kind: 'user' } }), { surfaceOp: 'append' })
     this.notify({
@@ -3224,6 +3501,11 @@ export class ChatroomRuntime {
         return decision
       }))
       disposers.push(registerChatroomAgentTools(agentCtx, this, sessionId))
+      if (this.config.imageGenerationBaseUrl) {
+        imageGenerationEndpoint(this.config.imageGenerationBaseUrl)
+        disposers.push(registerImageGenerationTool(agentCtx, (input, signal) => this.generateAgentImage(sessionId, input, signal)))
+        disposers.push(registerImageEditTool(agentCtx, (input, signal) => this.generateAgentImage(sessionId, input, signal)))
+      }
       disposers.push(registerWecomAgentTools(agentCtx, () => {
         const identity = this.initiatingIdentity(sessionId)
         return {
@@ -3251,6 +3533,66 @@ export class ChatroomRuntime {
       dispose()
       throw error
     }
+  }
+
+  private readonly activeImageSessions = new Set<string>()
+
+  /** Image requests share room authorization and Blob storage, not an unrestricted shell. */
+  private async generateAgentImage(sessionId: string, input: ImageGenerationInput, signal: AbortSignal): Promise<string> {
+    this.assertReady()
+    signal.throwIfAborted()
+    const baseUrl = this.config.imageGenerationBaseUrl
+    if (!baseUrl) throw new ChatroomInputError('本部署未启用生图工具。')
+    const member = parseRoomAgentSessionId(sessionId)
+    const profile = member === undefined ? undefined : this.requireRoomAgentProfiles().get(member.profileId)
+    if (member !== undefined && (profile === undefined || !profile.enabled || profile.roomId !== member.roomId)) {
+      throw new ChatroomInputError('当前 AI 成员不可用。')
+    }
+    const room = member === undefined ? this.agentToolTarget(sessionId).room : this.requireState(member.roomId)
+    const generation = profile === undefined ? undefined : room.agentExecutionGenerations.get(profile.id)
+    const participantId = this.sessionActors.get(sessionId)
+    const actor = this.config.authEnabled
+      ? this.auth.activeAccounts().find(account => account.participantId === participantId)
+      : participantId === undefined ? undefined : this.requireMembers().get(`${room.record.id}:${participantId}`)
+    if (actor === undefined) throw new ChatroomInputError('生图操作需要当前轮唯一的有效发起用户。')
+    const check = (): void => {
+      signal.throwIfAborted()
+      this.assertRoomAccess(room.record.id, { ...actor, avatarId: actor.avatarId ?? fallbackAvatarId(actor.participantId) })
+      if (this.config.authEnabled && !this.auth.activeAccounts().some(account => account.participantId === actor.participantId)) throw new ChatroomInputError('发起账号已停用。')
+      if (profile !== undefined && (this.requireRoomAgentProfiles().get(profile.id)?.updatedAt !== profile.updatedAt
+        || room.agentExecutionGenerations.get(profile.id) !== generation || room.agentRuntime.get(profile.id)?.status === 'cancelled')) {
+        throw new ChatroomInputError('AI 成员已取消或配置已变化。')
+      }
+    }
+    check()
+    const source = input.sourceFileId ? this.file(input.sourceFileId, { ...actor, avatarId: actor.avatarId ?? fallbackAvatarId(actor.participantId) }) : undefined
+    if (input.sourceFileId && this.requireFiles().get(input.sourceFileId)?.roomId !== room.record.id) throw new ChatroomInputError('改图原图不属于当前群聊。')
+    if (this.activeImageSessions.has(sessionId) || this.activeImageSessions.size >= 2) throw new ChatroomInputError('已有图片正在生成，请完成后再试。')
+    this.activeImageSessions.add(sessionId)
+    const operationId = randomUUID()
+    const started = Date.now()
+    this.diagnostics.record({ event: 'image.start', operationId, sessionId })
+    try {
+      const image = await generateImage(input, {
+        baseUrl, model: this.config.imageGenerationModel ?? 'gpt-image-2.5-flare',
+        maxBytes: this.config.maxFileBytes, timeoutMs: 240_000,
+        ...(source ? { source: { data: source.data, mediaType: source.ref.mediaType } } : {}),
+      }, signal)
+      check()
+      const identity = profile === undefined ? this.agentIdentity(room) : {
+        participantId: `chatroom-agent-${profile.id}`, displayName: profile.name, avatarId: profile.avatarId ?? fallbackAvatarId(`chatroom-agent-${profile.id}`),
+      }
+      const record = await this.fileRecord(room.record.id, identity, {
+        type: 'file', name: `generated-${randomUUID()}.png`, mediaType: image.mediaType, data: '',
+      }, image.data)
+      check()
+      await this.requireFiles().put(record.id, record)
+      this.diagnostics.record({ event: 'image.success', operationId, sessionId, elapsedMs: Date.now() - started, bytes: image.data.byteLength })
+      return `![生成图片](/plugins/deepseek-harness-chatroom/api/files/${encodeURIComponent(record.id)})\n\n${identifyFileText(publicFile(record))}`
+    } catch (error) {
+      this.diagnostics.record({ event: 'image.failure', operationId, sessionId, elapsedMs: Date.now() - started, error: diagnosticError(error) })
+      throw error
+    } finally { this.activeImageSessions.delete(sessionId) }
   }
 
   private initiatingIdentity(sessionId: string): ChatroomIdentity {
@@ -3368,13 +3710,13 @@ export class ChatroomRuntime {
         this.backfillMeetingCard(message.card, 'direct', message.conversationId, message.createdAt)
       }
     }
-    const persisted = new Set((await this.ctx.sessionPersistence.list()).map(header => String(header.id)))
+    const persisted = new Set((await listSessionHeaders(this.ctx.sessionPersistence)).map(header => String(header.id)))
     let complete = true
     for (const state of this.states.values()) {
       let events: readonly SessionEvent[] | undefined = state.binding?.agent.session.snapshotEvents()
       if (events === undefined && persisted.has(state.record.sessionId)) {
         try {
-          events = (await this.ctx.sessionPersistence.inspect(SessionId(state.record.sessionId))).events
+          events = (await inspectSession(this.ctx.sessionPersistence, SessionId(state.record.sessionId))).events
         } catch (error) {
           complete = false
           this.log.warn('Unable to inspect room %s while recovering meeting cards: %s', state.record.id, String(error))
@@ -3393,7 +3735,7 @@ export class ChatroomRuntime {
       let events: readonly SessionEvent[] | undefined = state.binding?.agent.session.snapshotEvents()
       if (events === undefined && persisted.has(state.record.sessionId)) {
         try {
-          events = (await this.ctx.sessionPersistence.inspect(SessionId(state.record.sessionId))).events
+          events = (await inspectSession(this.ctx.sessionPersistence, SessionId(state.record.sessionId))).events
         } catch (error) {
           complete = false
           this.log.warn('Unable to inspect branch %s while recovering meeting cards: %s', state.record.id, String(error))
@@ -3982,12 +4324,23 @@ export class ChatroomRuntime {
     )
   }
 
-  /** Whether this identity may manage the room's AI participants (super-admin, owner, or admin). */
+  /** Authenticated deployments grant management only to platform super-administrators. */
   private canManageRoomAgents(record: RoomRecord, identity: ChatroomIdentity | undefined): boolean {
     if (identity === undefined) return false
-    if ('role' in identity && identity.role === 'super-admin') return true
+    if (this.config.authEnabled) return this.auth.isSuperAdmin(identity.participantId)
     return record.ownerParticipantId === identity.participantId
       || (record.adminParticipantIds ?? []).includes(identity.participantId)
+  }
+
+  /** Recheck established streams before every event without an upstream dsh-auth request. */
+  private canReceiveRoomSse(state: RoomState, participantId: string): boolean {
+    return !this.config.authEnabled || (this.auth.isActiveAccount(participantId)
+      && this.isRoomMember(state.record.id, participantId))
+  }
+
+  /** Notifications are account-scoped, so only local account/session liveness applies. */
+  private canReceiveNotificationSse(participantId: string): boolean {
+    return !this.config.authEnabled || this.auth.isActiveAccount(participantId)
   }
 
   /** Room AI participant access: super-admin may manage any room; others must be a managing member. */
@@ -4490,12 +4843,15 @@ export class ChatroomRuntime {
   }
 
   private assertRoomInviter(record: RoomRecord, identity: ChatroomIdentity): void {
-    if ('role' in identity && identity.role === 'super-admin') return
+    if (this.config.authEnabled) {
+      if (!this.auth.isSuperAdmin(identity.participantId)) throw new ChatroomInputError('当前身份没有群管理权限；仅平台超级管理员可修改。')
+      return
+    }
     this.assertRoomManager(record, identity.participantId)
   }
 
   /** Enforce authenticated membership before any room operation. */
-  private assertRoomAccess(roomId: string, identity: ChatroomIdentity): void {
+  assertRoomAccess(roomId: string, identity: ChatroomIdentity): void {
     if (this.config.authEnabled) this.assertRoomMember(roomId, identity.participantId)
   }
 
@@ -5206,6 +5562,17 @@ function writeSseEvent(
 ): boolean {
   const response = client.response
   if (response.destroyed || response.writableEnded) return false
+  try {
+    if (!client.canReceive()) {
+      remove()
+      closeSse(response)
+      return false
+    }
+  } catch {
+    remove()
+    closeSse(response)
+    return false
+  }
   const buffered = 'writableLength' in response && typeof response.writableLength === 'number'
     ? response.writableLength
     : 0

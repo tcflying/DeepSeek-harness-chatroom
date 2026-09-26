@@ -6,9 +6,15 @@ import { ChatroomRuntime } from './room.js';
 export declare class ChatroomHttpController {
     private readonly runtime;
     private readonly config;
+    private readonly thumbnails;
+    private readonly videos;
     private readonly log;
     private readonly configurationApi;
+    private readonly streams;
+    private readonly clientReportTimes;
     constructor(ctx: Context, runtime: ChatroomRuntime, config: Config);
+    /** Dispatch one request under a registered chatroom API prefix. */
+    stop(): Promise<void>;
     /** Dispatch one request under a registered chatroom API prefix. */
     handle(request: IncomingMessage, response: ServerResponse): Promise<void>;
     private handleSession;
@@ -45,9 +51,11 @@ export declare class ChatroomHttpController {
     private handleQueuedPrompt;
     private handleForward;
     private handleFile;
+    private handleVideos;
     private handleImage;
     private handleEvents;
     private handleNotifications;
+    private openStream;
     private handleConfiguration;
     private sessionPayload;
     private requireIdentity;

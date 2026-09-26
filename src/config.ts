@@ -1,8 +1,12 @@
 import { isAbsolute } from 'node:path'
 import z from '@deepseek-ai/schemastery'
+import { imageGenerationEndpoint } from './image-generation.js'
 
 /** Deployment configuration for shared AI rooms. */
 export interface Config {
+  imageGenerationBaseUrl?: string
+  imageGenerationModel?: string
+  miniMaxCodePath?: string
   dataDirectory?: string
   roomId: string
   roomTitle: string
@@ -51,6 +55,9 @@ export interface Config {
 }
 
 export const Config: z<Config> = z.object({
+  imageGenerationBaseUrl: z.string().default(''),
+  imageGenerationModel: z.string().min(1).max(128).default('gpt-image-2.5-flare'),
+  miniMaxCodePath: z.string().default(''),
   dataDirectory: z.string().default(''),
   roomId: z.string().min(1).max(64).pattern(/^[a-z0-9][a-z0-9_-]*$/u).default('lobby'),
   roomTitle: z.string().min(1).max(80).default('AI 聊天室'),
@@ -99,6 +106,7 @@ export const Config: z<Config> = z.object({
 
 /** Validate relationships Schemastery cannot express by individual fields. */
 export function validateConfig(config: Config): void {
+  if (config.imageGenerationBaseUrl) imageGenerationEndpoint(config.imageGenerationBaseUrl)
   if (config.dataDirectory !== undefined && config.dataDirectory !== ''
     && config.dataDirectory !== ':memory:' && !isAbsolute(config.dataDirectory)) {
     throw new Error(`chatroom: dataDirectory must be absolute or :memory:, got ${JSON.stringify(config.dataDirectory)}`)
